@@ -411,7 +411,7 @@
                                       </packing>
                                     </child>
                                     <child>
-                                      <object class="GtkButton" id="start_gauge1_button1">
+                                      <object class="GtkButton" id="start_gauge2_button">
                                         <property name="label" translatable="yes">Start Gauge 2</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
@@ -769,12 +769,6 @@
                     <child>
                       <placeholder/>
                     </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -836,9 +830,6 @@
                         <property name="left_attach">0</property>
                         <property name="top_attach">0</property>
                       </packing>
-                    </child>
-                    <child>
-                      <placeholder/>
                     </child>
                   </object>
                   <packing>

@@ -69,6 +69,9 @@ class Handler:
 		start_gauge1_button = self._builder.get_object("start_gauge1_button")
 		start_gauge1_button.connect("clicked", self.start_gauge1)
 
+		start_gauge2_button = self._builder.get_object("start_gauge2_button")
+		start_gauge2_button.connect("clicked", self.start_gauge2)
+
 		read_pressure_button = self._builder.get_object("read_pressure_button")
 		read_pressure_button.connect("clicked", self.start_reading_data)
 
@@ -97,10 +100,16 @@ class Handler:
 
 	def start_gauge1(self, button):
 		device = self._devices[self._device_ids['pressure']]
-		channel = device.channels()['on_off']
-		com = channel.serial_com()
+		gauge_1_state_channel = device.get_channel_by_name('gauge_1_state')
 
-		com.send_message("start_gauge_1")
+		# gauge_1_state_channel.set_value("1")
+
+
+	def start_gauge2(self, button):
+		device = self._devices[self._device_ids['pressure']]
+		gauge_2_state_channel = device.get_channel_by_name('gauge_2_state')
+
+		# gauge_2_state_channel.set_value("1")
 
 
 	def create_plot(self):
@@ -133,10 +142,12 @@ class Handler:
 		# Update the value textbox.
 		# self._builder.get_object("current_pressure_reading").set_text(str(value))
 
+		'''
 		# Update the plot.
 		if len(self._pressures) > 0:
 			self.update_plot(1000)
-		
+		'''
+
 		return False
 
 	def read_data(self):
@@ -179,7 +190,7 @@ class Handler:
 					self._timestamps.append(   datetime.datetime.fromtimestamp(timestamp) )
 					self._pressures.append( ( float(pressure_1), float(pressure_2)) )
 
-				GLib.idle_add( self.update_stuff, pressure_1 )   
+				GLib.idle_add( self.update_stuff, pressure_1 )
 
 			except ValueError:
 				pass
@@ -188,7 +199,7 @@ class Handler:
 
 	def start_reading_data(self, button):
 
-		self.write_to_logger("Starting Reading data.")
+		self.write_to_logger("Starting reading data.")
 
 		self._read_data = True
 
@@ -292,7 +303,7 @@ class Handler:
 				ser.close()
 				ser.open()
 			except SerialException:
-				print 'Port already open'
+				print 'Port already open!'
 			
 			
 			output_msg = ser.readline().strip()

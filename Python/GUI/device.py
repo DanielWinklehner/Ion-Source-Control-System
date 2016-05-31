@@ -27,55 +27,6 @@ class Device:
 	def serial_com(self):
 		return _self.serial_com
 
-	def send_message(self, messages):
-		'''
-			messages must be a dictonary. The keys must be channel names (message_header) and the values must be values to send.
-			e.g., messages = { 'gauge_1_state': 1, 'gauge_1_pressure': 123} 
-		'''
-
-		# All of these go to the same Arduino.
-		# So create one long string of message to transmit.
-
-		message_string = ""
-
-		i = 0
-		for channel_name in messages.keys():
-			message_string += "set:{}={}".format(channel_name, messages[channel_name])
-
-			if i < len(messages.keys() - 1):
-				message_string += "&"
-
-
-
-		# Send the set message.
-		self._serial_com.send_message(message_string)
-
-		# # We're probably set. But just listen for an "assigned" message to make sure the value was set properly.
-
-		# # Read the Arduino's response.
-		# keyword, header, value = self.read_arduino_message()
-
-		# # Repeat the set message until we get the "assigned" message back from Arduino.
-		# while not ( keyword == "assigned" and header == self._message_header ):				# THOUGHT: Maybe have a timeout?
-		# 	self._serial_com.send_message(message)
-
-	def receive_message(self):
-		message = "query:{}={}".format("everything", '?')
-
-		# Send the query message.
-		self._serial_com.send_message(message)
-
-		response = self.read_arduino_message()
-
-		# Untangle the response.
-		response_parts = response.split("&")
-
-		values = {}
-		# for part in response_parts:
-			# data = part[]
-
-
-
 		
 
 class Channel:

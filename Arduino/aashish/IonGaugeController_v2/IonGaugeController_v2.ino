@@ -78,7 +78,7 @@ char deviceId[37];
 bool deviceIdentified = false;
 String inputCommand;
 /* 
- *  States: What state the device is on; because you can't really do multi-threadding with Arduinos, we need to keep track of what "state" the device is on to decide what we want the Arduino to do."
+ *  States: What state the device is on; because you can't really do multi-threadding with Arduinos, we need to keep track of what "state" the device is on to decide what we want the Arduino to do.
  *  
  *  
  */
@@ -353,11 +353,31 @@ void loop() {
     
   }
   else if (keyword == "set") {
+    
     if (header == "identified") {
       if (value == "1") {
         currentDeviceState = resting;
       }
     }
+    else if (header == "gauge_1_state") {
+      if (value == "1") {
+        gauge1_interrupt();
+      }
+      else {
+       // Code to stop the gauge? 
+      }
+    }
+    else if (header == "gauge_2_state") {
+      if (value == "1") {
+        gauge2_interrupt();
+      }
+      else {
+        // Code to stop the gauge?
+      }
+    }
+
+    Serial.println("assigned:" + header + "=" + value);
+    
   }
 
 
