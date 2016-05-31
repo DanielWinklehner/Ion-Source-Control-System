@@ -35,12 +35,11 @@ import uuid
 
 
 pressure_arduino_id = "9de3d90f-cdf7-4ef8-9604-548243401df6"
+interlock_system_arduino_id = ""
 
 # ser = serial.Serial('/dev/ttyACM0', 9600)
 
 class Handler:
-
-	
 
 	def __init__(self):
 		
@@ -241,6 +240,7 @@ class Handler:
 				# because we need to query the id's much before we define all the necessary channels.
 
 				id_channel 				 = Channel(name="id",               serial_com=pressure_serial_com, message_header="id",               upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="bool",   unit=None, scaling=1)
+				
 				gauge_1_state_channel    = Channel(name="gauge_1_status",   serial_com=pressure_serial_com, message_header="gauge_1_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="string", unit=None, scaling=1)
 				gauge_1_pressure_channel = Channel(name="gauge_1_pressure", serial_com=pressure_serial_com, message_header="gauge_1_pressure", upper_limit=1000000, lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
 				gauge_2_state_channel    = Channel(name="gauge_2_status",   serial_com=pressure_serial_com, message_header="gauge_2_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
@@ -298,6 +298,7 @@ class Handler:
 	def identify_devices(self):
 		
 		print "Identifying devices connected!"
+
 		self.write_to_logger("Identifying devices connected!")
 
 		for port_name in self.port_names:
@@ -305,7 +306,7 @@ class Handler:
 			# print port_name
 
 			try:
-				ser = serial.Serial(port_name, timeout=3)
+				ser = serial.Serial(port_name, timeout=3)	# Needs a more systematic and consistent way to do timeouts. Also, need to implement timeouts for a lot of message passing. 
 				ser.close()
 				ser.open()
 			except SerialException:
@@ -344,7 +345,11 @@ class Handler:
 						print "Bingo! Found the correct device id!"
 
 						self._builder.get_object("pressure_port_name").set_text(port_name)
-						self._builder.get_object("pressure_device_id").set_text("( {} )".format(device_id_reported_by_arduino))	# Do it better than just using [17:]. The output is always going to be "output:device_id={}"
+						
+						# Do it better than just using [17:]. The output is always going to be "output:device_id={}". 
+						# So use something like split() instead of hard coding character lengths. 
+						
+						self._builder.get_object("pressure_device_id").set_text("( {} )".format(device_id_reported_by_arduino))	
 
 
 
@@ -369,6 +374,5 @@ if __name__ == "__main__":
 	hand._window.show_all()
 	hand._window.maximize()
 	
-
 	Gtk.main()
 
