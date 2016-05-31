@@ -325,51 +325,47 @@ void loop() {
   
   inputCommand = Serial.readString();
   
-  
-  if (inputCommand == "identify_yourself") {
-    currentDeviceState = identification;
-  }
-  else {
-   // Serial.println("here");
+  int first = inputCommand.indexOf(":");
+  int second = inputCommand.indexOf("=");
 
-    
-    
-    int first = inputCommand.indexOf(":");
-    int second = inputCommand.indexOf("=");
+  String keyword = inputCommand.substring(0, first);
+  String header = inputCommand.substring(first + 1, second);
+  String value = inputCommand.substring(second + 1, inputCommand.length());
 
-    String keyword = inputCommand.substring(0, first);
-    String header = inputCommand.substring(first + 1, second);
-    String value = inputCommand.substring(second + 1, inputCommand.length());
+  if (keyword == "query") {
 
-    if (keyword == "query") {
-      
-      if (header == "gauge_1_state") {
-        Serial.println("output:gauge_1_state=" + gauge1_state);
-      }
-      else if (header == "gauge_1_pressure") {
-        Serial.println("output:gauge_1_pressure=" + gauge1_torr_str);
-      }
-      else if (header == "gauge_2_state") {
-        Serial.println("output:gauge_1_pressure=" + gauge2_state);
-      }
-      else if (header == "gauge_2_pressure") {
-        Serial.println("output:gauge_2_pressure=" + gauge1_torr_str);
-      }
-      
+    if (header == "identification") {
+      Serial.print("output:device_id=");
+      Serial.println(deviceId);
     }
-    else if (keyword == "set") {
-      
+    else if (header == "gauge_1_state") {
+      Serial.println("output:gauge_1_state=" + gauge1_state);
     }
-
+    else if (header == "gauge_1_pressure") {
+      Serial.println("output:gauge_1_pressure=" + gauge1_torr_str);
+    }
+    else if (header == "gauge_2_state") {
+      Serial.println("output:gauge_2_state=" + gauge2_state);
+    }
+    else if (header == "gauge_2_pressure") {
+      Serial.println("output:gauge_2_pressure=" + gauge2_torr_str);
+    }
     
   }
+  else if (keyword == "set") {
+    if (header == "identified") {
+      if (value == "1") {
+        currentDeviceState = resting;
+      }
+    }
+  }
 
-  
 
 
-  
+
+  /*
   if (currentDeviceState == identification) {
-    Serial.print("device_id=");
+    Serial.print("output:device_id=");
     Serial.println(deviceId);
   }
   else if (currentDeviceState == sending_output) {
@@ -382,7 +378,7 @@ void loop() {
   const char * message = "query:pressure=100";
   
   //char ** parsed_message = parse_message(message);
-
+  */
 
 
   

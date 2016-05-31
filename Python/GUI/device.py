@@ -29,7 +29,7 @@ class Device:
 
 	def send_message(self, messages):
 		'''
-			messages must be a dictonary. The keys must be channel names (messagee_header) and the values must be values to send.
+			messages must be a dictonary. The keys must be channel names (message_header) and the values must be values to send.
 			e.g., messages = { 'gauge_1_state': 1, 'gauge_1_pressure': 123} 
 		'''
 
@@ -103,6 +103,9 @@ class Channel:
 	def serial_com(self):
 		return self._serial_com
 
+	def message_header(self):
+		return self._message_header
+
 	def upper_limit(self):
 		return self._upper_limit
 
@@ -124,7 +127,7 @@ class Channel:
 	def read_arduino_message(self):
 		response = self._serial_com.read_message()
 
-		# print response
+		# print "The arduino sent the following response: ", response
 
 		
 		response_parts =  response.split(':')
@@ -153,6 +156,8 @@ class Channel:
 			self._serial_com.send_message(message)
 
 			keyword, header, value = self.read_arduino_message()
+
+			print keyword, header, self._message_header, header == self._message_header
 
 		# We have what we need.
 

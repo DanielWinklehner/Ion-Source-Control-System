@@ -131,7 +131,7 @@ class Handler:
 
 	def update_stuff(self, value):
 		# Update the value textbox.
-		self._builder.get_object("current_pressure_reading").set_text(str(value))
+		# self._builder.get_object("current_pressure_reading").set_text(str(value))
 
 		# Update the plot.
 		if len(self._pressures) > 0:
@@ -143,7 +143,12 @@ class Handler:
 
 		list_size = 10
 
+		self._read_data = True	# This should later be controlled by another button or something that allows us to "Start" reading data and then, at some point, "Stop" reading them.
+
 		while self._read_data:
+
+			print "Reading data!"
+
 			# Just pressure data for now.
 			device = self._devices[self._device_ids['pressure']]
 
@@ -153,15 +158,14 @@ class Handler:
 			gauge_1_pressure_channel = device.get_channel_by_name('gauge_1_pressure')
 			gauge_2_state_channel    = device.get_channel_by_name('gauge_2_state')
 			gauge_2_pressure_channel = device.get_channel_by_name('gauge_2_pressure')
-
+			
 			gauge_1_state, gauge_1_pressure = gauge_1_state_channel.read_value(), gauge_1_pressure_channel.read_value()
 			gauge_2_state, gauge_2_pressure = gauge_2_state_channel.read_value(), gauge_2_pressure_channel.read_value()
-
-			if len(values) == 4:
-				self._builder.get_object("gauge1_state").set_text( gauge_1_state    )
-				self._builder.get_object("gauge1_torr" ).set_text( gauge_1_pressure )
-				self._builder.get_object("gauge2_state").set_text( gauge_2_state    )
-				self._builder.get_object("gauge2_torr" ).set_text( gauge_2_pressure )
+			
+			self._builder.get_object("gauge1_state").set_text( gauge_1_state    )
+			self._builder.get_object("gauge1_torr" ).set_text( gauge_1_pressure )
+			self._builder.get_object("gauge2_state").set_text( gauge_2_state    )
+			self._builder.get_object("gauge2_torr" ).set_text( gauge_2_pressure )
 
 			pressure_1 = gauge_1_pressure
 			pressure_2 = gauge_2_pressure
@@ -172,20 +176,10 @@ class Handler:
 				float(pressure_2)
 
 				if float(pressure_1) >= 0. and float(pressure_2) >= 0.:
-
-					# if len(self._timestamps) > list_size:
-					# 	self._timestamps = self._timestamps[1:]
-
-					# if len(self._pressures) > list_size:
-					# 	self._pressures = self._pressures[1:]
-
-					# if len(self._timestamps) > list_size + 1:
-						# print "List too big!"
-
 					self._timestamps.append(   datetime.datetime.fromtimestamp(timestamp) )
 					self._pressures.append( ( float(pressure_1), float(pressure_2)) )
 
-				GLib.idle_add( self.update_stuff, value )   
+				GLib.idle_add( self.update_stuff, pressure_1 )   
 
 			except ValueError:
 				pass
@@ -203,6 +197,10 @@ class Handler:
 		self.create_plot()
 
 	def read_and_identify_devices(self):
+
+		print "Reading and identifying devices!"
+
+
 		self.port_names = control_system_serial.get_all_serial_ports()
 
 		self.identify_devices()
@@ -212,9 +210,15 @@ class Handler:
 		for port_name in self._device_addresses:
 			
 			# Replace this with another hashmap of arduino IDs against what those units are.
+
+			print "Figuring out stuff for devices!"
+
+			print port_name
 			
 			if self._device_addresses[port_name] == pressure_arduino_id:
 				# This is our pressure unit.
+
+				print "Working with device=pressure."
 
 				# Assign a new device id.
 				device_id = uuid.uuid4()
@@ -226,7 +230,7 @@ class Handler:
 				id_channel 				 = Channel(name="id",               serial_com=pressure_serial_com, message_header="id",               upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="bool",   unit=None, scaling=1)
 				gauge_1_state_channel    = Channel(name="gauge_1_status",   serial_com=pressure_serial_com, message_header="gauge_1_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="string", unit=None, scaling=1)
 				gauge_1_pressure_channel = Channel(name="gauge_1_pressure", serial_com=pressure_serial_com, message_header="gauge_1_pressure", upper_limit=1000000, lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
-				gauge_2_state_channel    = Channel(name="gauge_2_status",   serial_com=pressure_serial_com, message_header="gauge_2_state",    upper_limit=1000000, lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
+				gauge_2_state_channel    = Channel(name="gauge_2_status",   serial_com=pressure_serial_com, message_header="gauge_2_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
 				gauge_2_pressure_channel = Channel(name="gauge_2_pressure", serial_com=pressure_serial_com, message_header="gauge_2_pressure", upper_limit=1000000, lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
 
 				pressure_channels = {'id': id_channel, 'gauge_1_state': gauge_1_state_channel, 'gauge_1_pressure': gauge_1_pressure_channel, 'gauge_2_state': gauge_2_state_channel, 'gauge_2_pressure': gauge_2_pressure_channel}
@@ -236,6 +240,8 @@ class Handler:
 				self._devices[device_id] = pressure_unit
 
 				self._device_ids['pressure'] = device_id
+
+		print "All setup complete!"
 
 
 	def write_to_logger(self, message):
@@ -290,8 +296,9 @@ class Handler:
 			
 			
 			output_msg = ser.readline().strip()
-			input_message = "identify_yourself"
+			input_message = "query:identification=?"
 
+			'''
 			while "device_id" not in output_msg:
 				ser.write(input_message)
 				time.sleep(0.01)
@@ -303,34 +310,50 @@ class Handler:
 			# ser.write("identify_yourself")
 
 			# time.sleep(0.5)
+			'''
 
-			print (ser.readline())
 
 			while True:
 				
+				input_message = "query:identification=?"
+
+				ser.write(input_message)
 				line1 = ser.readline().strip()
+
+				ser.write(input_message)
 				line2 = ser.readline().strip()
 
 				print "reading lines"
 
+				print line1, line2
+
 				if line1 == line2:
 				# if True:
-					self._device_addresses[port_name] = line2[10:]
-					ser.write("identified")
+					self._device_addresses[port_name] = line2[17:]
+					ser.write("set:identified=1")
 
-					if line2[10:] == pressure_arduino_id:
+					# print line2[17:], pressure_arduino_id
+
+					if line2[17:] == pressure_arduino_id:
+						
+						print "Bingo! Found the correct device id!"
+
 						self._builder.get_object("pressure_port_name").set_text(port_name)
-						self._builder.get_object("pressure_device_id").set_text("( {} )".format(line2[10:]))
+						self._builder.get_object("pressure_device_id").set_text("( {} )".format(line2[17:]))	# Do it better than just using [17:]. The output is always going to be "output:device_id={}"
 
-					self.write_to_logger("Identified device id = {} on port {}.".format(line2[10:], port_name))
 
+
+					self.write_to_logger("Identified device id = {} on port {}.".format(line2[17:], port_name))
+
+					
 					ser.flushInput()
 					ser.flushOutput()	
 					ser.close()
 
 					break
 
-		self.write_to_logger("{} devices successfully identified!".format(len(self._device_addresses)))
+		noun = "devices" if len(self._device_addresses) > 1 else "device"
+		self.write_to_logger( "{} {} successfully identified!".format(len(self._device_addresses), noun) )
 		
 
 
