@@ -27,8 +27,6 @@ class Device:
 	def serial_com(self):
 		return _self.serial_com
 
-		
-
 class Channel:
 
 	def __init__(self, name, serial_com, message_header, upper_limit, lower_limit, uid, data_type, unit, scaling):
@@ -45,8 +43,6 @@ class Channel:
 		self._scaling = scaling
 
 		self._value = -1
-
-		
 
 	def name(self):
 		return self._name
@@ -78,9 +74,6 @@ class Channel:
 	def read_arduino_message(self):
 		response = self._serial_com.read_message()
 
-		# print "The arduino sent the following response: ", response
-
-		
 		response_parts =  response.split(':')
 		result_parts = response_parts[1].split('=')
 
@@ -131,13 +124,11 @@ class Channel:
 		keyword, header, value = self.read_arduino_message()
 
 		# Repeat the set message until we get the "assigned" message back from Arduino.
-		while not ( keyword == "assigned" and header == self._message_header ):				# THOUGHT: Maybe have a timeout?
+		while not ( (keyword == "assigned") and (header == self._message_header) ):				# THOUGHT: Maybe have a timeout?
 			self._serial_com.send_message(message)
 
 		# THOUGHT: Do we even need to "store" the value here as a class attribute?
 		self._value = _value
-
-
 
 
 class SerialCOM:
@@ -147,9 +138,7 @@ class SerialCOM:
 		self._arduino_id = arduino_id
 		self._arduino_port = arduino_port
 
-
 		self._ser = serial.Serial(self._arduino_port, baudrate=9600, timeout=3)
-
 
 	def channel_id(self):
 		return self._channel_id

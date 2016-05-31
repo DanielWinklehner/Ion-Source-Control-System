@@ -211,22 +211,20 @@ class Handler:
 
 		print "Reading and identifying devices!"
 
-
 		self.port_names = control_system_serial.get_all_serial_ports()
 
 		self.identify_devices()
 
 		self.write_all_serial_port_names()
 
+
+		# Define all necessary devices and corresponding classes here. 
+
 		for port_name in self._device_addresses:
 			
-			# Replace this with another hashmap of arduino IDs against what those units are.
-
-			print "Figuring out stuff for devices!"
-
-			print port_name
+			# ION GAUGE CONTROLLER. 
 			
-			if self._device_addresses[port_name] == pressure_arduino_id:
+			if self._device_addresses[port_name] == pressure_arduino_id:		# Replace this with another hashmap of arduino IDs against what those units are.
 				# This is our pressure unit.
 
 				print "Working with device=pressure."
@@ -237,6 +235,10 @@ class Handler:
 
 
 				pressure_serial_com = SerialCOM(channel_id=channel_id, arduino_id=pressure_arduino_id, arduino_port=port_name)
+
+
+				# Do we need to have the user require to define an id_channel? Because every Device would need to have an associated id with it and
+				# because we need to query the id's much before we define all the necessary channels.
 
 				id_channel 				 = Channel(name="id",               serial_com=pressure_serial_com, message_header="id",               upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="bool",   unit=None, scaling=1)
 				gauge_1_state_channel    = Channel(name="gauge_1_status",   serial_com=pressure_serial_com, message_header="gauge_1_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="string", unit=None, scaling=1)
@@ -251,6 +253,10 @@ class Handler:
 				self._devices[device_id] = pressure_unit
 
 				self._device_ids['pressure'] = device_id
+
+			# ION GAUGE CONTROLLER ENDS.
+
+			# Other devices. 
 
 		print "All setup complete!"
 
@@ -309,21 +315,7 @@ class Handler:
 			output_msg = ser.readline().strip()
 			input_message = "query:identification=?"
 
-			'''
-			while "device_id" not in output_msg:
-				ser.write(input_message)
-				time.sleep(0.01)
-
-				output_msg = ser.readline()
-
-				print output_msg
-
-			# ser.write("identify_yourself")
-
-			# time.sleep(0.5)
-			'''
-
-
+		
 			while True:
 				
 				input_message = "query:identification=?"
@@ -338,9 +330,11 @@ class Handler:
 
 				print line1, line2
 
+				device_id_reported_by_arduino = line2[17:]
+
 				if line1 == line2:
 				# if True:
-					self._device_addresses[port_name] = line2[17:]
+					self._device_addresses[port_name] = device_id_reported_by_arduino
 					ser.write("set:identified=1")
 
 					# print line2[17:], pressure_arduino_id
@@ -350,11 +344,11 @@ class Handler:
 						print "Bingo! Found the correct device id!"
 
 						self._builder.get_object("pressure_port_name").set_text(port_name)
-						self._builder.get_object("pressure_device_id").set_text("( {} )".format(line2[17:]))	# Do it better than just using [17:]. The output is always going to be "output:device_id={}"
+						self._builder.get_object("pressure_device_id").set_text("( {} )".format(device_id_reported_by_arduino))	# Do it better than just using [17:]. The output is always going to be "output:device_id={}"
 
 
 
-					self.write_to_logger("Identified device id = {} on port {}.".format(line2[17:], port_name))
+					self.write_to_logger("Identified device id = {} on port {}.".format(device_id_reported_by_arduino, port_name))
 
 					
 					ser.flushInput()
