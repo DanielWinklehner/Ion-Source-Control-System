@@ -34,8 +34,10 @@ from device import Device, Channel, SerialCOM
 import uuid
 
 
-pressure_arduino_id = ""
-interlock_system_arduino_id = "9de3d90f-cdf7-4ef8-9604-548243401df6"
+pressure_arduino_id         = ""
+interlock_flow_arduino_id   = ""										# This includes 5 flow meters and 5 temperature sensors.
+interlock_others_arduino_id = "9de3d90f-cdf7-4ef8-9604-548243401df6"	# This includes 2 each of solenoid valves, vacuum valves and reed switches. 
+
 
 # ser = serial.Serial('/dev/ttyACM0', 9600)
 
@@ -319,46 +321,72 @@ class Handler:
 
 			# ION GAUGE CONTROLLER ENDS.
 
-			# INTERLOCK SYSTEM.
 
-			if self._device_addresses[port_name] == interlock_system_arduino_id:
-				# This is the interlock system.
+			# Interlock Others Unit Begins. 
+			# This includes 2 each of solenoid valves, vacuum valves and reed switches.
 
-				print "Working with device=Interlock System."
+			if self._device_addresses[port_name] == interlock_others_arduino_id:
+
+				print "Working with device=Interlock Others System."
 
 				# Assign a new device id.
 				device_id = uuid.uuid4()
 				channel_id = uuid.uuid4()
 
-				interlock_serial_com = SerialCOM(channel_id=channel_id, arduino_id=interlock_system_arduino_id, arduino_port=port_name)
+				interlock_others_serial_com = SerialCOM(channel_id=channel_id, arduino_id=interlock_system_arduino_id, arduino_port=port_name)
 
-				interlock_channels = {}
+				interlock_others_channels = {}
 
 				# Solenoid Valves. x 2
 				
 				for i in range(1, 3):
-					interlock_channels['solenoid_valve_' + str(i)] = Channel(name="solenoid_valve_" + str(i), serial_com=interlock_serial_com, message_header="solenoid_valve_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="write")
+					interlock_others_channels['solenoid_valve_' + str(i)] = Channel(name="solenoid_valve_" + str(i), serial_com=interlock_others_serial_com, message_header="solenoid_valve_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="write")
+
+				# Vacuum Valves. x 2
+				for i in range(1, 3):
+					interlock_others_channels['vacuum_valve_' + str(i)] = Channel(name="vacuum_valve_" + str(i), serial_com=interlock_others_serial_com, message_header="vacuum_valve_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+
+				# Reed Switches. x 2
+				for i in range(1, 3):
+					interlock_others_channels['reed_switch_' + str(i)] = Channel(name="reed_switch_" + str(i), serial_com=interlock_others_serial_com, message_header="reed_switch_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+
+				interlock_others_unit = Device(name="Interlock Others System", arduino_device_id=device_id, channels=interlock_others_channels)
+
+				self._devices[device_id] = interlock_others_unit
+				self._device_ids['interlock_others'] = device_id
+
+
+			# Interlock Others Unit Ends.
+
+
+			# Interlock Flow Unit Begins.
+			if self._device_addresses[port_name] == interlock_flow_arduino_id:
+
+				print "Working with device=Interlock Flow System."
+
+				# Assign a new device id.
+				device_id = uuid.uuid4()
+				channel_id = uuid.uuid4()
+
+				interlock_flow_serial_com = SerialCOM(channel_id=channel_id, arduino_id=interlock_system_arduino_id, arduino_port=port_name)
+
+				interlock_flow_channels = {}
 
 				# Flow meters. x 5
 				for i in range(1, 6):
 					# This reads square wave frequencies.
-					interlock_channels['flow_meter_' + str(i)] = Channel(name="flow_meter_" + str(i), serial_com=interlock_serial_com, message_header="flow_meter_" + str(i), upper_limit=10000000, lower_limit=0, uid=uuid.uuid4(), data_type="float", unit="Hz", scaling=1, mode="read")
+					interlock_flow_channels['flow_meter_' + str(i)] = Channel(name="flow_meter_" + str(i), serial_com=interlock_flow_serial_com, message_header="flow_meter_" + str(i), upper_limit=10000000, lower_limit=0, uid=uuid.uuid4(), data_type="float", unit="Hz", scaling=1, mode="read")
 
-				# Vacuum Valves. x 2
-				for i in range(1, 3):
-					interlock_channels['vacuum_valve_' + str(i)] = Channel(name="vacuum_valve_" + str(i), serial_com=interlock_serial_com, message_header="vacuum_valve_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+				# Temperature sensors. x 5
+				for i in range(1, 6):
+					interlock_flow_channels['temperature_sensor_' + str(i)] = Channel(name="temperature_sensor_" + str(i), serial_com=interlock_flow_serial_com, message_header="temperature_sensor_" + str(i), upper_limit=1000, lower_limit=0, uid=uuid.uuid4(), data_type="float", unit="K", scaling=1, mode="read")
+				
+				interlock_flow_unit = Device(name="Interlock Flow System", arduino_device_id=device_id, channels=interlock_flow_channels)
 
-				# Reed Switches. x 2
-				for i in range(1, 3):
-					interlock_channels['reed_switch_' + str(i)] = Channel(name="reed_switch_" + str(i), serial_com=interlock_serial_com, message_header="reed_switch_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+				self._devices[device_id] = interlock_flow_unit
+				self._device_ids['interlock_flow'] = device_id
 
-				interlock_unit = Device(name="Interlock System", arduino_device_id=device_id, channels=interlock_channels)
-
-				self._devices[device_id] = interlock_unit
-				self._device_ids['interlock'] = device_id
-
-
-			# INTERLOCK SYSTEM ENDS.
+			# Interlock Flow Unit Ends.
 
 			# Other devices. 
 
