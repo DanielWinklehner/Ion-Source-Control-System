@@ -29,7 +29,7 @@ class Device:
 
 class Channel:
 
-	def __init__(self, name, serial_com, message_header, upper_limit, lower_limit, uid, data_type, unit, scaling):
+	def __init__(self, name, serial_com, message_header, upper_limit, lower_limit, uid, data_type, unit, scaling, mode="both"):
 		
 		self._name = name
 		self._serial_com = serial_com
@@ -43,6 +43,8 @@ class Channel:
 		self._scaling = scaling
 
 		self._value = -1
+
+		self._mode = mode
 
 	def name(self):
 		return self._name
@@ -71,6 +73,9 @@ class Channel:
 	def scaling(self):
 		return self._scaling
 
+	def mode(self):
+		return self._mode
+
 	def read_arduino_message(self):
 		response = self._serial_com.read_message()
 
@@ -85,6 +90,10 @@ class Channel:
 
 
 	def read_value(self):
+		
+		if self._mode == "write":
+			raise ValueError("ERROR: You are trying to read in values from a write-only channel!")
+			return
 		
 		# Build a query message.
 		message = "query:{}={}".format(self._message_header, '?')
@@ -111,6 +120,10 @@ class Channel:
 
 
 	def set_value(self, value):
+
+		if self._mode == "read":
+			raise ValueError("ERROR: You are trying to write values to a read-only channel!")
+			return
 
 		# Build a set message to send to the Arduino.
 		message = "set:{}={}".format(self._message_header, value)

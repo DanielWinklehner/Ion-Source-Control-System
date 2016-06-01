@@ -34,8 +34,8 @@ from device import Device, Channel, SerialCOM
 import uuid
 
 
-pressure_arduino_id = "9de3d90f-cdf7-4ef8-9604-548243401df6"
-interlock_system_arduino_id = ""
+pressure_arduino_id = ""
+interlock_system_arduino_id = "9de3d90f-cdf7-4ef8-9604-548243401df6"
 
 # ser = serial.Serial('/dev/ttyACM0', 9600)
 
@@ -52,6 +52,8 @@ class Handler:
 		self._device_ids = {} # Key = common name, value = device id
 
 		self._read_data = False
+		self._read_interlock_data = False
+
 
 
 		self._builder = Gtk.Builder()
@@ -74,11 +76,15 @@ class Handler:
 		read_pressure_button = self._builder.get_object("read_pressure_button")
 		read_pressure_button.connect("clicked", self.start_reading_data)
 
+		read_interlock_button = self._builder.get_object("interlock_start_reading_button")
+		read_interlock_button.connect("clicked", self.start_reading_interlock_data)
+
 		read_serial_ports_thread = threading.Thread(target=self.read_and_identify_devices)
 		read_serial_ports_thread.start()
 
 
-		self._data_reading_thread = threading.Thread(target=self.read_data)
+		self._data_reading_thread = threading.Thread(target=self.read_data)							# Maybe have one function and use arguments instead?
+		self._interlock_data_reading_thread = threading.Thread(target=self.read_interlock_data)
 		
 
 		# These are for the pressure plot.
@@ -196,6 +202,51 @@ class Handler:
 		
 			time.sleep(1)
 
+
+	def read_interlock_data(self):
+
+		list_size = 10
+
+		self._read_interlock_data = True	# This should later be controlled by another button or something that allows us to "Start" reading data and then, at some point, "Stop" reading them.
+
+		while self._read_data:
+
+			print "Reading interlock data!"
+
+			# Interlock data.
+			device = self._devices[self._device_ids['interlock']]
+
+			timestamp = time.time()
+
+			# First get all channels. 
+			channels = {}
+
+			# Solenoid Valves. x 2
+			for i in range(1, 3):
+				channels['solenoid_valve_' + str(i)] = device.get_channel_by_name('solenoid_valve_' + str(i))
+
+			# Flow Meters. x 5
+			for i in range(1, 6):
+				channels['flow_meter_' + str(i)] = device.get_channel_by_name('flow_meter_' + str(i))
+
+			# Vacuum Valves. x 2
+			for i in range(1, 3):
+				channels['vacuum_valve_' + str(i)] = device.get_channel_by_name('vacuum_valve_' + str(i))
+
+			# Reed Switches. x 2
+			for i in range(1, 3):
+				channels['reed_switch_' + str(i)] = device.get_channel_by_name('reed_switch_' + str(i))
+
+			# We have all the channels we need. 
+
+			# Now read in values (for those where we can read in).
+
+			for channel_name in channels.keys():
+				if channels[channel_name].mode() != "write":
+					self._builder.get_object(channel_name + "_value").set_text( channels[channel_name].read_value() )
+		
+			time.sleep(1)
+
 	def start_reading_data(self, button):
 
 		self.write_to_logger("Starting reading data.")
@@ -205,6 +256,18 @@ class Handler:
 		self._data_reading_thread.start()	# This thread is associated with the "read_data()" method.
 
 		self.create_plot()
+
+
+	def start_reading_interlock_data(self, button):
+
+		self.write_to_logger("Starting reading interlock data.")
+
+		self._read_interlock_data = True
+
+		self._interlock_data_reading_thread.start()	# This thread is associated with the "read_data()" method.
+
+		
+
 
 	def read_and_identify_devices(self):
 
@@ -239,12 +302,12 @@ class Handler:
 				# Do we need to have the user require to define an id_channel? Because every Device would need to have an associated id with it and
 				# because we need to query the id's much before we define all the necessary channels.
 
-				id_channel 				 = Channel(name="id",               serial_com=pressure_serial_com, message_header="id",               upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="bool",   unit=None, scaling=1)
+				id_channel 				 = Channel(name="id",               serial_com=pressure_serial_com, message_header="id",               upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="bool",   unit=None, scaling=1, mode="read")
 				
-				gauge_1_state_channel    = Channel(name="gauge_1_status",   serial_com=pressure_serial_com, message_header="gauge_1_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="string", unit=None, scaling=1)
-				gauge_1_pressure_channel = Channel(name="gauge_1_pressure", serial_com=pressure_serial_com, message_header="gauge_1_pressure", upper_limit=1000000, lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
-				gauge_2_state_channel    = Channel(name="gauge_2_status",   serial_com=pressure_serial_com, message_header="gauge_2_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
-				gauge_2_pressure_channel = Channel(name="gauge_2_pressure", serial_com=pressure_serial_com, message_header="gauge_2_pressure", upper_limit=1000000, lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1)
+				gauge_1_state_channel    = Channel(name="gauge_1_status",   serial_com=pressure_serial_com, message_header="gauge_1_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="string", unit=None, scaling=1, mode="both")
+				gauge_1_pressure_channel = Channel(name="gauge_1_pressure", serial_com=pressure_serial_com, message_header="gauge_1_pressure", upper_limit=1000000, lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1, mode="read")
+				gauge_2_state_channel    = Channel(name="gauge_2_status",   serial_com=pressure_serial_com, message_header="gauge_2_state",    upper_limit=1,       lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1, mode="both")
+				gauge_2_pressure_channel = Channel(name="gauge_2_pressure", serial_com=pressure_serial_com, message_header="gauge_2_pressure", upper_limit=1000000, lower_limit=0, uid=uuid.uuid4(), data_type="float",  unit=None, scaling=1, mode="read")
 
 				pressure_channels = {'id': id_channel, 'gauge_1_state': gauge_1_state_channel, 'gauge_1_pressure': gauge_1_pressure_channel, 'gauge_2_state': gauge_2_state_channel, 'gauge_2_pressure': gauge_2_pressure_channel}
 
@@ -255,6 +318,47 @@ class Handler:
 				self._device_ids['pressure'] = device_id
 
 			# ION GAUGE CONTROLLER ENDS.
+
+			# INTERLOCK SYSTEM.
+
+			if self._device_addresses[port_name] == interlock_system_arduino_id:
+				# This is the interlock system.
+
+				print "Working with device=Interlock System."
+
+				# Assign a new device id.
+				device_id = uuid.uuid4()
+				channel_id = uuid.uuid4()
+
+				interlock_serial_com = SerialCOM(channel_id=channel_id, arduino_id=interlock_system_arduino_id, arduino_port=port_name)
+
+				interlock_channels = {}
+
+				# Solenoid Valves. x 2
+				
+				for i in range(1, 3):
+					interlock_channels['solenoid_valve_' + str(i)] = Channel(name="solenoid_valve_" + str(i), serial_com=interlock_serial_com, message_header="solenoid_valve_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="write")
+
+				# Flow meters. x 5
+				for i in range(1, 6):
+					# This reads square wave frequencies.
+					interlock_channels['flow_meter_' + str(i)] = Channel(name="flow_meter_" + str(i), serial_com=interlock_serial_com, message_header="flow_meter_" + str(i), upper_limit=10000000, lower_limit=0, uid=uuid.uuid4(), data_type="float", unit="Hz", scaling=1, mode="read")
+
+				# Vacuum Valves. x 2
+				for i in range(1, 3):
+					interlock_channels['vacuum_valve_' + str(i)] = Channel(name="vacuum_valve_" + str(i), serial_com=interlock_serial_com, message_header="vacuum_valve_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+
+				# Reed Switches. x 2
+				for i in range(1, 3):
+					interlock_channels['reed_switch_' + str(i)] = Channel(name="reed_switch_" + str(i), serial_com=interlock_serial_com, message_header="reed_switch_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+
+				interlock_unit = Device(name="Interlock System", arduino_device_id=device_id, channels=interlock_channels)
+
+				self._devices[device_id] = interlock_unit
+				self._device_ids['interlock'] = device_id
+
+
+			# INTERLOCK SYSTEM ENDS.
 
 			# Other devices. 
 
@@ -340,9 +444,9 @@ class Handler:
 
 					# print line2[17:], pressure_arduino_id
 
-					if line2[17:] == pressure_arduino_id:
+					if device_id_reported_by_arduino == pressure_arduino_id:
 						
-						print "Bingo! Found the correct device id!"
+
 
 						self._builder.get_object("pressure_port_name").set_text(port_name)
 						
@@ -351,6 +455,9 @@ class Handler:
 						
 						self._builder.get_object("pressure_device_id").set_text("( {} )".format(device_id_reported_by_arduino))	
 
+					elif device_id_reported_by_arduino == interlock_system_arduino_id:
+						self._builder.get_object("interlock_port_name").set_text(port_name)
+						self._builder.get_object("interlock_device_id").set_text("( {} )".format(device_id_reported_by_arduino))	
 
 
 					self.write_to_logger("Identified device id = {} on port {}.".format(device_id_reported_by_arduino, port_name))
