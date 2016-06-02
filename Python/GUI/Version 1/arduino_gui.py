@@ -36,7 +36,7 @@ import uuid
 
 pressure_arduino_id         = ""
 interlock_flow_arduino_id   = ""										# This includes 5 flow meters and 5 temperature sensors.
-interlock_others_arduino_id = "9de3d90f-cdf7-4ef8-9604-548243401df6"	# This includes 2 each of solenoid valves, vacuum valves and reed switches. 
+interlock_others_arduino_id = "2cc580d6-fa29-44a7-9fec-035acd72340e"	# This includes 2 each of solenoid valves, vacuum valves and reed switches. 
 
 
 # ser = serial.Serial('/dev/ttyACM0', 9600)
@@ -53,8 +53,9 @@ class Handler:
 
 		self._device_ids = {} # Key = common name, value = device id
 
-		self._read_data = False
-		self._read_interlock_data = False
+		self._read_ion_gauge_data = False
+		self._read_interlock_flow_data = False
+		self._read_interlock_others_data = False
 
 
 
@@ -66,9 +67,27 @@ class Handler:
 
 		self._window.connect("destroy", Gtk.main_quit)
 
-		button = self._builder.get_object("send_message_button")
-		button.connect("clicked", self.send_message)
+		read_serial_ports_thread = threading.Thread(target=self.read_and_identify_devices)
+		read_serial_ports_thread.start()
 
+
+
+		# Setup all device units.
+
+		self.setup_ion_gauge()
+		self.setup_interlock_flow()
+		self.setup_interlock_others()
+		
+
+		# Need some way to keep track of all threads, like when it says to stop reading data, that thread should stop. Right now, once a thread has started, it never stops.
+
+
+
+	# ==============================================================================================================================
+	# ===================================================== Setup Device Units =====================================================
+	# ==============================================================================================================================
+
+	def setup_ion_gauge(self):
 		start_gauge1_button = self._builder.get_object("start_gauge1_button")
 		start_gauge1_button.connect("clicked", self.start_gauge1)
 
@@ -76,18 +95,12 @@ class Handler:
 		start_gauge2_button.connect("clicked", self.start_gauge2)
 
 		read_pressure_button = self._builder.get_object("read_pressure_button")
-		read_pressure_button.connect("clicked", self.start_reading_data)
+		read_pressure_button.connect("clicked", self.start_reading_ion_gauge_data)
 
-		read_interlock_button = self._builder.get_object("interlock_start_reading_button")
-		read_interlock_button.connect("clicked", self.start_reading_interlock_data)
-
-		read_serial_ports_thread = threading.Thread(target=self.read_and_identify_devices)
-		read_serial_ports_thread.start()
-
-
-		self._data_reading_thread = threading.Thread(target=self.read_data)							# Maybe have one function and use arguments instead?
-		self._interlock_data_reading_thread = threading.Thread(target=self.read_interlock_data)
 		
+		# Maybe have one function and use arguments instead? No becaue we need individual threads for each unit as we want to read all of them in parallel.
+
+		self._ion_gauge_data_reading_thread = threading.Thread(target=self.read_ion_gauge_data)							
 
 		# These are for the pressure plot.
 
@@ -102,7 +115,74 @@ class Handler:
 
 		# self._ani = None
 
-	# Need another method to keep track of all threads, like when it says to stop reading data, that thread should stop.
+	def setup_interlock_flow(self):
+		read_interlock_flow_button = self._builder.get_object("interlock_flow_start_reading_button")
+		read_interlock_flow_button.connect("clicked", self.start_reading_interlock_flow_data)
+
+		self._interlock_flow_data_reading_thread = threading.Thread(target=self.read_interlock_flow_data)
+
+	def setup_interlock_others(self):
+		read_interlock_others_button = self._builder.get_object("interlock_others_start_reading_button")
+		read_interlock_others_button.connect("clicked", self.start_reading_interlock_others_data)
+
+		self._interlock_others_data_reading_thread = threading.Thread(target=self.read_interlock_others_data)
+
+		set_solenoid_valve_1_high_button = self._builder.get_object("set_solenoid_valve_1_high")
+		set_solenoid_valve_1_high_button.connect("clicked", self.set_solenoid_valve_1_high)
+
+		set_solenoid_valve_1_low_button = self._builder.get_object("set_solenoid_valve_1_low")
+		set_solenoid_valve_1_low_button.connect("clicked", self.set_solenoid_valve_1_low)
+
+
+	# ==============================================================================================================================
+	# =================================================== Setup Device Units Ends ==================================================
+	# ==============================================================================================================================
+
+
+
+	# ==============================================================================================================================
+	# ================================================== Start Data Reading Threads ================================================
+	# ==============================================================================================================================
+
+	def set_solenoid_valve_1_high(self, button):
+		device = self._devices[self._device_ids['interlock_others']]
+		solenoid_valve_channel = device.get_channel_by_name('solenoid_valve_1')
+
+		solenoid_valve_channel.set_value("1")
+
+	def set_solenoid_valve_1_low(self, button):
+		device = self._devices[self._device_ids['interlock_others']]
+		solenoid_valve_channel = device.get_channel_by_name('solenoid_valve_1')
+
+		solenoid_valve_channel.set_value("0")
+
+	def start_reading_ion_gauge_data(self, button):
+
+		self.write_to_logger("Starting reading data.")
+
+		self._read_ion_gauge_data = True
+		self._data_reading_thread.start()	# This thread is associated with the "read_ion_gauge_data()" method.
+
+		# self.create_plot()
+
+	def start_reading_interlock_others_data(self, button):
+
+		self.write_to_logger("Starting reading interlock others data.")
+
+		self._read_interlock_others_data = True
+		self._interlock_others_data_reading_thread.start()	# This thread is associated with the "read_interlock_others_data()" method.
+
+	def start_reading_interlock_flow_data(self, button):
+
+		self.write_to_logger("Starting reading interlock flow data.")
+
+		self._read_interlock_flow_data = True
+		self._interlock_flow_data_reading_thread.start()	# This thread is associated with the "read_interlock_flow_data()" method.
+
+
+	# ==============================================================================================================================
+	# =============================================== Start Data Reading Threads Ends===============================================
+	# ==============================================================================================================================
 
 
 	def start_gauge1(self, button):
@@ -110,7 +190,6 @@ class Handler:
 		gauge_1_state_channel = device.get_channel_by_name('gauge_1_state')
 
 		# gauge_1_state_channel.set_value("1")
-
 
 	def start_gauge2(self, button):
 		device = self._devices[self._device_ids['pressure']]
@@ -157,13 +236,13 @@ class Handler:
 
 		return False
 
-	def read_data(self):
+	def read_ion_gauge_data(self):
 
 		list_size = 10
 
-		self._read_data = True	# This should later be controlled by another button or something that allows us to "Start" reading data and then, at some point, "Stop" reading them.
+		self._read_ion_gauge_data = True	# This should later be controlled by another button or something that allows us to "Start" reading data and then, at some point, "Stop" reading them.
 
-		while self._read_data:
+		while self._read_ion_gauge_data:
 
 			print "Reading data!"
 
@@ -205,18 +284,20 @@ class Handler:
 			time.sleep(1)
 
 
-	def read_interlock_data(self):
+	def read_interlock_others_data(self):
+
+		print "reading other"
 
 		list_size = 10
 
-		self._read_interlock_data = True	# This should later be controlled by another button or something that allows us to "Start" reading data and then, at some point, "Stop" reading them.
+		self._read_interlock_others_data = True	# This should later be controlled by another button or something that allows us to "Start" reading data and then, at some point, "Stop" reading them.
 
-		while self._read_data:
+		while self._read_interlock_others_data:
 
-			print "Reading interlock data!"
+			print "Reading interlock others data!"
 
 			# Interlock data.
-			device = self._devices[self._device_ids['interlock']]
+			device = self._devices[self._device_ids['interlock_others']]
 
 			timestamp = time.time()
 
@@ -224,20 +305,65 @@ class Handler:
 			channels = {}
 
 			# Solenoid Valves. x 2
-			for i in range(1, 3):
+			for i in range(1, 2):
 				channels['solenoid_valve_' + str(i)] = device.get_channel_by_name('solenoid_valve_' + str(i))
 
-			# Flow Meters. x 5
-			for i in range(1, 6):
-				channels['flow_meter_' + str(i)] = device.get_channel_by_name('flow_meter_' + str(i))
-
+			'''
 			# Vacuum Valves. x 2
 			for i in range(1, 3):
 				channels['vacuum_valve_' + str(i)] = device.get_channel_by_name('vacuum_valve_' + str(i))
+			'''
+
+			# Flow Meter. x 2
+			for i in range(1, 2):
+				channels['flow_meter_' + str(i)] = device.get_channel_by_name('flow_meter_' + str(i))
 
 			# Reed Switches. x 2
-			for i in range(1, 3):
-				channels['reed_switch_' + str(i)] = device.get_channel_by_name('reed_switch_' + str(i))
+			for i in range(1, 2):
+				channels['micro_switch_' + str(i)] = device.get_channel_by_name('micro_switch_' + str(i))
+
+			# We have all the channels we need. 
+
+			# Now read in values (for those where we can read in).
+
+			for channel_name in channels.keys():
+				if channels[channel_name].mode() != "write":
+					print "Reading ", channel_name
+					self._builder.get_object(channel_name + "_value").set_text( channels[channel_name].read_value() )
+		
+			time.sleep(1)
+
+
+
+	def read_interlock_flow_data(self):
+
+		list_size = 10
+
+		self._read_interlock_flow_data = True	# This should later be controlled by another button or something that allows us to "Start" reading data and then, at some point, "Stop" reading them.
+
+		while self._read_interlock_flow_data:
+
+			print "Reading interlock flow data!"
+
+			# Interlock data.
+			device = self._devices[self._device_ids['interlock_flow']]
+
+			timestamp = time.time()
+
+			# First get all channels. 
+			channels = {}
+
+			
+			# Flow Meters. x 5
+			
+			for i in range(1, 6):
+				channels['flow_meter_' + str(i)] = device.get_channel_by_name('flow_meter_' + str(i))
+
+
+			# Temperature sensor. x 5
+
+			for i in range(1, 6):
+				channels['temperature_sensor_' + str(i)] = device.get_channel_by_name('temperature_sensor_' + str(i))
 
 			# We have all the channels we need. 
 
@@ -249,26 +375,7 @@ class Handler:
 		
 			time.sleep(1)
 
-	def start_reading_data(self, button):
 
-		self.write_to_logger("Starting reading data.")
-
-		self._read_data = True
-
-		self._data_reading_thread.start()	# This thread is associated with the "read_data()" method.
-
-		self.create_plot()
-
-
-	def start_reading_interlock_data(self, button):
-
-		self.write_to_logger("Starting reading interlock data.")
-
-		self._read_interlock_data = True
-
-		self._interlock_data_reading_thread.start()	# This thread is associated with the "read_data()" method.
-
-		
 
 
 	def read_and_identify_devices(self):
@@ -333,22 +440,29 @@ class Handler:
 				device_id = uuid.uuid4()
 				channel_id = uuid.uuid4()
 
-				interlock_others_serial_com = SerialCOM(channel_id=channel_id, arduino_id=interlock_system_arduino_id, arduino_port=port_name)
+				interlock_others_serial_com = SerialCOM(channel_id=channel_id, arduino_id=interlock_others_arduino_id, arduino_port=port_name)
 
 				interlock_others_channels = {}
 
 				# Solenoid Valves. x 2
 				
-				for i in range(1, 3):
+				for i in range(1, 2):
 					interlock_others_channels['solenoid_valve_' + str(i)] = Channel(name="solenoid_valve_" + str(i), serial_com=interlock_others_serial_com, message_header="solenoid_valve_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="write")
 
+				'''
 				# Vacuum Valves. x 2
 				for i in range(1, 3):
 					interlock_others_channels['vacuum_valve_' + str(i)] = Channel(name="vacuum_valve_" + str(i), serial_com=interlock_others_serial_com, message_header="vacuum_valve_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+				'''
+
+				for i in range(1, 2):
+					interlock_others_channels['flow_meter_' + str(i)] = Channel(name="flow_meter_" + str(i), serial_com=interlock_others_serial_com, message_header="flow_meter_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+
+
 
 				# Reed Switches. x 2
-				for i in range(1, 3):
-					interlock_others_channels['reed_switch_' + str(i)] = Channel(name="reed_switch_" + str(i), serial_com=interlock_others_serial_com, message_header="reed_switch_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
+				for i in range(1, 2):
+					interlock_others_channels['micro_switch_' + str(i)] = Channel(name="micro_switch_" + str(i), serial_com=interlock_others_serial_com, message_header="micro_switch_" + str(i), upper_limit=1, lower_limit=0, uid=uuid.uuid4(), data_type="bool", unit=None, scaling=1, mode="read")
 
 				interlock_others_unit = Device(name="Interlock Others System", arduino_device_id=device_id, channels=interlock_others_channels)
 
@@ -368,7 +482,7 @@ class Handler:
 				device_id = uuid.uuid4()
 				channel_id = uuid.uuid4()
 
-				interlock_flow_serial_com = SerialCOM(channel_id=channel_id, arduino_id=interlock_system_arduino_id, arduino_port=port_name)
+				interlock_flow_serial_com = SerialCOM(channel_id=channel_id, arduino_id=interlock_flow_arduino_id, arduino_port=port_name)
 
 				interlock_flow_channels = {}
 
@@ -400,19 +514,6 @@ class Handler:
 		text_buffer.insert(iterator, message)
 
 
-	def send_message(self, button):
-		print "Button clicked"
-		device_selected = self._builder.get_object('devices_combobox').get_active_text()
-		
-		message_to_send = self._builder.get_object('message_to_send_textbox').get_text()
-
-		port_name_index = device_selected.find("(")
-		port_name = device_selected[:port_name_index].strip()
-
-		ser = serial.Serial(port_name, 9600)
-
-		ser.write(message_to_send)
-		
 
 	def onDeleteWindow(self, *args):
 		Gtk.main_quit(*args)
@@ -467,6 +568,12 @@ class Handler:
 
 				if line1 == line2:
 				# if True:
+
+					print "line matched"
+					print line1
+					print line2
+					print "\n" * 2
+
 					self._device_addresses[port_name] = device_id_reported_by_arduino
 					ser.write("set:identified=1")
 
@@ -483,7 +590,10 @@ class Handler:
 						
 						self._builder.get_object("pressure_device_id").set_text("( {} )".format(device_id_reported_by_arduino))	
 
-					elif device_id_reported_by_arduino == interlock_system_arduino_id:
+					elif device_id_reported_by_arduino == interlock_others_arduino_id:
+
+						print "Setting Ids."
+
 						self._builder.get_object("interlock_port_name").set_text(port_name)
 						self._builder.get_object("interlock_device_id").set_text("( {} )".format(device_id_reported_by_arduino))	
 

@@ -4,12 +4,16 @@ import serial
 
 class Device:
 
-	def __init__(self, name, channels=dict()):
+	def __init__(self, name, arduino_device_id, channels):
 		self._name = name
+		self._arduino_device_id = arduino_device_id
 		self._channels = channels 					# This is a dictionary of channels with their names as keys.
 
-	def name(self):
+	def get_name(self):
 		return self._name
+
+	def arduino_device_id(self):
+		return self._arduino_device_id
 
 	def channels(self):
 		return self._channels
@@ -17,23 +21,15 @@ class Device:
 	def get_channel_by_name(self, channel_name):
 		return self._channels[channel_name]
 
-	def add_channel(self, channel):
-		"""Adds a channel to the current device. Since the _channels property of the Device class is a dictionary with channel names as its keys, this takes Channel.name() as the key for the channel being added.
-		
-		Args:
-		    channel (Channel): Channel object to add. 
-		
-		Returns:
-		    None
-		"""
-		self._channels[channel.name()] = channel
-	
+	def register_serial_com(self, serial_com):
+		self._serial_com = serial_com
 
-	
+	def serial_com(self):
+		return _self.serial_com
 
 class Channel:
 
-	def __init__(self, name, serial_com, message_header, upper_limit, lower_limit, data_type, unit="", scaling=1., mode="both"):
+	def __init__(self, name, serial_com, message_header, upper_limit, lower_limit, uid, data_type, unit, scaling, mode="both"):
 		
 		self._name = name
 		self._serial_com = serial_com
@@ -41,7 +37,7 @@ class Channel:
 
 		self._upper_limit = upper_limit
 		self._lower_limit = lower_limit
-		
+		self._uid = uid
 		self._data_type = data_type
 		self._unit = unit
 		self._scaling = scaling
@@ -65,7 +61,9 @@ class Channel:
 	def lower_limit(self):
 		return self._lower_limit
 
-	
+	def uid(self):
+		return self._uid
+
 	def data_type(self):
 		return self._data_type
 
@@ -158,11 +156,15 @@ class Channel:
 
 class SerialCOM:
 
-	def __init__(self, arduino_id, arduino_port):
+	def __init__(self, channel_id, arduino_id, arduino_port):
+		self._channel_id = channel_id
 		self._arduino_id = arduino_id
 		self._arduino_port = arduino_port
 
 		self._ser = serial.Serial(self._arduino_port, baudrate=9600, timeout=3)
+
+	def channel_id(self):
+		return self._channel_id
 
 	def arduino_id(self):
 		return self._arduino_id
