@@ -124,11 +124,15 @@ class Device:
 		# Have to add device first so that there is a frame to add to
 		self.add_device_to_gui()
 
-		# for channel_name, channel in self._channels.items():
-		#     front_page_widget = widgets.FrontPageDisplayValue(name=channel.label())
-		#     self._front_page_widgets[channel_name] = front_page_widget
-
+		# Create a list of tuples (display_order, channel).
+		all_channels = []
 		for channel_name, channel in self._channels.items():
+			all_channels.append( (channel.get_display_order(), channel) )
+
+		all_channels.sort(key=lambda tup: tup[0], reverse=True)
+
+
+		for display_order, channel in all_channels:
 			channel.initialize()
 
 		self._initialized = True
@@ -145,7 +149,7 @@ class Device:
 
 class Channel:
 	def __init__(self, name, label, message_header, upper_limit, lower_limit, data_type, unit="",
-				 scaling=1., mode="both"):
+				 scaling=1., mode="both", display_order=0):
 
 		self._name = name
 		self._label = label
@@ -164,6 +168,8 @@ class Channel:
 		self._overview_page_display = None
 
 		self._timeout = 2	# In seconds.
+
+		self._display_order = display_order # Higher number on the top.
 
 	def add_channel_to_gui(self):
 		"""
@@ -210,6 +216,9 @@ class Channel:
 
 	def get_value(self):
 		return self._value
+
+	def get_display_order(self):
+		return self._display_order
 
 	def initialize(self):
 		"""

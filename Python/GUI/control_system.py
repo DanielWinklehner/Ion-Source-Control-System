@@ -374,39 +374,64 @@ if __name__ == "__main__":
 	# Generate a test device
 	# Each device is connected to a single arduino, several devices can be connected to the
 	# same Arduino, but never several arduinos to a single device!
-	test_device1 = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e",
+	interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e",
 						  label="Interlock Box")
-	test_device1.set_overview_page_presence(True)
+	interlock_box_device.set_overview_page_presence(True)
 
-	# Generate a test channel as part of the test device
-	test_channel1 = Channel(name="micro_switch_1", label="Micro Switch 1",
-							message_header="micro_switch_1",
-							upper_limit=1,
-							lower_limit=0,
-							data_type=bool,
-							mode="read")
+	
+	# Add channels to the interlock box device.
 
-	test_channel1a = Channel(name="flow_meter_1", label="Flow Meter 1",
-							 message_header="flow_meter_1",
-							 upper_limit=1,
-							 lower_limit=0,
-							 data_type=int,
-							 mode="read")
+	# Flow meters. x5.
+	for i in range(5):
+		ch = Channel(name="flow_meter_{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+					 message_header="flow_meter_" + str(i + 1),
+					 upper_limit=1,
+					 lower_limit=0,
+					 data_type=int,
+					 mode="read",
+					 display_order=(11 - i))
 
-	test_channel2 = Channel(name="solenoid_valve_1", label="Solenoid Valve 1",
-							message_header="solenoid_valve_1",
-							upper_limit=1,
-							lower_limit=0,
-							data_type=bool,
-							mode="write")
+		interlock_box_device.add_channel(ch)
 
+	# Microswitches. x2.
+	for i in range(2):
+		ch = Channel(name="micro_switch_{}".format(i + 1), label="Micro Switch {}".format(i + 1),
+					message_header="micro_switch_{}".format(i + 1),
+					upper_limit=1,
+					lower_limit=0,
+					data_type=bool,
+					mode="read",
+					display_order=(11 - 5 - i))
 
-	# Add the channel to the device and the device to the control system
-	test_device1.add_channel(test_channel1)
-	test_device1.add_channel(test_channel1a)
-	test_device1.add_channel(test_channel2)
+		interlock_box_device.add_channel(ch)
+	
+	# Solenoid valves. x2.
+	for i in range(2):	
+		ch = Channel(name="solenoid_valve_{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
+					message_header="solenoid_valve_{}".format(i + 1),
+					upper_limit=1,
+					lower_limit=0,
+					data_type=bool,
+					mode="write",
+					display_order=(11 - 5 - 2 - i))
 
-	control_system.add_device(test_device1)
+		interlock_box_device.add_channel(ch)
+
+	# Vacuum Valves. x2.
+	for i in range(2):
+		ch = Channel(name="vacuum_valve_{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
+					message_header="vacuum_valve_{}".format(i + 1),
+					upper_limit=1,
+					lower_limit=0,
+					data_type=bool,
+					mode="read",
+					display_order=(11 - 5 - 2 - 2 - i))
+
+		interlock_box_device.add_channel(ch)
+
+	# Add all our devices to the control system.
+	
+	control_system.add_device(interlock_box_device)
 
 
 
