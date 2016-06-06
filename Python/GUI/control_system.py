@@ -64,6 +64,8 @@ class MIST1ControlSystem:
 		self._communication_threads_start_time = {}
 		self._arduino_status_bars = {}
 
+		self._set_value_for_widget = None
+
 		
 
 	def about_program_callback(self, menu_item):
@@ -95,6 +97,16 @@ class MIST1ControlSystem:
 
 	def add_serial_com(self, serial_com):
 		self._serial_comms[serial_com.arduino_id()] = serial_com
+
+
+	def set_value_callback(self, widget):
+		parent_channel = widget.get_parent_channel()
+		parent_device = parent_channel.get_parent_device()
+
+		self._set_value_for_widget = widget
+		self._communication_threads_mode[parent_channel.get_arduino_id()] = "write"
+
+
 
 	def communicate(self, devices):
 		"""
@@ -129,6 +141,35 @@ class MIST1ControlSystem:
 
 							GLib.idle_add(self.update_gui, channel)
 
+				elif self._communication_threads_mode[arduino_id] == "write":
+
+					widget_to_set_value_for = self._set_value_for_widget
+					channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
+
+					print "Communicating updated value to Arduino ID {} for widget {}".format( channel_to_set_value_for.get_arduino_id(), widget_to_set_value_for.get_name() )
+
+					# Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
+					
+					if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
+						
+						try:
+							value_to_update = widget_to_set_value_for.get_value()
+						except ValueError:
+							value_to_update = -1
+
+						
+						print "Setting value = {}".format(value_to_update)
+
+						channel_to_set_value_for.set_value(value_to_update)
+
+						pass
+
+					self._communication_threads_mode[arduino_id] = "read"
+
+
+
+		print "Closing communication thread!"
+
 		return 0
 
 	def emergency_stop(self, widget):
@@ -140,7 +181,7 @@ class MIST1ControlSystem:
 		"""
 
 		self._status_bar.push(1, "Emergency stop button was pushed!")
-		self._keep_communicating = False
+		self.shut_down_communication_threads()
 
 		return 0
 
@@ -270,6 +311,8 @@ class MIST1ControlSystem:
 
 			self._arduino_status_bars[arduino_id].set_value(frequency)
 
+			self.set_value_callback( channel.get_overview_page_display() )
+
 		# If display on overview page is desired, update:
 		if channel.get_parent_device().is_on_overview_page():
 
@@ -302,7 +345,8 @@ if __name__ == "__main__":
 							 upper_limit=1,
 							 lower_limit=0,
 							 data_type=int,
-							 mode="read")
+							 mode="both")	# Should be "read". Changed for testing purpose. Change it back when you create at least one writable channel.
+
 
 	# Add the channel to the device and the device to the control system
 	test_device1.add_channel(test_channel1)

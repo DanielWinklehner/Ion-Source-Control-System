@@ -37,19 +37,10 @@ unsigned long cloopTime;
 char deviceId[37];
 bool deviceIdentified = false;
 String inputCommand;
-/* 
- *  States: What state the device is on; because you can't really do multi-threadding with Arduinos, we need to keep track of what "state" the device is on to decide what we want the Arduino to do.
- *  
- *  
- */
-enum DeviceState {
-  identification,
-  sending_output,
-  receiving_input,
-  resting
-};
 
-DeviceState currentDeviceState = resting;
+int randomNumber; // For testing purpose. Remove later.
+
+
 
 bool microSwitch = LOW;
 
@@ -59,6 +50,8 @@ void setup()   {
   pinMode(SolenoidValve1, OUTPUT);  // Solenoid Valve.
   pinMode(MicroSwitch1, INPUT);   // Microswitch.
   pinMode(FlowSensor1, INPUT);
+
+  pinMode(13, OUTPUT);  // Inbuild LED.
   
   Serial.begin(115200);
 //  Serial.begin(128000);
@@ -89,6 +82,15 @@ String get_serial_data() {
 
 void loop() {
 
+  // For testing set_value(). Remove later.
+  if (randomNumber > 0) {
+    digitalWrite(13, HIGH);
+  }
+  else {
+    digitalWrite(13, LOW);
+  }
+
+  
   // Flow Meters:
   currentTime = millis();
   // Every second, calculate and print litres/hour
@@ -96,15 +98,16 @@ void loop() {
   {
     cloopTime = currentTime; // Updates cloopTime
     flow_sensor1_freq_write = flow_sensor1_freq; //
-    flow_sensor1_freq = 0; // Reset Counter
+    flow_sensor1_freq = 0; // Reset Counter    
   }
   
   microSwitch = digitalRead(MicroSwitch1);
 
   // GUI Communication.
-  if (Serial.available()) {
-//  inputCommand = Serial.readString();
   
+  if (Serial.available()) {
+    
+    //  inputCommand = Serial.readString();
     inputCommand = get_serial_data();
     
     int first = inputCommand.indexOf(":");
@@ -128,13 +131,13 @@ void loop() {
       else if (header == "flow_meter_1") {
         Serial.print("output:flow_meter_1=");
         //Serial.println(flow_sensor1_freq_write, DEC);
-        Serial.println(-random(100));
+        Serial.println(random(100) - random(100));
       }
     }
     else if (keyword == "set") {  
       if (header == "identified") {
         if (value == "1") {
-          currentDeviceState = resting;
+          deviceIdentified = true;
         }
       }
       else if (header == "solenoid_valve_1") {
@@ -148,6 +151,14 @@ void loop() {
           digitalWrite(SolenoidValve1, LOW);
           Serial.println("assigned:solenoid_valve_1=LOW");
         } 
+       }
+       else if (header == "flow_meter_1") {
+        // Remove this later. Flow meters are supposed to be read-only.
+
+        randomNumber = value.toInt();
+        Serial.print("assigned:flow_meter_1=");
+        Serial.println(value);
+        
        }
        }
      //Serial.println("assigned:" + header + "=" + value);

@@ -11,7 +11,7 @@ class FrontPageDisplayValue(Gtk.Frame):
     Simple widget with two labels and a entry box to display a single value
     """
 
-    def __init__(self, name="Channel N/A", unit="N/A", displayformat=".2f", set_flag=False):
+    def __init__(self, name="Channel N/A", unit="N/A", displayformat=".2f", set_flag=False, parent_channel=None):
         """
         :param name:
         :param unit:
@@ -37,6 +37,9 @@ class FrontPageDisplayValue(Gtk.Frame):
 
         if not self.set_flag:
             self.value_entry.set_sensitive(False)
+
+
+        self._parent_channel = parent_channel
 
     def get_displayformat(self):
         """
@@ -108,6 +111,14 @@ class FrontPageDisplayValue(Gtk.Frame):
         self.value_entry.set_text("{0:{1}}".format(value, self.displayformat))
 
         return 0
+
+    def get_parent_channel(self):
+        """Summary
+        
+        Returns:
+            TYPE: Description
+        """
+        return self._parent_channel
 
 
 class FrontPageDeviceFrame(Gtk.Frame):

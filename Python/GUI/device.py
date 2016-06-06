@@ -180,7 +180,8 @@ class Channel:
 			self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name=self._label,
 																		unit=self._unit,
 																		displayformat=".2f",
-																		set_flag=set_flag)
+																		set_flag=set_flag,
+																		parent_channel=self)
 
 			parent_device.get_overview_frame().pack_start(self._overview_page_display, False, False, 4)
 
@@ -252,16 +253,9 @@ class Channel:
 
 	def read_arduino_message(self):
 
-		# start = time.time()
-
 		response = self._serial_com.read_message()
 
-		# end = time.time()
-
-		# print "Reading arduino response took {} seconds.".format(end - start)
-
 		try:
-
 			response_parts = response.split(':')
 			result_parts = response_parts[1].split('=')
 
@@ -270,9 +264,7 @@ class Channel:
 			value = result_parts[1]
 
 			return keyword, header, value
-
 		except:
-
 			return "", "", ""
 
 	def read_value(self):
