@@ -1,6 +1,7 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GLib, GObject
+from gi.repository import Gtk, GLib
+
 __author__ = "Aashish Tripathee and Daniel Winklehner"
 __doc__ = """A number of widgets inheriting from gi to be placed in the GUI repeatedly"""
 
@@ -10,7 +11,7 @@ class FrontPageDisplayValue(Gtk.Frame):
     Simple widget with two labels and a entry box to display a single value
     """
 
-    def __init__(self, name="Channel N/A", unit="N/A", displayformat=None, set_flag=False):
+    def __init__(self, name="Channel N/A", unit="N/A", displayformat=".2f", set_flag=False):
         """
         :param name:
         :param unit:
@@ -23,6 +24,7 @@ class FrontPageDisplayValue(Gtk.Frame):
         self.name_label = Gtk.Label(name)
         self.unit_label = Gtk.Label(unit)
         self.value_entry = Gtk.Entry()
+        self.value_entry.set_size_request(60, 40)
 
         self.set_flag = set_flag
         self.displayformat = displayformat
@@ -103,28 +105,73 @@ class FrontPageDisplayValue(Gtk.Frame):
         :param value:
         :return:
         """
-        if self.displayformat is None:
-            self.displayformat = ".2f"
-
         self.value_entry.set_text("{0:{1}}".format(value, self.displayformat))
 
         return 0
 
 
+class FrontPageDeviceFrame(Gtk.Frame):
+    """
+    Simple widget with two labels and a entry box to display a single value
+    """
+
+    def __init__(self, label="Device N/A"):
+        """
+        :param label:
+        """
+
+        Gtk.Frame.__init__(self, label=label, margin=4)
+        self.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
+        self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
+        self.add(self.vbox)
+
+    def get_label_text(self):
+        """
+        Returns the name label as str
+        :return: name
+        """
+
+        return self.get_label()
+
+    def pack_start(self, *args, **kwargs):
+        """
+        Wrapper around pack_start for Gtk.Box
+        :param args:
+        :return:
+        """
+
+        self.vbox.pack_start(*args, **kwargs)
+
+        return 0
+
+    def set_label_text(self, label):
+        """
+        Sets the text label of the Gtk.Frame
+        :param label:
+        :return:
+        """
+        self.set_label(label=label)
+
 if __name__ == "__main__":
+
     window = Gtk.Window(title="Widgets Test Window")
     window.connect("destroy", lambda q: Gtk.main_quit())
-    vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-    window.add(vbox)
+    test_fpdf = FrontPageDeviceFrame(label="Device 1")
+    window.add(test_fpdf)
 
     fpds = []
 
     for i in range(5):
+
         if i == 2:
+
             test_fpd = FrontPageDisplayValue("Channel %i" % i, "kV", displayformat=".2e", set_flag=True)
+
         else:
+
             test_fpd = FrontPageDisplayValue("Channel %i" % i, "kV")
-        vbox.pack_start(test_fpd, True, True, 0)
+
+        test_fpdf.pack_start(test_fpd, True, True, 0)
         test_fpd.set_value(i*10)
         fpds.append(test_fpd)
 
