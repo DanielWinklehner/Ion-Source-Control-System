@@ -17,6 +17,8 @@ from serial import SerialException
 from device import Device, Channel
 from MIST1_Control_System_GUI_Widgets import *
 
+import data_logging
+
 
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
@@ -138,6 +140,7 @@ class MIST1ControlSystem:
 		"""
 
 		self._status_bar.push(1, "Emergency stop button was pushed!")
+		self._keep_communicating = False
 
 		return 0
 
@@ -341,6 +344,6 @@ if __name__ == "__main__":
 	test_device3.add_channel(test_channel3)
 	control_system.add_device(test_device3)
 	'''
-	
+
 	# Run the control system, this has to be last as it does all the initializations and adding to the gui
 	control_system.run()
