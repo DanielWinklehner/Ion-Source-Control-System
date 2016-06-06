@@ -123,8 +123,8 @@ void loop() {
   
       else if (header == "micro_switch_1") {
         Serial.print("output:micro_switch_1=");
-        //Serial.println(microSwitch);
-        Serial.println(random(500));
+        Serial.println(microSwitch);
+        //Serial.println(random(500));
       }
       else if (header == "flow_meter_1") {
         Serial.print("output:flow_meter_1=");

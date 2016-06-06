@@ -185,7 +185,7 @@ class FrontPageDisplayBool(Gtk.Frame):
 		Sets the value in the value entry
 		:param value:
 		:return:
-		"""
+		"""	
 		if value:
 			self._true_rb.set_active(True)
 		else:
@@ -195,7 +195,7 @@ class FrontPageDisplayBool(Gtk.Frame):
 
 	def get_radio_buttons(self):
 		return self._true_rb, self._false_rb
-		
+
 	def get_parent_channel(self):
 		"""Summary
 		

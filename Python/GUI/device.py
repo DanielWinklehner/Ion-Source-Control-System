@@ -180,15 +180,19 @@ class Channel:
 		if parent_device.is_on_overview_page():
 			# Create a display
 
-			if self._mode == "read":
+			if self._data_type == bool:
+
+				self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayBool(name=self._label,
+																		   set_flag=set_flag,
+																		   parent_channel=self)
+
+			else:
+
+				# Create a display
 				self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name=self._label,
 																			unit=self._unit,
 																			displayformat=".2f",
 																			set_flag=set_flag,
-																			parent_channel=self)
-			elif self._mode == "write":
-				self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayBool(name=self._label,
-																			set_flag=True,
 																			parent_channel=self)
 
 
@@ -309,7 +313,7 @@ class Channel:
 
 		# We have what we need.
 
-		self._value = self._data_type(value)
+		self._value = self._data_type(float(value))
 
 		return self._value
 
@@ -320,7 +324,7 @@ class Channel:
 
 		if type(value_to_set) == bool:
 			value_to_set = int(value_to_set)
-			
+
 		# Build a set message to send to the Arduino.
 		message = "set:{}={}".format(self._message_header, value_to_set)
 

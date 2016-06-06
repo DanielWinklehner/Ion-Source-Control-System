@@ -66,7 +66,19 @@ class MIST1ControlSystem:
 
 		self._set_value_for_widget = None	
 
-		
+		# HDF5 logging.
+		# self._data_logger = None
+
+
+	'''
+	def register_data_logging_file(self, filename):
+		self._data_logger = data_logging.DataLogging(log_filename=filename)
+		self._data_logger.initialize()
+
+	
+	def log_data(self, channel):
+		self._data_logger.log_value(channel=channel)
+	'''
 
 	def about_program_callback(self, menu_item):
 		"""
@@ -84,12 +96,15 @@ class MIST1ControlSystem:
 
 		for device_name, device in self._devices.items():
 			for channel_name, channel in device.channels().items():
-				widget = channel.get_overview_page_display()
-				
-				try:	# According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-and-type-in-python, better to use try-except than check type / instanceof.
-					widget.get_radio_buttons()[0].connect("toggled", self.set_value_callback, widget)
-				except Exception as e:
-					pass
+
+				if channel.mode() == "both" or channel.mode() == "write":	# TODO: Find a better way to do this.
+
+					widget = channel.get_overview_page_display()
+					
+					try:	# According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-and-type-in-python, better to use try-except than check type / instanceof.
+						widget.get_radio_buttons()[0].connect("toggled", self.set_value_callback, widget)
+					except Exception as e:
+						pass
 
 
 
@@ -107,6 +122,13 @@ class MIST1ControlSystem:
 		# Add device to the list of devices in the control system
 		self._devices[device.name()] = device
 
+
+		# Add corresponding channels to the hdf5 log.
+		'''
+		for channel_name, channel in device.channels().items():
+			self._data_logger.add_channel(channel)
+		'''
+
 		return 0
 
 	def add_serial_com(self, serial_com):
@@ -115,7 +137,7 @@ class MIST1ControlSystem:
 
 	def set_value_callback(self, button, widget):
 		
-		print "Set callback called!"
+		print "Set callback called by {}".format(widget.get_name())
 
 		parent_channel = widget.get_parent_channel()
 
@@ -149,6 +171,9 @@ class MIST1ControlSystem:
 						if channel.mode() == "read" or channel.mode() == "both":
 
 							channel.read_value()
+
+							# Log data.
+							# self.log_data(channel)
 
 							self._communication_threads_poll_count[arduino_id] += 1
 
@@ -344,6 +369,8 @@ if __name__ == "__main__":
 
 	control_system = MIST1ControlSystem()
 
+	# control_system.register_data_logging_file(filename="data_log.hdf5")
+
 	# Generate a test device
 	# Each device is connected to a single arduino, several devices can be connected to the
 	# same Arduino, but never several arduinos to a single device!
@@ -356,7 +383,7 @@ if __name__ == "__main__":
 							message_header="micro_switch_1",
 							upper_limit=1,
 							lower_limit=0,
-							data_type=int,
+							data_type=bool,
 							mode="read")
 
 	test_channel1a = Channel(name="flow_meter_1", label="Flow Meter 1",
@@ -380,6 +407,8 @@ if __name__ == "__main__":
 	test_device1.add_channel(test_channel2)
 
 	control_system.add_device(test_device1)
+
+
 
 
 	'''
