@@ -12,6 +12,11 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-stop</property>
+  </object>
   <object class="GtkTextBuffer" id="log_texbuffer"/>
   <object class="GtkWindow" id="main_window">
     <property name="can_focus">False</property>
@@ -229,6 +234,7 @@
                     <property name="margin_right">4</property>
                     <property name="margin_top">4</property>
                     <property name="margin_bottom">4</property>
+                    <property name="image">image1</property>
                     <property name="image_position">top</property>
                     <property name="always_show_image">True</property>
                     <signal name="clicked" handler="stop_button_clicked_cb" swapped="no"/>

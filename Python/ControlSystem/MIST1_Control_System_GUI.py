@@ -285,6 +285,7 @@ if __name__ == "__main__":
                              upper_limit=1,
                              lower_limit=0,
                              data_type=int,
+                             unit="gps",
                              mode="read")
 
     # Add the channel to the device and the device to the control system
@@ -303,6 +304,7 @@ if __name__ == "__main__":
                             upper_limit=1,
                             lower_limit=0,
                             data_type=int,
+                            unit="gps",
                             mode="read")
 
     # Add the channel to the device
@@ -319,7 +321,7 @@ if __name__ == "__main__":
                             message_header="micro_switch_1",
                             upper_limit=1,
                             lower_limit=0,
-                            data_type=int,
+                            data_type=bool,
                             mode="read")
 
     # Add the channel to the device

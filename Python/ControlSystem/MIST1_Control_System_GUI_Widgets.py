@@ -31,9 +31,9 @@ class FrontPageDisplayValue(Gtk.Frame):
 
         self.add(hbox)
 
-        hbox.pack_start(self.name_label, True, True, 0)
-        hbox.pack_start(self.value_entry, True, True, 0)
-        hbox.pack_start(self.unit_label, True, True, 0)
+        hbox.pack_start(self.name_label, False, False, 0)
+        hbox.pack_start(self.value_entry, False, False, 0)
+        hbox.pack_start(self.unit_label, False, False, 0)
 
         if not self.set_flag:
             self.value_entry.set_sensitive(False)
@@ -110,6 +110,76 @@ class FrontPageDisplayValue(Gtk.Frame):
         return 0
 
 
+class FrontPageDisplayBool(Gtk.Frame):
+    """
+    Simple widget with two labels and a entry box to display a single value
+    """
+
+    def __init__(self, name="Channel N/A", true_label="ON", false_label="OFF", set_flag=False):
+        """
+        :param name:
+        :param true_label:
+        :param false_label:
+        :param set_flag: flag whether this is a set or a read channel
+        """
+
+        Gtk.Frame.__init__(self)
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4, margin=4)
+
+        self._name_label = Gtk.Label(name)
+        self._true_rb = Gtk.RadioButton.new_with_label(None, true_label)
+        self._false_rb = Gtk.RadioButton.new_with_label_from_widget(self._true_rb, false_label)
+        self._set_flag = set_flag
+
+        self.add(hbox)
+
+        hbox.pack_start(self._name_label, False, False, 0)
+        hbox.pack_start(self._true_rb, False, False, 0)
+        hbox.pack_start(self._false_rb, False, False, 0)
+
+        if not self._set_flag:
+            self._true_rb.set_sensitive(False)
+            self._false_rb.set_sensitive(False)
+
+    def get_name(self):
+        """
+        Returns the name label as str
+        :return: name
+        """
+
+        return self._name_label.get_text()
+
+    def get_value(self):
+        """
+        Returns the value entries value as bool
+        :return: value
+        """
+
+        return bool(self._true_rb.get_active())
+
+    def set_name(self, name_str):
+        """
+        Returns the name label as str
+        :return:
+        """
+        self._name_label.set_text(name_str)
+
+        return 0
+
+    def set_value(self, value):
+        """
+        Sets the value in the value entry
+        :param value:
+        :return:
+        """
+        if value:
+            self._true_rb.set_active(True)
+        else:
+            self._false_rb.set_active(True)
+
+        return 0
+
+
 class FrontPageDeviceFrame(Gtk.Frame):
     """
     Simple widget with two labels and a entry box to display a single value
@@ -167,6 +237,10 @@ if __name__ == "__main__":
 
             test_fpd = FrontPageDisplayValue("Channel %i" % i, "kV", displayformat=".2e", set_flag=True)
 
+        elif i == 3:
+
+            test_fpd = FrontPageDisplayBool("Channel %i" % i, set_flag=True)
+
         else:
 
             test_fpd = FrontPageDisplayValue("Channel %i" % i, "kV")
@@ -176,6 +250,9 @@ if __name__ == "__main__":
         fpds.append(test_fpd)
 
     print("%s: %.2f %s" % (fpds[2].get_name(), fpds[2].get_value(), fpds[2].get_unit()))
+    print("%s: %s" % (fpds[3].get_name(), fpds[3].get_value()))
+    fpds[3].set_value(False)
+    print("%s: %s" % (fpds[3].get_name(), fpds[3].get_value()))
 
     window.show_all()
     Gtk.main()

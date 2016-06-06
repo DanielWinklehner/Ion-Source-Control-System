@@ -21,11 +21,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="MIST1_Control_System_GUI.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="MIST1_Control_System_GUI.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="391">
-              <caret line="236" column="34" selection-start-line="236" selection-start-column="34" selection-end-line="236" selection-end-column="34" />
+            <state relative-caret-position="1455">
+              <caret line="332" column="0" selection-start-line="332" selection-start-column="0" selection-end-line="332" selection-end-column="0" />
               <folding>
                 <element signature="e#0#11#0" expanded="true" />
               </folding>
@@ -33,21 +33,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="gtk-contained.css" pinned="false" current-in-tab="false">
-        <entry file="file://C:/Python27/Lib/site-packages/gnome/share/themes/DeLorean-Dark-Unity-3.18/gtk-3.0/gtk-contained.css">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="94">
-              <caret line="8750" column="34" selection-start-line="8750" selection-start-column="34" selection-end-line="8750" selection-end-column="34" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="device.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/device.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="350">
-              <caret line="115" column="0" selection-start-line="115" selection-start-column="0" selection-end-line="115" selection-end-column="0" />
+            <state relative-caret-position="231">
+              <caret line="179" column="0" selection-start-line="179" selection-start-column="0" selection-end-line="179" selection-end-column="0" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
@@ -55,11 +45,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MIST1_Control_System_GUI_Widgets.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="MIST1_Control_System_GUI_Widgets.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-68">
-              <caret line="26" column="49" selection-start-line="26" selection-start-column="49" selection-end-line="26" selection-end-column="49" />
+            <state relative-caret-position="418">
+              <caret line="254" column="63" selection-start-line="254" selection-start-column="63" selection-end-line="254" selection-end-column="63" />
               <folding />
             </state>
           </provider>
@@ -84,10 +74,11 @@
         <option value="$PROJECT_DIR$/../GUI/control_system_serial.py" />
         <option value="$PROJECT_DIR$/control_system.py" />
         <option value="$APPLICATION_HOME_DIR$/bin/idea.properties" />
-        <option value="$PROJECT_DIR$/MIST1_Control_System_GUI.py" />
-        <option value="$PROJECT_DIR$/device.py" />
-        <option value="$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py" />
         <option value="C:/Python27/Lib/site-packages/gnome/share/themes/DeLorean-Dark-Unity-3.18/gtk-3.0/gtk-contained.css" />
+        <option value="$PROJECT_DIR$/RadioButtions.py" />
+        <option value="$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py" />
+        <option value="$PROJECT_DIR$/device.py" />
+        <option value="$PROJECT_DIR$/MIST1_Control_System_GUI.py" />
       </list>
     </option>
   </component>
@@ -122,8 +113,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scratches" />
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -144,6 +133,8 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -167,23 +158,6 @@
     </key>
   </component>
   <component name="RunManager" selected="Python.MIST1_Control_System_GUI">
-    <configuration default="false" name="arduino_gui" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ControlSystem" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/arduino_gui.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
     <configuration default="false" name="MIST1_Control_System_GUI_ONLY" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -248,6 +222,23 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ControlSystem" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MIST1_Control_System_GUI.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="RadioButtions" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ControlSystem" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RadioButtions.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -387,19 +378,19 @@
       <method />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.arduino_gui" />
-      <item index="1" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_ONLY" />
-      <item index="2" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_Widgets" />
-      <item index="3" class="java.lang.String" itemvalue="Python.control_system" />
-      <item index="4" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI" />
+      <item index="0" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_ONLY" />
+      <item index="1" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_Widgets" />
+      <item index="2" class="java.lang.String" itemvalue="Python.control_system" />
+      <item index="3" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI" />
+      <item index="4" class="java.lang.String" itemvalue="Python.RadioButtions" />
     </list>
     <recent_temporary>
       <list size="5">
         <item index="0" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI" />
         <item index="1" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_Widgets" />
-        <item index="2" class="java.lang.String" itemvalue="Python.control_system" />
-        <item index="3" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_ONLY" />
-        <item index="4" class="java.lang.String" itemvalue="Python.arduino_gui" />
+        <item index="2" class="java.lang.String" itemvalue="Python.RadioButtions" />
+        <item index="3" class="java.lang.String" itemvalue="Python.control_system" />
+        <item index="4" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_ONLY" />
       </list>
     </recent_temporary>
   </component>
@@ -420,15 +411,15 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="7" />
+    <editor active="false" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24973656" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32936078" sideWeight="0.5021075" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32900432" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33333334" sideWeight="0.49789253" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.33333334" sideWeight="0.49789253" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24973656" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -463,16 +454,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1887">
-          <caret line="114" column="11" selection-start-line="114" selection-start-column="11" selection-end-line="114" selection-end-column="11" />
-          <folding>
-            <element signature="e#0#11#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/device.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="7140">
@@ -728,7 +709,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="298">
           <caret line="155" column="7" selection-start-line="155" selection-start-column="7" selection-end-line="155" selection-end-column="7" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -740,39 +720,71 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/Python27/Lib/site-packages/gnome/share/themes/DeLorean-Dark-Unity-3.18/gtk-3.0/gtk-contained.css">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="148750">
+          <caret line="8750" column="34" selection-start-line="8750" selection-start-column="34" selection-end-line="8750" selection-end-column="34" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Python27/Lib/site-packages/matplotlib/widgets.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2474">
+          <caret line="730" column="64" selection-start-line="730" selection-start-column="64" selection-end-line="730" selection-end-column="64" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2016.1/system/python_stubs/-762174762/gi/repository/Gtk/RadioButton.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="186">
+          <caret line="826" column="14" selection-start-line="826" selection-start-column="4" selection-end-line="826" selection-end-column="14" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/.PyCharm2016.1/system/python_stubs/-762174762/gtk/_gtk/ToggleButton.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="196">
+          <caret line="212" column="8" selection-start-line="212" selection-start-column="8" selection-end-line="212" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RadioButtions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="4" column="0" selection-start-line="4" selection-start-column="0" selection-end-line="4" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="418">
+          <caret line="254" column="63" selection-start-line="254" selection-start-column="63" selection-end-line="254" selection-end-column="63" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/device.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="350">
-          <caret line="115" column="0" selection-start-line="115" selection-start-column="0" selection-end-line="115" selection-end-column="0" />
+        <state relative-caret-position="231">
+          <caret line="179" column="0" selection-start-line="179" selection-start-column="0" selection-end-line="179" selection-end-column="0" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Python27/Lib/site-packages/gnome/share/themes/DeLorean-Dark-Unity-3.18/gtk-3.0/gtk-contained.css">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="94">
-          <caret line="8750" column="34" selection-start-line="8750" selection-start-column="34" selection-end-line="8750" selection-end-column="34" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="391">
-          <caret line="236" column="34" selection-start-line="236" selection-start-column="34" selection-end-line="236" selection-end-column="34" />
+        <state relative-caret-position="1455">
+          <caret line="332" column="0" selection-start-line="332" selection-start-column="0" selection-end-line="332" selection-end-column="0" />
           <folding>
             <element signature="e#0#11#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-68">
-          <caret line="26" column="49" selection-start-line="26" selection-start-column="49" selection-end-line="26" selection-end-column="49" />
-          <folding />
         </state>
       </provider>
     </entry>

@@ -177,11 +177,19 @@ class Channel:
 
         # Add channels to the devices GUI overview page frame if desired
         if parent_device.is_on_overview_page():
-            # Create a display
-            self._overview_page_display = widgets.FrontPageDisplayValue(name=self._label,
-                                                                        unit=self._unit,
-                                                                        displayformat=".2f",
-                                                                        set_flag=set_flag)
+
+            if self._data_type == bool:
+
+                self._overview_page_display = widgets.FrontPageDisplayBool(name=self._label,
+                                                                           set_flag=set_flag)
+
+            else:
+
+                # Create a display
+                self._overview_page_display = widgets.FrontPageDisplayValue(name=self._label,
+                                                                            unit=self._unit,
+                                                                            displayformat=".2f",
+                                                                            set_flag=set_flag)
 
             parent_device.get_overview_frame().pack_start(self._overview_page_display, False, False, 4)
 

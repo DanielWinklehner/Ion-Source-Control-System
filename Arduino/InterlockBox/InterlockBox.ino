@@ -38,9 +38,7 @@ char deviceId[37];
 bool deviceIdentified = false;
 String inputCommand;
 
-int randomNumber; // For testing purpose. Remove later.
-
-
+bool solenoidValve = LOW; // For testing purpose only.
 
 bool microSwitch = LOW;
 
@@ -82,14 +80,14 @@ String get_serial_data() {
 
 void loop() {
 
-  // For testing set_value(). Remove later.
-  if (randomNumber > 0) {
+
+  // For testing purpose only.
+  if (solenoidValve) {
     digitalWrite(13, HIGH);
   }
   else {
     digitalWrite(13, LOW);
   }
-
   
   // Flow Meters:
   currentTime = millis();
@@ -144,22 +142,21 @@ void loop() {
         if (value == "1") {
           if (digitalRead(SolenoidValve1) == LOW) {
             digitalWrite(SolenoidValve1, HIGH);
+
+            solenoidValve = HIGH; // For testing purpose only.
+            
             Serial.println("assigned:solenoid_valve_1=HIGH");
           }
         }
         else {
           digitalWrite(SolenoidValve1, LOW);
+
+          solenoidValve = LOW;  // For testing purpose only.
+          
           Serial.println("assigned:solenoid_valve_1=LOW");
         } 
        }
-       else if (header == "flow_meter_1") {
-        // Remove this later. Flow meters are supposed to be read-only.
 
-        randomNumber = value.toInt();
-        Serial.print("assigned:flow_meter_1=");
-        Serial.println(value);
-        
-       }
        }
      //Serial.println("assigned:" + header + "=" + value);
     }

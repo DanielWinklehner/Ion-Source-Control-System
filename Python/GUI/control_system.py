@@ -64,7 +64,7 @@ class MIST1ControlSystem:
 		self._communication_threads_start_time = {}
 		self._arduino_status_bars = {}
 
-		self._set_value_for_widget = None
+		self._set_value_for_widget = None	
 
 		
 
@@ -78,6 +78,20 @@ class MIST1ControlSystem:
 		dialog.destroy()
 
 		return 0
+
+	def set_widget_connections(self):
+
+
+		for device_name, device in self._devices.items():
+			for channel_name, channel in device.channels().items():
+				widget = channel.get_overview_page_display()
+				
+				try:	# According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-and-type-in-python, better to use try-except than check type / instanceof.
+					widget.get_radio_buttons()[0].connect("toggled", self.set_value_callback, widget)
+				except Exception as e:
+					pass
+
+
 
 	def add_arduino_status_bar(self, arduino_id, status_bar):
 		self._arduino_status_bars[arduino_id] = status_bar
@@ -99,9 +113,11 @@ class MIST1ControlSystem:
 		self._serial_comms[serial_com.arduino_id()] = serial_com
 
 
-	def set_value_callback(self, widget):
+	def set_value_callback(self, button, widget):
+		
+		print "Set callback called!"
+
 		parent_channel = widget.get_parent_channel()
-		parent_device = parent_channel.get_parent_device()
 
 		self._set_value_for_widget = widget
 		self._communication_threads_mode[parent_channel.get_arduino_id()] = "write"
@@ -114,11 +130,8 @@ class MIST1ControlSystem:
 		:return:
 		"""
 
-		j = 0
-
 		while self._keep_communicating:
-			# print "Communication thread running", j
-			# j += 1
+
 			for device in devices:
 
 				# For each device that belonds to the same arduino (i.e same thread) we do this
@@ -141,7 +154,7 @@ class MIST1ControlSystem:
 
 							GLib.idle_add(self.update_gui, channel)
 
-				elif self._communication_threads_mode[arduino_id] == "write":
+				elif self._communication_threads_mode[arduino_id] == "write" and self._set_value_for_widget is not None:
 
 					widget_to_set_value_for = self._set_value_for_widget
 					channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
@@ -151,7 +164,7 @@ class MIST1ControlSystem:
 					# Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
 					
 					if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
-						
+	
 						try:
 							value_to_update = widget_to_set_value_for.get_value()
 						except ValueError:
@@ -160,15 +173,18 @@ class MIST1ControlSystem:
 						
 						print "Setting value = {}".format(value_to_update)
 
-						channel_to_set_value_for.set_value(value_to_update)
+						try:
+							channel_to_set_value_for.set_value(value_to_update)
+						except Exception, e:
+							# Setting value failed. There was some exception.
+							# Write the error message to the status bar.
+							self._status_bar.push(2, str(e))
 
-						pass
 
 					self._communication_threads_mode[arduino_id] = "read"
+					self._set_value_for_widget = None
 
-
-
-		print "Closing communication thread!"
+		print "Closing communication thread."
 
 		return 0
 
@@ -239,8 +255,13 @@ class MIST1ControlSystem:
 
 			device.initialize()
 
+		# Setup connections for widgets (for radio buttons for example).
+		self.set_widget_connections()
+
 		# Any and all remaining initializations go here
 		self.initialize_communication_threads()
+
+
 
 		self._initialized = True
 
@@ -311,8 +332,6 @@ class MIST1ControlSystem:
 
 			self._arduino_status_bars[arduino_id].set_value(frequency)
 
-			self.set_value_callback( channel.get_overview_page_display() )
-
 		# If display on overview page is desired, update:
 		if channel.get_parent_device().is_on_overview_page():
 
@@ -345,13 +364,23 @@ if __name__ == "__main__":
 							 upper_limit=1,
 							 lower_limit=0,
 							 data_type=int,
-							 mode="both")	# Should be "read". Changed for testing purpose. Change it back when you create at least one writable channel.
+							 mode="read")
+
+	test_channel2 = Channel(name="solenoid_valve_1", label="Solenoid Valve 1",
+							message_header="solenoid_valve_1",
+							upper_limit=1,
+							lower_limit=0,
+							data_type=bool,
+							mode="write")
 
 
 	# Add the channel to the device and the device to the control system
 	test_device1.add_channel(test_channel1)
 	test_device1.add_channel(test_channel1a)
+	test_device1.add_channel(test_channel2)
+
 	control_system.add_device(test_device1)
+
 
 	'''
 	# Another test device

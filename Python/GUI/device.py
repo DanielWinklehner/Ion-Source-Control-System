@@ -159,9 +159,11 @@ class Channel:
 		self._value = -1
 		self._mode = mode
 		self._arduino_id = None
-		self._parent_device = None  # The device this channel belongs to will be set during add_channel
+		self._parent_device = None  # The device this channel belongs to will be set during add_channel().
 		self._initialized = False
 		self._overview_page_display = None
+
+		self._timeout = 2	# In seconds.
 
 	def add_channel_to_gui(self):
 		"""
@@ -177,11 +179,18 @@ class Channel:
 		# Add channels to the devices GUI overview page frame if desired
 		if parent_device.is_on_overview_page():
 			# Create a display
-			self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name=self._label,
-																		unit=self._unit,
-																		displayformat=".2f",
-																		set_flag=set_flag,
-																		parent_channel=self)
+
+			if self._mode == "read":
+				self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name=self._label,
+																			unit=self._unit,
+																			displayformat=".2f",
+																			set_flag=set_flag,
+																			parent_channel=self)
+			elif self._mode == "write":
+				self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayBool(name=self._label,
+																			set_flag=True,
+																			parent_channel=self)
+
 
 			parent_device.get_overview_frame().pack_start(self._overview_page_display, False, False, 4)
 
@@ -285,7 +294,9 @@ class Channel:
 
 		# Ideally, we should have all we need. But in case the first message sent
 		# by the Arduino was dropped, keep querying until we get some response.
-		while not (keyword == "output" and header == self._message_header):  # THOUGHT: Maybe have a timeout?
+
+		start_time = time.time()
+		while ( not (keyword == "output" and header == self._message_header) ) and (time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
 
 			print "Trying again!"
 
@@ -302,13 +313,16 @@ class Channel:
 
 		return self._value
 
-	def set_value(self, value):
+	def set_value(self, value_to_set):
 
 		if self._mode == "read":
 			raise ValueError("ERROR: You are trying to write values to a read-only channel!")
 
+		if type(value_to_set) == bool:
+			value_to_set = int(value_to_set)
+			
 		# Build a set message to send to the Arduino.
-		message = "set:{}={}".format(self._message_header, value)
+		message = "set:{}={}".format(self._message_header, value_to_set)
 
 		# Send the set message.
 		self._serial_com.send_message(message)
@@ -319,8 +333,19 @@ class Channel:
 		keyword, header, value = self.read_arduino_message()
 
 		# Repeat the set message until we get the "assigned" message back from Arduino.
-		while not ((keyword == "assigned") and (header == self._message_header)):  # THOUGHT: Maybe have a timeout?
+
+		start_time = time.time()
+		while ( not ((keyword == "assigned") and (header == self._message_header)) ) and (time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
+
+			print "Didn't work out the first time so trying again!"
+
 			self._serial_com.send_message(message)
+			keyword, header, value = self.read_arduino_message()
+
+		if len(value) == 0:
+			# This means there was a timeout.
+			print "Timeout!"
+			raise Exception("ERROR: Could not set value = {} for channel = {} because of a timeout!".format(value_to_set, self._name))
 
 		# THOUGHT: Do we even need to "store" the value here as a class attribute?
 		self._value = value
