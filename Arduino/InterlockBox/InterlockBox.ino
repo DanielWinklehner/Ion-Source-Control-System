@@ -59,10 +59,11 @@ void setup()   {
   pinMode(SolenoidValve1, OUTPUT);  // Solenoid Valve.
   pinMode(MicroSwitch1, INPUT);   // Microswitch.
   pinMode(FlowSensor1, INPUT);
+  
+  Serial.begin(115200);
+//  Serial.begin(128000);
 
-  // Get the device ID.
-  Serial.begin(9600);
-
+  // Get this Arduino's device ID from memory
   for (int i=0; i < 36; i++) {
     deviceId[i] = EEPROM.read(i);
   }
@@ -71,6 +72,19 @@ void setup()   {
 
 void flow_interrupt1() {
   flow_sensor1_freq++;
+}
+
+String get_serial_data() {
+  String content = "";
+  char character;
+
+  while(Serial.available()) {
+      character = Serial.read();
+      content.concat(character);
+      delay(2);
+  }
+
+  return content;
 }
 
 void loop() {
@@ -88,49 +102,56 @@ void loop() {
   microSwitch = digitalRead(MicroSwitch1);
 
   // GUI Communication.
-  inputCommand = Serial.readString();
+  if (Serial.available()) {
+//  inputCommand = Serial.readString();
   
-  int first = inputCommand.indexOf(":");
-  int second = inputCommand.indexOf("=");
-
-  String keyword = inputCommand.substring(0, first);
-  String header = inputCommand.substring(first + 1, second);
-  String value = inputCommand.substring(second + 1, inputCommand.length());
-
-  if (keyword == "query") {
-    if (header == "identification") {
-      Serial.print("output:device_id=");
-      Serial.println(deviceId);
-    }
-    else if (header == "micro_switch_1") {
-      Serial.println("output:micro_switch_1=" + microSwitch);
-    }
-    else if (header == "flow_meter_1") {
-      Serial.print("output:flow_meter_1=");
-      Serial.println(flow_sensor1_freq_write, DEC);
-    }
-  }
-  else if (keyword == "set") {  
-    if (header == "identified") {
-      if (value == "1") {
-        currentDeviceState = resting;
+    inputCommand = get_serial_data();
+    
+    int first = inputCommand.indexOf(":");
+    int second = inputCommand.indexOf("=");
+  
+    String keyword = inputCommand.substring(0, first);
+    String header = inputCommand.substring(first + 1, second);
+    String value = inputCommand.substring(second + 1, inputCommand.length());
+  
+    if (keyword == "query") {
+      if (header == "identification") {
+        Serial.print("output:device_id=");
+        Serial.println(deviceId);
+      }
+  
+      else if (header == "micro_switch_1") {
+        Serial.print("output:micro_switch_1=");
+        //Serial.println(microSwitch);
+        Serial.println(random(500));
+      }
+      else if (header == "flow_meter_1") {
+        Serial.print("output:flow_meter_1=");
+        //Serial.println(flow_sensor1_freq_write, DEC);
+        Serial.println(-random(100));
       }
     }
-    else if (header == "solenoid_valve_1") {
-      if (value == "1") {
-        if (digitalRead(SolenoidValve1) == LOW) {
-          digitalWrite(SolenoidValve1, HIGH);
-          Serial.println("assigned:solenoid_valve_1=HIGH");
+    else if (keyword == "set") {  
+      if (header == "identified") {
+        if (value == "1") {
+          currentDeviceState = resting;
         }
       }
-      else {
-        digitalWrite(SolenoidValve1, LOW);
-        Serial.println("assigned:solenoid_valve_1=LOW");
-      } 
-     }
+      else if (header == "solenoid_valve_1") {
+        if (value == "1") {
+          if (digitalRead(SolenoidValve1) == LOW) {
+            digitalWrite(SolenoidValve1, HIGH);
+            Serial.println("assigned:solenoid_valve_1=HIGH");
+          }
+        }
+        else {
+          digitalWrite(SolenoidValve1, LOW);
+          Serial.println("assigned:solenoid_valve_1=LOW");
+        } 
+       }
+       }
      //Serial.println("assigned:" + header + "=" + value);
     }
-    
   }
 
 

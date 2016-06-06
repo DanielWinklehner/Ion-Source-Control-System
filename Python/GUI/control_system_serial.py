@@ -78,14 +78,14 @@ def identify_device_ports(arduino_device_ids):
 
 	for serial_port_name in all_serial_ports:
 		
-		print "Connecting on", serial_port_name
+		print "Connecting to", serial_port_name
 		
-		ser = serial.Serial(serial_port_name, baudrate=9600, timeout=3)
+		ser = serial.Serial(serial_port_name, baudrate=115200, timeout=3)
 
 		# Send a message, querying for a device id. 
 		input_message = "query:identification=?"
 
-		timeout = 10	# in seconds.
+		timeout = 2	# in seconds.
 
 		for i in range(timeout):
 			ser.write(input_message)
@@ -106,6 +106,6 @@ def identify_device_ports(arduino_device_ids):
 
 			time.sleep(1)	# Sleep for 1 second and send a query message again.
 
-		return devices_port_names
+	return devices_port_names
 
 
