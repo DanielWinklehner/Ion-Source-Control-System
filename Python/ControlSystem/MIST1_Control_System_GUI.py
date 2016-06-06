@@ -4,7 +4,7 @@ from MIST1_Control_System_GUI_Widgets import *
 from device import Device, Channel
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GLib, Gdk
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
 __doc__ = """The Control System for the MIST-1 Ion Source"""
@@ -31,6 +31,17 @@ class MIST1ControlSystem:
         self._status_bar = self._builder.get_object("main_statusbar")
         self._log_textbuffer = self._builder.get_object("log_texbuffer")
         self._overview_grid = self._builder.get_object("overview_grid")
+        self._emergency_stop_button = self._builder.get_object("stop_button")
+
+        # --- Paint the stop button red! --- #
+        # color = Gdk.color_parse('#234fdb')
+        # color = Gdk.color_parse('#FF0000')
+        colorh = '#FF0000'
+        color = Gdk.RGBA()
+        color.parse(colorh)
+        color.to_string()
+        # self._emergency_stop_button.modify_bg(Gtk.StateFlags.NORMAL, color)
+        self._emergency_stop_button.override_background_color(Gtk.StateFlags.NORMAL, color)
 
         # --- The main device dict --- #
         self._devices = {}

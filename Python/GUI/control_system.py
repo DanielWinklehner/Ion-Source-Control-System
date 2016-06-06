@@ -384,7 +384,7 @@ if __name__ == "__main__":
 	# Flow meters. x5.
 	for i in range(5):
 		ch = Channel(name="flow_meter_{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-					 message_header="flow_meter_" + str(i + 1),
+					 message_header="flow_meter#" + str(i + 1),
 					 upper_limit=1,
 					 lower_limit=0,
 					 data_type=int,
@@ -396,7 +396,7 @@ if __name__ == "__main__":
 	# Microswitches. x2.
 	for i in range(2):
 		ch = Channel(name="micro_switch_{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-					message_header="micro_switch_{}".format(i + 1),
+					message_header="micro_switch#{}".format(i + 1),
 					upper_limit=1,
 					lower_limit=0,
 					data_type=bool,
@@ -408,7 +408,7 @@ if __name__ == "__main__":
 	# Solenoid valves. x2.
 	for i in range(2):	
 		ch = Channel(name="solenoid_valve_{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-					message_header="solenoid_valve_{}".format(i + 1),
+					message_header="solenoid_valve#{}".format(i + 1),
 					upper_limit=1,
 					lower_limit=0,
 					data_type=bool,
@@ -420,7 +420,7 @@ if __name__ == "__main__":
 	# Vacuum Valves. x2.
 	for i in range(2):
 		ch = Channel(name="vacuum_valve_{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-					message_header="vacuum_valve_{}".format(i + 1),
+					message_header="vacuum_valve#{}".format(i + 1),
 					upper_limit=1,
 					lower_limit=0,
 					data_type=bool,
