@@ -5,6 +5,7 @@ from device import Device, Channel
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib, Gdk
+from DansPyMods import MPLCanvasWrapper3
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
 __doc__ = """The Control System for the MIST-1 Ion Source"""
@@ -31,17 +32,36 @@ class MIST1ControlSystem:
         self._status_bar = self._builder.get_object("main_statusbar")
         self._log_textbuffer = self._builder.get_object("log_texbuffer")
         self._overview_grid = self._builder.get_object("overview_grid")
+
         self._emergency_stop_button = self._builder.get_object("stop_button")
+        self._emergency_stop_button.set_name("stop_button")
 
         # --- Paint the stop button red! --- #
-        # color = Gdk.color_parse('#234fdb')
-        # color = Gdk.color_parse('#FF0000')
-        colorh = '#FF0000'
-        color = Gdk.RGBA()
-        color.parse(colorh)
-        color.to_string()
-        # self._emergency_stop_button.modify_bg(Gtk.StateFlags.NORMAL, color)
-        self._emergency_stop_button.override_background_color(Gtk.StateFlags.NORMAL, color)
+        style_provider = Gtk.CssProvider()
+
+        css = """
+        GtkButton#stop_button {
+            color: #000000;
+            font-size: 18pt;
+            background-image: url('bg.png');
+        }
+        """
+
+        style_provider.load_from_data(css)
+
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            style_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        # --- Create a canvas for plotting --- #
+        self._canvas = MPLCanvasWrapper3(main_window=self._main_window, nbp=1)
+        self._builder.get_object("plot_alignment").add(self._canvas)
+        self._canvas.connect("button_press_event", self.mouse_event_callback)
+        self._canvas.connect("update_request", self.update_after_mplcw_settings_change)
+        self._canvas.xtime = True
+        self._canvas.draw_idle()
 
         # --- The main device dict --- #
         self._devices = {}
@@ -219,6 +239,15 @@ class MIST1ControlSystem:
 
         return 0
 
+    def mouse_event_callback(self, widget, event):
+        """
+        Callback for mouse events in the MPLCanvasWrapper
+        :return:
+        """
+        print("Mouse event callback was called.")
+
+        return 0
+
     def run(self):
         """
         :return:
@@ -242,6 +271,14 @@ class MIST1ControlSystem:
         timestr = time.strftime("%d %b, %Y, %H:%M:%S: ", time.localtime())
 
         self._log_textbuffer.insert(self._log_textbuffer.get_end_iter(), timestr + text + "\n")
+
+        return 0
+
+    def update_after_mplcw_settings_change(self, widget, nbp=None):
+        """
+        :return:
+        """
+        print("Settings change callback was called from nbp %i." % nbp)
 
         return 0
 

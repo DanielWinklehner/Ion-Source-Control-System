@@ -229,6 +229,8 @@
                     <property name="margin_right">4</property>
                     <property name="margin_top">4</property>
                     <property name="margin_bottom">4</property>
+                    <property name="image_position">top</property>
+                    <property name="always_show_image">True</property>
                     <signal name="clicked" handler="stop_button_clicked_cb" swapped="no"/>
                   </object>
                   <packing>

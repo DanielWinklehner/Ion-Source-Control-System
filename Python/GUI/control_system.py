@@ -11,7 +11,7 @@ import uuid
 import control_system_serial
 import serial
 
-from gi.repository import Gtk, GLib, GObject
+from gi.repository import Gtk, GLib, GObject, Gdk
 
 from serial import SerialException
 from device import Device, Channel
@@ -45,6 +45,28 @@ class MIST1ControlSystem:
 		self._status_bar = self._builder.get_object("main_statusbar")
 		self._log_textbuffer = self._builder.get_object("log_texbuffer")
 		self._overview_grid = self._builder.get_object("overview_grid")
+
+		self._emergency_stop_button = self._builder.get_object("stop_button")
+		self._emergency_stop_button.set_name("stop_button")
+
+		# --- Paint the stop button red! --- #
+		style_provider = Gtk.CssProvider()
+
+		css = """
+		GtkButton#stop_button {
+		    color: #000000;
+		    font-size: 18pt;
+		    background-image: url('bg.png');
+		}
+		"""
+
+		style_provider.load_from_data(css)
+
+		Gtk.StyleContext.add_provider_for_screen(
+			Gdk.Screen.get_default(),
+			style_provider,
+			Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+		)
 
 		# --- The main device dict --- #
 		self._devices = {}
@@ -180,6 +202,8 @@ class MIST1ControlSystem:
 							GLib.idle_add(self.update_gui, channel)
 
 				elif self._communication_threads_mode[arduino_id] == "write" and self._set_value_for_widget is not None:
+					
+					print "Setting value."
 
 					widget_to_set_value_for = self._set_value_for_widget
 					channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
@@ -369,13 +393,15 @@ if __name__ == "__main__":
 
 	control_system = MIST1ControlSystem()
 
+	# Setup data logging.
 	# control_system.register_data_logging_file(filename="data_log.hdf5")
 
-	# Generate a test device
+
+	# Generate a device.
 	# Each device is connected to a single arduino, several devices can be connected to the
 	# same Arduino, but never several arduinos to a single device!
-	interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e",
-						  label="Interlock Box")
+
+	interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")
 	interlock_box_device.set_overview_page_presence(True)
 
 	
@@ -383,7 +409,7 @@ if __name__ == "__main__":
 
 	# Flow meters. x5.
 	for i in range(5):
-		ch = Channel(name="flow_meter_{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+		ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
 					 message_header="flow_meter#" + str(i + 1),
 					 upper_limit=1,
 					 lower_limit=0,
@@ -395,7 +421,7 @@ if __name__ == "__main__":
 
 	# Microswitches. x2.
 	for i in range(2):
-		ch = Channel(name="micro_switch_{}".format(i + 1), label="Micro Switch {}".format(i + 1),
+		ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
 					message_header="micro_switch#{}".format(i + 1),
 					upper_limit=1,
 					lower_limit=0,
@@ -407,7 +433,7 @@ if __name__ == "__main__":
 	
 	# Solenoid valves. x2.
 	for i in range(2):	
-		ch = Channel(name="solenoid_valve_{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
+		ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
 					message_header="solenoid_valve#{}".format(i + 1),
 					upper_limit=1,
 					lower_limit=0,
@@ -417,17 +443,17 @@ if __name__ == "__main__":
 
 		interlock_box_device.add_channel(ch)
 
-	# Vacuum Valves. x2.
-	for i in range(2):
-		ch = Channel(name="vacuum_valve_{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-					message_header="vacuum_valve#{}".format(i + 1),
-					upper_limit=1,
-					lower_limit=0,
-					data_type=bool,
-					mode="read",
-					display_order=(11 - 5 - 2 - 2 - i))
+	# # Vacuum Valves. x2.
+	# for i in range(2):
+	# 	ch = Channel(name="vacuum_valve_{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
+	# 				message_header="vacuum_valve#{}".format(i + 1),
+	# 				upper_limit=1,
+	# 				lower_limit=0,
+	# 				data_type=bool,
+	# 				mode="read",
+	# 				display_order=(11 - 5 - 2 - 2 - i))
 
-		interlock_box_device.add_channel(ch)
+	# 	interlock_box_device.add_channel(ch)
 
 	# Add all our devices to the control system.
 	
@@ -472,5 +498,5 @@ if __name__ == "__main__":
 	control_system.add_device(test_device3)
 	'''
 
-	# Run the control system, this has to be last as it does all the initializations and adding to the gui
+	# Run the control system, this has to be last as it does all the initializations and adding to the GUI.
 	control_system.run()
