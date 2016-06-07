@@ -26,12 +26,13 @@ class DataLogging:
 
 		device_name = channel.get_parent_device().name()
 		channel_name = channel.name()
-		data_type = channel.data_type()
+		# data_type = np.dtype( [ ('timestamp', np.float64), ('value', np.int32) ] )
+		data_type = np.dtype(np.float64)
 
 		if device_name not in self._main_group.keys():
 			self._main_group.create_group(device_name)
 
-		dset = self._main_group[device_name].create_dataset(channel_name, (1,1), maxshape=(None,None), dtype=data_type)
+		dset = self._main_group[device_name].create_dataset(channel_name, (1,2), maxshape=(None,2), dtype=data_type, compression="gzip")
 		self._data_set[dset.name] = dset
 
 
@@ -45,6 +46,8 @@ class DataLogging:
 		dset = self._data_set[dataset_name]
 
 		
-		dset.resize((len(dset) + 1, len(dset) + 1))
-		dset[len(dset) + 1] = time.time(), value
+		dset.resize((len(dset) + 1, 2))
 
+		a = (time.time(), value)
+		dset[len(dset) - 1] = a
+		

@@ -89,10 +89,10 @@ class MIST1ControlSystem:
 		self._set_value_for_widget = None	
 
 		# HDF5 logging.
-		# self._data_logger = None
+		self._data_logger = None
 
 
-	'''
+
 	def register_data_logging_file(self, filename):
 		self._data_logger = data_logging.DataLogging(log_filename=filename)
 		self._data_logger.initialize()
@@ -100,7 +100,7 @@ class MIST1ControlSystem:
 	
 	def log_data(self, channel):
 		self._data_logger.log_value(channel=channel)
-	'''
+	
 
 	def about_program_callback(self, menu_item):
 		"""
@@ -146,10 +146,9 @@ class MIST1ControlSystem:
 
 
 		# Add corresponding channels to the hdf5 log.
-		'''
 		for channel_name, channel in device.channels().items():
-			self._data_logger.add_channel(channel)
-		'''
+			if channel.mode() == "read" or channel.mode() == "both":
+				self._data_logger.add_channel(channel)
 
 		return 0
 
@@ -159,7 +158,7 @@ class MIST1ControlSystem:
 
 	def set_value_callback(self, button, widget):
 		
-		print "Set callback called by {}".format(widget.get_name())
+		# print "Set callback called by {}".format(widget.get_name())
 
 		parent_channel = widget.get_parent_channel()
 
@@ -195,7 +194,7 @@ class MIST1ControlSystem:
 							channel.read_value()
 
 							# Log data.
-							# self.log_data(channel)
+							self.log_data(channel)
 
 							self._communication_threads_poll_count[arduino_id] += 1
 
@@ -208,7 +207,7 @@ class MIST1ControlSystem:
 					widget_to_set_value_for = self._set_value_for_widget
 					channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
 
-					print "Communicating updated value to Arduino ID {} for widget {}".format( channel_to_set_value_for.get_arduino_id(), widget_to_set_value_for.get_name() )
+					print "Communicating updated value for widget {}".format( widget_to_set_value_for.get_name() )
 
 					# Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
 					
@@ -394,8 +393,8 @@ if __name__ == "__main__":
 	control_system = MIST1ControlSystem()
 
 	# Setup data logging.
-	# control_system.register_data_logging_file(filename="data_log.hdf5")
-
+	current_time = time.strftime('%a-%d-%b-%Y_%H:%M:%S-EST', time.localtime())
+	control_system.register_data_logging_file(filename="log/{}.hdf5".format(current_time))
 
 	# Generate a device.
 	# Each device is connected to a single arduino, several devices can be connected to the
@@ -443,17 +442,17 @@ if __name__ == "__main__":
 
 		interlock_box_device.add_channel(ch)
 
-	# # Vacuum Valves. x2.
-	# for i in range(2):
-	# 	ch = Channel(name="vacuum_valve_{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-	# 				message_header="vacuum_valve#{}".format(i + 1),
-	# 				upper_limit=1,
-	# 				lower_limit=0,
-	# 				data_type=bool,
-	# 				mode="read",
-	# 				display_order=(11 - 5 - 2 - 2 - i))
+	# Vacuum Valves. x2.
+	for i in range(2):
+		ch = Channel(name="vacuum_valve_{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
+					message_header="vacuum_valve#{}".format(i + 1),
+					upper_limit=1,
+					lower_limit=0,
+					data_type=bool,
+					mode="read",
+					display_order=(11 - 5 - 2 - 2 - i))
 
-	# 	interlock_box_device.add_channel(ch)
+		interlock_box_device.add_channel(ch)
 
 	# Add all our devices to the control system.
 	

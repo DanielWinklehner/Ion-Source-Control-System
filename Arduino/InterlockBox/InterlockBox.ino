@@ -218,8 +218,8 @@ void loop() {
       else if (filteredHeader == "flow_meter") {
         if (serialNumber.toInt() <= (sizeof(flowSensorPins) / sizeof(int))) {
           Serial.print("output:flow_meter#"  + serialNumber + "=");  
-          Serial.println(flowSensorFreqsWrite[serialNumber.toInt() - 1], DEC);
-          //Serial.println(random(100) - random(100));
+          //Serial.println(flowSensorFreqsWrite[serialNumber.toInt() - 1], DEC);
+          Serial.println(random(100) - random(100));
         } 
       }
       else if (filteredHeader == "vacuum_valve") {
