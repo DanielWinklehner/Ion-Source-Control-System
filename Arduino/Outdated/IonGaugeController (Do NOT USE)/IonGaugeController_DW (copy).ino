@@ -90,13 +90,6 @@ String gauge2_torr_str = String("0.0e-0");
 String gauge1_state = "OFF";
 String gauge2_state = "OFF";
 
-
-// Communication Variables:
-char deviceId[37];
-bool deviceIdentified = false;
-String inputCommand;
-
-
 void setup()   { 
   // Initialise the Arduino data pins for OUTPUT
   pinMode(RELAY1, OUTPUT);       

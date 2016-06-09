@@ -20,9 +20,6 @@ All text above, and the splash screen must be included in any redistribution
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <EEPROM.h>
-
-
 
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -90,13 +87,6 @@ String gauge2_torr_str = String("0.0e-0");
 String gauge1_state = "OFF";
 String gauge2_state = "OFF";
 
-
-// Communication Variables:
-char deviceId[37];
-bool deviceIdentified = false;
-String inputCommand;
-
-
 void setup()   { 
   // Initialise the Arduino data pins for OUTPUT
   pinMode(RELAY1, OUTPUT);       
@@ -161,30 +151,7 @@ void setup()   {
   display.setCursor(54,48);
   display.print("0.0e-0");
   display.display();
-
-  // Get the device ID.
-  Serial.begin(115200);
-
-  for (int i=0; i < 36; i++) {
-    deviceId[i] = EEPROM.read(i);
-  }
-  
 }
-
-
-String get_serial_data() {
-  String content = "";
-  char character;
-
-  while(Serial.available()) {
-      character = Serial.read();
-      content.concat(character);
-      delay(2);
-  }
-
-  return content;
-}
-
 
 void loop() {
   //delay(50);
@@ -321,98 +288,7 @@ void loop() {
   display.print(gauge2_torr_str);
   // Show the new display
   display.display();
-
-
-  // GUI Communication.
-  if (Serial.available()) {
-    //  inputCommand = Serial.readString();
-    inputCommand = get_serial_data();
-    
-    int first = inputCommand.indexOf(":");
-    int second = inputCommand.indexOf("=");
-  
-    String keyword = inputCommand.substring(0, first);
-    String header = inputCommand.substring(first + 1, second);
-    String value = inputCommand.substring(second + 1, inputCommand.length());
-
-    int serialNumberCharacterIndex = header.indexOf("#");
-    String serialNumber = header.substring(serialNumberCharacterIndex + 1, header.length());
-
-    String filteredHeader;
-    if (serialNumberCharacterIndex > -1) {
-      filteredHeader = header.substring(0, serialNumberCharacterIndex);
-    }
-    else {
-      filteredHeader = header;
-    }
-  
-    if (keyword == "query") {
-  
-      if (header == "identification") {
-        Serial.print("output:device_id=");
-        Serial.println(deviceId);
-      }
-      else if (header == "gauge_state#1") {
-        if (gauge1_state == "OFF") {
-          Serial.println("output:gauge_state#1=0");  
-        }
-        else {
-          Serial.println("output:gauge_state#1=1");  
-        }
-      }
-      else if (header == "gauge_pressure#1") {
-        Serial.println("output:gauge_pressure#1=" + gauge1_torr_str);
-      }
-      else if (header == "gauge_state#2") {
-        if (gauge2_state == "OFF") {
-          Serial.println("output:gauge_state#2=0");  
-        }
-        else {
-          Serial.println("output:gauge_state#2=1");  
-        }
-      }
-      else if (header == "gauge_pressure#2") {
-        Serial.println("output:gauge_pressure#2=" + gauge2_torr_str);
-      }
-      
-    }
-    else if (keyword == "set") {
-      
-      if (header == "identified") {
-        if (value == "1") {
-          deviceIdentified = true;
-        }
-      }
-      else if (header == "gauge_state#1") {
-        if (value == "1") {
-          gauge1_interrupt();
-          Serial.println("assigned:gauge_state#1=" + value);
-        }
-        else {
-         // Code to stop the gauge? 
-         Serial.println("assigned:gauge_state#1=" + value);
-        }
-      }
-      else if (header == "gauge_state#2") {
-        if (value == "1") {
-          gauge2_interrupt();
-          Serial.println("assigned:gauge_state#2=" + value);
-        }
-        else {
-          // Code to stop the gauge?
-          Serial.println("assigned:gauge_state#2=" + value);
-        }
-      }
-  
-      
-      
-    }
-  }
-  
-  
-  
 }
-
 
 String formatted_pressure(double pressure)
 {

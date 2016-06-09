@@ -20,8 +20,6 @@ All text above, and the splash screen must be included in any redistribution
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <EEPROM.h>
-
 
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -67,31 +65,9 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
   B01110000, B01110000,
   B00000000, B00110000 };
 
-
 #if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
-
-
-
-char deviceId[37];
-bool deviceIdentified = false;
-String inputCommand;
-/* 
- *  States: What state the device is on; because you can't really do multi-threadding with Arduinos, we need to keep track of what "state" the device is on to decide what we want the Arduino to do.
- *  
- *  
- */
-enum DeviceState {
-  identification,
-  sending_output,
-  receiving_input,
-  resting
-};
-
-
-
-DeviceState currentDeviceState = resting;
 
 // Global flags for on/off status of ion gauges
 boolean gauge1_running = false;
@@ -163,31 +139,24 @@ void setup()   {
   display.setTextSize(2);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
-  display.print("IG1:");
+  display.print("APG:");
   display.setCursor(54,0);
   display.print("OFF");
   display.setCursor(54,16);
   display.print("0.0e-0");
   display.setCursor(0,32);
-  display.print("IG2:");
+  display.print("AIM:");
   display.setCursor(54,32);
   display.print("OFF");
   display.setCursor(54,48);
   display.print("0.0e-0");
   display.display();
-
-  // Get the device ID.
-  Serial.begin(9600);
-
-  for (int i=0; i < 36; i++) {
-    deviceId[i] = EEPROM.read(i);
-  }
-  
 }
 
 void loop() {
-  delay(50);
+  //delay(50);
 
+  // CAVE: Gauge1 is a PIRANI gauge for use in atm down to 10-3 mbar
   if (gauge1_running)
   {
     analogRead(GAUGE1_IN);
@@ -200,12 +169,13 @@ void loop() {
     }
     gauge1_raw /= double(samples);
     gauge1_volt = raw_to_volt(gauge1_raw);
-    gauge1_torr = volt_to_torr(gauge1_volt);
+    gauge1_torr = volt_to_torr_pirani(gauge1_volt);
     gauge1_torr_str = formatted_pressure(gauge1_torr);
 
-    if (gauge1_volt > 10.7)
+    if (gauge1_volt > 9.2)
     {
-      // Above 10.7 means the pressure is high enough to damage the ion gauge.
+      // Above 9.2 means some error state, will probably update this soon 
+      // to read out the two known error states at V = 9.5 and V = 9.6
       // We turn it off and set the error state. User can reset the error 
       // state by switching the IG off and then on again.
       gauge1_err = true;
@@ -216,15 +186,15 @@ void loop() {
 
       gauge1_state = String("ERR");
     }
-    else if (gauge1_volt > 10.0)
+    else if (gauge1_volt > 9.1)
     {
       // Above 10 V is considered out of range, so we tell the user and 
       // display the maximum pressure value in the fit (@10 V).
       gauge1_state = String("HIGH");
     }
-    else if (gauge1_volt < 2.0)
+    else if (gauge1_volt < 3.0)
     {
-      // Below 2 V is considered out of range, so we tell the user and 
+      // Below 3 V is considered out of range, so we tell the user and 
       // display the minimum pressure value in the fit (@2 V).
       gauge1_state = String("LOW");
     }
@@ -305,111 +275,54 @@ void loop() {
   display.setTextColor(WHITE);
   // Do the printing
   display.setCursor(0,0);
-  display.print("IG1:");
+  display.print("APG:");
   display.setCursor(54,0);
   display.print(gauge1_state);
   display.setCursor(54,16);
   display.print(gauge1_torr_str);
   display.setCursor(0,32);
-  display.print("IG2:");
+  display.print("AIM:");
   display.setCursor(54,32);
   display.print(gauge2_state);
   display.setCursor(54,48);
   display.print(gauge2_torr_str);
   // Show the new display
   display.display();
-
-
-
-  // GUI Communication.
-  
-  inputCommand = Serial.readString();
-  
-  int first = inputCommand.indexOf(":");
-  int second = inputCommand.indexOf("=");
-
-  String keyword = inputCommand.substring(0, first);
-  String header = inputCommand.substring(first + 1, second);
-  String value = inputCommand.substring(second + 1, inputCommand.length());
-
-  if (keyword == "query") {
-
-    if (header == "identification") {
-      Serial.print("output:device_id=");
-      Serial.println(deviceId);
-    }
-    else if (header == "gauge_1_state") {
-      Serial.println("output:gauge_1_state=" + gauge1_state);
-    }
-    else if (header == "gauge_1_pressure") {
-      Serial.println("output:gauge_1_pressure=" + gauge1_torr_str);
-    }
-    else if (header == "gauge_2_state") {
-      Serial.println("output:gauge_2_state=" + gauge2_state);
-    }
-    else if (header == "gauge_2_pressure") {
-      Serial.println("output:gauge_2_pressure=" + gauge2_torr_str);
-    }
-    
-  }
-  else if (keyword == "set") {
-    
-    if (header == "identified") {
-      if (value == "1") {
-        currentDeviceState = resting;
-      }
-    }
-    else if (header == "gauge_1_state") {
-      if (value == "1") {
-        gauge1_interrupt();
-      }
-      else {
-       // Code to stop the gauge? 
-      }
-    }
-    else if (header == "gauge_2_state") {
-      if (value == "1") {
-        gauge2_interrupt();
-      }
-      else {
-        // Code to stop the gauge?
-      }
-    }
-
-    Serial.println("assigned:" + header + "=" + value);
-    
-  }
-  
 }
-
-
 
 String formatted_pressure(double pressure)
 {
   int exponent;
   double pressure_value;
-
-  for (int i = 1; i < 12; i++)
-  {
-    if (int(pressure * pow(10, i)) > 0)
+  String pressure_str;
+  if (pressure >= 1.0) {
+    
+    pressure_str = String(pressure, 1);
+    
+  } else {
+    
+    for (int i = 1; i < 12; i++)
     {
-      pressure_value = pressure * pow(10, i);
-      exponent = i;
-      break;
+      if (int(pressure * pow(10, i)) > 0)
+      {
+        pressure_value = pressure * pow(10, i);
+        exponent = i;
+        break;
+      }
     }
-  }
-
-  // Handle case where we have 10e-X
-  if (String(pressure_value, 1) == "10.0")
-  {
-    pressure_value = 1.0;
-    exponent -= 1;
+  
+    // Handle case where we have 10e-X
+    if (String(pressure_value, 1) == "10.0")
+    {
+      pressure_value = 1.0;
+      exponent -= 1;
+    }
+    
+    pressure_str = String(pressure_value, 1);
+    pressure_str.concat("e-");
+    pressure_str.concat(exponent);
   }
   
-  String pressure_str = String(pressure_value, 1);
-  pressure_str.concat("e-");
-  pressure_str.concat(exponent);
-
   return pressure_str;
   
 }
@@ -419,6 +332,20 @@ double raw_to_volt(double raw)
   // Arduino samples 5 V into 1024 bins. Breakout board has a voltage divider with
   // R2 = 4.96 kOhm and R1 + R2 = 14.89 kOhm
   return raw / 1024.0 * 5.0 / 4.96 * 14.89;
+}
+
+double volt_to_torr_pirani(double volt)
+{
+  if (volt <= 3.0){
+    // Below the working pressure regime
+    return 1.0e-3;
+  }
+  if (volt >= 9.1){
+    // Above the working pressure regime
+    return 944.06;
+  }
+
+  return pow(10, (volt - 6.125));
 }
 
 double volt_to_torr(double volt)
@@ -480,7 +407,7 @@ void gauge1_interrupt()
     //Serial.println("Switching Gauge1 on\n");
     gauge1_running = true;
     
-    digitalWrite(RELAY1,LOW);   // Turns ON Relay 1
+    //digitalWrite(RELAY1,LOW);   // Turns ON Relay 1
 
     gauge1_state = String("ON");
 

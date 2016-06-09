@@ -4,7 +4,7 @@ import time
 import serial
 import sys
 import glob
-import MIST1_Control_System_GUI_Widgets
+import MIST1_Control_System_GUI_Widgets as widgets
 
 
 class Device:
@@ -77,7 +77,7 @@ class Device:
         # Add device to GUI overview page if desired
         if self._on_overview_page:
             # Create a frame
-            self._overview_frame = MIST1_Control_System_GUI_Widgets.FrontPageDeviceFrame(label=self._label)
+            self._overview_frame = widgets.FrontPageDeviceFrame(label=self._label)
 
             # Add the frame to the layout
             self._parent.get_overview_grid().add(self._overview_frame)
@@ -110,9 +110,9 @@ class Device:
 
             # Add infobar to the arduino_vbox on the side of the GUI
             vbox = self._parent.get_arduino_vbox()
-            infobar = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(
-                name="{} at Port: {}. Polling rate =".format(self._label, self._serial_com.arduino_port()),
-                displayformat=".1f", unit="Hz")
+            infobar = widgets.FrontPageDisplayValue(name="Arduino at Port: %s. Polling rate =" %
+                                                         self._serial_com.arduino_port(),
+                                                    displayformat=".1f", unit="Hz")
 
             vbox.pack_start(infobar, False, False, 4)
             self._parent.add_arduino_status_bar(self._arduino_id, infobar)
@@ -125,14 +125,11 @@ class Device:
         # Have to add device first so that there is a frame to add to
         self.add_device_to_gui()
 
-        # Create a list of tuples (display_order, channel).
-        all_channels = []
+        # for channel_name, channel in self._channels.items():
+        #     front_page_widget = widgets.FrontPageDisplayValue(name=channel.label())
+        #     self._front_page_widgets[channel_name] = front_page_widget
+
         for channel_name, channel in self._channels.items():
-            all_channels.append((channel.get_display_order(), channel))
-
-        all_channels.sort(key=lambda tup: tup[0], reverse=True)
-
-        for display_order, channel in all_channels:
             channel.initialize()
 
         self._initialized = True
@@ -149,7 +146,7 @@ class Device:
 
 class Channel:
     def __init__(self, name, label, message_header, upper_limit, lower_limit, data_type, unit="",
-                 scaling=1., mode="both", display_order=0):
+                 scaling=1., mode="both"):
 
         self._name = name
         self._label = label
@@ -163,13 +160,9 @@ class Channel:
         self._value = -1
         self._mode = mode
         self._arduino_id = None
-        self._parent_device = None  # The device this channel belongs to will be set during add_channel().
+        self._parent_device = None  # The device this channel belongs to will be set during add_channel
         self._initialized = False
         self._overview_page_display = None
-
-        self._timeout = 2  # In seconds.
-
-        self._display_order = display_order  # Higher number on the top.
 
     def add_channel_to_gui(self):
         """
@@ -184,22 +177,19 @@ class Channel:
 
         # Add channels to the devices GUI overview page frame if desired
         if parent_device.is_on_overview_page():
-            # Create a display
 
             if self._data_type == bool:
 
-                self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayBool(name=self._label,
-                                                                                                    set_flag=set_flag,
-                                                                                                    parent_channel=self)
+                self._overview_page_display = widgets.FrontPageDisplayBool(name=self._label,
+                                                                           set_flag=set_flag)
 
             else:
 
                 # Create a display
-                self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name=self._label,
-                                                                                                     unit=self._unit,
-                                                                                                     displayformat=".2f",
-                                                                                                     set_flag=set_flag,
-                                                                                                     parent_channel=self)
+                self._overview_page_display = widgets.FrontPageDisplayValue(name=self._label,
+                                                                            unit=self._unit,
+                                                                            displayformat=".2f",
+                                                                            set_flag=set_flag)
 
             parent_device.get_overview_frame().pack_start(self._overview_page_display, False, False, 4)
 
@@ -215,9 +205,6 @@ class Channel:
 
     def get_value(self):
         return self._value
-
-    def get_display_order(self):
-        return self._display_order
 
     def initialize(self):
         """
@@ -274,9 +261,16 @@ class Channel:
 
     def read_arduino_message(self):
 
+        # start = time.time()
+
         response = self._serial_com.read_message()
 
+        # end = time.time()
+
+        # print "Reading arduino response took {} seconds.".format(end - start)
+
         try:
+
             response_parts = response.split(':')
             result_parts = response_parts[1].split('=')
 
@@ -285,7 +279,9 @@ class Channel:
             value = result_parts[1]
 
             return keyword, header, value
+
         except:
+
             return "", "", ""
 
     def read_value(self):
@@ -306,10 +302,7 @@ class Channel:
 
         # Ideally, we should have all we need. But in case the first message sent
         # by the Arduino was dropped, keep querying until we get some response.
-
-        start_time = time.time()
-        while (not (keyword == "output" and header == self._message_header)) and (
-            time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
+        while not (keyword == "output" and header == self._message_header):  # THOUGHT: Maybe have a timeout?
 
             print "Trying again!"
 
@@ -322,20 +315,17 @@ class Channel:
 
         # We have what we need.
 
-        self._value = self._data_type(float(value))
+        self._value = self._data_type(value)
 
         return self._value
 
-    def set_value(self, value_to_set):
+    def set_value(self, value):
 
         if self._mode == "read":
             raise ValueError("ERROR: You are trying to write values to a read-only channel!")
 
-        if type(value_to_set) == bool:
-            value_to_set = int(value_to_set)
-
         # Build a set message to send to the Arduino.
-        message = "set:{}={}".format(self._message_header, value_to_set)
+        message = "set:{}={}".format(self._message_header, value)
 
         # Send the set message.
         self._serial_com.send_message(message)
@@ -344,41 +334,29 @@ class Channel:
 
         # Read the Arduino's response.
         keyword, header, value = self.read_arduino_message()
-        # print keyword, header, value
+
+        print keyword, header, value
 
         # Repeat the set message until we get the "assigned" message back from Arduino.
-        start_time = time.time()
-        while (not ((keyword == "assigned") and (header == self._message_header))) and (
-            time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
-
-            print "Didn't work out the first time so trying again!"
-
+        while not ((keyword == "assigned") and (header == self._message_header)):  # THOUGHT: Maybe have a timeout?
             self._serial_com.send_message(message)
-            keyword, header, value = self.read_arduino_message()
-
-        if len(value) == 0:
-            # This means there was a timeout.
-            print "Timeout!"
-            raise Exception(
-                "ERROR: Could not set value = {} for channel = {} because of a timeout!".format(value_to_set,
-                                                                                                self._name))
 
         # THOUGHT: Do we even need to "store" the value here as a class attribute?
         self._value = value
 
 
 class SerialCOM:
+
     def __init__(self, arduino_id):
         self._arduino_id = arduino_id
         self._arduino_port = self.find_port(arduino_id)
 
         if self._arduino_port is None:
+
             # TODO: Handle these cases such that all other devices are still connecting!
             raise SystemExit
 
         self._ser = serial.Serial(self._arduino_port, baudrate=115200, timeout=2)
-
-        self._alive_timeout = 1  # In seconds.
 
     def arduino_id(self):
         return self._arduino_id
@@ -458,6 +436,7 @@ class SerialCOM:
                     # This is probably an Arduino designed for this Control System.
                     # Get the device id.
                     if arduino_id == response.split("=")[1]:
+
                         print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
 
                         return serial_port_name
@@ -469,24 +448,6 @@ class SerialCOM:
 
         return None
 
-    def is_alive(self):
-        """Summary
-
-        Returns:
-            TYPE: Description
-        """
-
-        self.send_message("query:identification=?")
-        response = self.read_message()
-
-        first_message_time = time.time()
-        while (response.strip() != "output:device_id=" + self._arduino_id) and (
-            (time.time() - first_message_time) < self._alive_timeout):
-            self.send_message("query:identification=?")
-            response = self.read_message()
-
-        return response.strip() == "output:device_id=" + self._arduino_id
-
     def send_message(self, message):
 
         self._ser.flushInput()
@@ -496,12 +457,12 @@ class SerialCOM:
 
     def read_message(self):
 
-        try:
-            self._ser.flushInput()
-            self._ser.flushOutput()
+        self._ser.flushInput()
+        self._ser.flushOutput()
 
-            message = self._ser.readline()
-            return message
-        # except serial.SerialException as e:
-        except IOError as e:
-            print e
+        # start = time.time()
+        message = self._ser.readline()
+        # end = time.time()
+        # print "Actual time for reading the message is {} seconds.".format(end - start)
+
+        return message

@@ -153,9 +153,6 @@ class FrontPageDisplayBool(Gtk.Frame):
 			self._true_rb.set_sensitive(False)
 			self._false_rb.set_sensitive(False)
 
-		# Set default state "OFF"
-		self._false_rb.set_active(True)
-
 		self._parent_channel = parent_channel
 
 	def get_name(self):

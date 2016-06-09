@@ -1,5 +1,4 @@
 import gi
-
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
 
@@ -12,7 +11,7 @@ class FrontPageDisplayValue(Gtk.Frame):
     Simple widget with two labels and a entry box to display a single value
     """
 
-    def __init__(self, name="Channel N/A", unit="N/A", displayformat=".2f", set_flag=False, parent_channel=None):
+    def __init__(self, name="Channel N/A", unit="N/A", displayformat=".2f", set_flag=False):
         """
         :param name:
         :param unit:
@@ -32,14 +31,12 @@ class FrontPageDisplayValue(Gtk.Frame):
 
         self.add(hbox)
 
-        hbox.pack_start(self.name_label, True, True, 0)
-        hbox.pack_start(self.value_entry, True, True, 0)
-        hbox.pack_start(self.unit_label, True, True, 0)
+        hbox.pack_start(self.name_label, False, False, 0)
+        hbox.pack_start(self.value_entry, False, False, 0)
+        hbox.pack_start(self.unit_label, False, False, 0)
 
         if not self.set_flag:
             self.value_entry.set_sensitive(False)
-
-        self._parent_channel = parent_channel
 
     def get_displayformat(self):
         """
@@ -112,21 +109,13 @@ class FrontPageDisplayValue(Gtk.Frame):
 
         return 0
 
-    def get_parent_channel(self):
-        """Summary
-
-        Returns:
-            TYPE: Description
-        """
-        return self._parent_channel
-
 
 class FrontPageDisplayBool(Gtk.Frame):
     """
     Simple widget with two labels and a entry box to display a single value
     """
 
-    def __init__(self, name="Channel N/A", true_label="ON", false_label="OFF", set_flag=False, parent_channel=None):
+    def __init__(self, name="Channel N/A", true_label="ON", false_label="OFF", set_flag=False):
         """
         :param name:
         :param true_label:
@@ -151,11 +140,6 @@ class FrontPageDisplayBool(Gtk.Frame):
         if not self._set_flag:
             self._true_rb.set_sensitive(False)
             self._false_rb.set_sensitive(False)
-
-        # Set default state "OFF"
-        self._false_rb.set_active(True)
-
-        self._parent_channel = parent_channel
 
     def get_name(self):
         """
@@ -194,17 +178,6 @@ class FrontPageDisplayBool(Gtk.Frame):
             self._false_rb.set_active(True)
 
         return 0
-
-    def get_radio_buttons(self):
-        return self._true_rb, self._false_rb
-
-    def get_parent_channel(self):
-        """Summary
-
-        Returns:
-            TYPE: Description
-        """
-        return self._parent_channel
 
 
 class FrontPageDeviceFrame(Gtk.Frame):
@@ -249,7 +222,6 @@ class FrontPageDeviceFrame(Gtk.Frame):
         """
         self.set_label(label=label)
 
-
 if __name__ == "__main__":
 
     window = Gtk.Window(title="Widgets Test Window")
@@ -274,7 +246,7 @@ if __name__ == "__main__":
             test_fpd = FrontPageDisplayValue("Channel %i" % i, "kV")
 
         test_fpdf.pack_start(test_fpd, True, True, 0)
-        test_fpd.set_value(i * 10)
+        test_fpd.set_value(i*10)
         fpds.append(test_fpd)
 
     print("%s: %.2f %s" % (fpds[2].get_name(), fpds[2].get_value(), fpds[2].get_unit()))

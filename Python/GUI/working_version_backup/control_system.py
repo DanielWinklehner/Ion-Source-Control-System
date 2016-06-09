@@ -8,7 +8,6 @@ import threading
 import datetime
 import uuid
 
-
 import control_system_serial
 import serial
 
@@ -81,7 +80,7 @@ class MIST1ControlSystem:
 		self._communication_threads = {}
 
 		# key = device_name, value = 'read' / 'write' i.e. which direction the communication is
-		# supposed to happen. It's from POV of the GUI i.e. the direction is GUI -> Arduino.
+		# supposed to happen. It's from POV of the GUI -> Arduino.
 		self._communication_threads_mode = {}
 		self._communication_threads_poll_count = {}
 		self._communication_threads_start_time = {}
@@ -91,10 +90,6 @@ class MIST1ControlSystem:
 
 		# HDF5 logging.
 		self._data_logger = None
-
-		self._last_checked_for_devices_alive = time.time()
-		self._alive_device_names = set()
-		self._check_for_alive_interval = 5	# In seconds.
 
 
 
@@ -119,6 +114,8 @@ class MIST1ControlSystem:
 		return 0
 
 	def set_widget_connections(self):
+
+
 		for device_name, device in self._devices.items():
 			for channel_name, channel in device.channels().items():
 
@@ -177,23 +174,6 @@ class MIST1ControlSystem:
 		"""
 
 		while self._keep_communicating:
-			'''
-			if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
-					
-				# Check which Arduinos are still alive.
-				print "Checking for alive devices."
-
-				for device in devices:
-					if device.get_serial_com().is_alive():
-						self._alive_device_names.add(device.name())
-					else:
-						self._alive_device_names.discard(device.name())
-
-				self._last_checked_for_devices_alive =  time.time()
-
-				print self._alive_device_names, self._devices
-			'''
-
 
 			for device in devices:
 
@@ -329,6 +309,8 @@ class MIST1ControlSystem:
 		# Any and all remaining initializations go here
 		self.initialize_communication_threads()
 
+
+
 		self._initialized = True
 
 		return 0
@@ -411,16 +393,14 @@ if __name__ == "__main__":
 	control_system = MIST1ControlSystem()
 
 	# Setup data logging.
-	current_time = time.strftime('%a-%d-%b-%Y_%H %M %S-EST', time.localtime())
+	current_time = time.strftime('%a-%d-%b-%Y_%H:%M:%S-EST', time.localtime())
 	control_system.register_data_logging_file(filename="log/{}.hdf5".format(current_time))
 
 	# Generate a device.
 	# Each device is connected to a single arduino, several devices can be connected to the
 	# same Arduino, but never several arduinos to a single device!
 
-	# Aashish => 2cc580d6-fa29-44a7-9fec-035acd72340e
-	# Daniel => 49ffb802-50c5-4194-879d-20a87bcfc6ef
-	interlock_box_device = Device("interlock_box", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", label="Interlock Box")
+	interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")
 	interlock_box_device.set_overview_page_presence(True)
 
 	
@@ -434,7 +414,6 @@ if __name__ == "__main__":
 					 lower_limit=0,
 					 data_type=int,
 					 mode="read",
-					 unit="Hz",
 					 display_order=(11 - i))
 
 		interlock_box_device.add_channel(ch)
@@ -465,7 +444,7 @@ if __name__ == "__main__":
 
 	# Vacuum Valves. x2.
 	for i in range(2):
-		ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
+		ch = Channel(name="vacuum_valve_{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
 					message_header="vacuum_valve#{}".format(i + 1),
 					upper_limit=1,
 					lower_limit=0,
@@ -480,35 +459,43 @@ if __name__ == "__main__":
 	control_system.add_device(interlock_box_device)
 
 
-	ion_gauge = Device("ion_gauge", arduino_id="cf436e6b-ba3d-479a-b221-bc387c37b858", label="Ion Gauge")
-	ion_gauge.set_overview_page_presence(True)
 
-	for i in range(2):
-		ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-					 message_header="gauge_state#" + str(i + 1),
-					 upper_limit=1,
-					 lower_limit=0,
-					 data_type=bool,
-					 mode="read",
-					 display_order=(4 - i))
 
-		ion_gauge.add_channel(ch)
+	'''
+	# Another test device
+	test_device2 = Device("vacuum_box", arduino_id="bd0f5a84-a2eb-4ff3-9ff2-597bf3b2c20a",
+						  label="Vacuum Box")
+	test_device2.set_overview_page_presence(True)
 
-	for i in range(2):
-		ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-					 message_header="gauge_pressure#" + str(i + 1),
-					 upper_limit=1000,
-					 lower_limit=0,
-					 data_type=float,
-					 mode="read",
-					 unit="Torr",
-					 display_order=(4 - i))
+	# Generate a test channel as part of the test device
+	test_channel2 = Channel(name="flow_meter_1", label="Flow Meter 1",
+							message_header="flow_meter_1",
+							upper_limit=1,
+							lower_limit=0,
+							data_type=int,
+							mode="read")
 
-		ion_gauge.add_channel(ch)
+	# Add the channel to the device
+	test_device2.add_channel(test_channel2)
+	control_system.add_device(test_device2)
 
-	# control_system.add_device(ion_gauge)
-	
+	# Another test device
+	test_device3 = Device("dummy_device", arduino_id="bd0f5a84-a2eb-4ff3-9ff2-597bf3b2c20a",
+						  label="Dummy Device")
+	test_device3.set_overview_page_presence(True)
+
+	# Generate a test channel as part of the test device
+	test_channel3 = Channel(name="micro_switch_1", label="Micro Switch 1",
+							message_header="micro_switch_1",
+							upper_limit=1,
+							lower_limit=0,
+							data_type=int,
+							mode="read")
+
+	# Add the channel to the device
+	test_device3.add_channel(test_channel3)
+	control_system.add_device(test_device3)
+	'''
 
 	# Run the control system, this has to be last as it does all the initializations and adding to the GUI.
 	control_system.run()
-

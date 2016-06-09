@@ -20,7 +20,6 @@ All text above, and the splash screen must be included in any redistribution
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <EEPROM.h>
 
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -66,31 +65,9 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
   B01110000, B01110000,
   B00000000, B00110000 };
 
-
 #if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
-
-
-
-char deviceId[37];
-bool deviceIdentified = false;
-String inputCommand;
-/* 
- *  States: What state the device is on; because you can't really do multi-threadding with Arduinos, we need to keep track of what "state" the device is on to decide what we want the Arduino to do."
- *  
- *  
- */
-enum DeviceState {
-  identification,
-  sending_output,
-  receiving_input,
-  resting
-};
-
-
-
-DeviceState currentDeviceState = resting;
 
 // Global flags for on/off status of ion gauges
 boolean gauge1_running = false;
@@ -174,14 +151,6 @@ void setup()   {
   display.setCursor(54,48);
   display.print("0.0e-0");
   display.display();
-
-  // Get the device ID.
-  Serial.begin(9600);
-
-  for (int i=0; i < 36; i++) {
-    deviceId[i] = EEPROM.read(i);
-  }
-  
 }
 
 void loop() {
@@ -317,43 +286,6 @@ void loop() {
   display.print(gauge2_torr_str);
   // Show the new display
   display.display();
-
-
-
-  // GUI Communication.
-  inputCommand = Serial.readString();
-  // Determine what state the Ardunio should be in right now.
-  
-  if (inputCommand == "identify_yourself") {
-    currentDeviceState = identification;
-  }
-  else if (inputCommand == "send_output") {
-    currentDeviceState = sending_output;
-  }
-  else if (inputCommand == "receive_input") {
-    currentDeviceState = receiving_input;
-  }
-  else if (inputCommand == "identified") {
-    currentDeviceState = resting;
-  }
-  else if (inputCommand == "rest") {
-    currentDeviceState = resting;
-  }
-
-
-  
-  if (currentDeviceState == identification) {
-    Serial.print("device_id=");
-    Serial.println(deviceId);
-  }
-  else if (currentDeviceState == sending_output) {
-    Serial.println(gauge1_state + "," + gauge1_torr_str + "," + gauge2_state + "," + gauge2_torr_str);
-  }
-  else if (currentDeviceState == receiving_input) {
-    
-  }
-
-  
 }
 
 String formatted_pressure(double pressure)

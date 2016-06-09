@@ -109,7 +109,8 @@ class Device:
 
 			# Add infobar to the arduino_vbox on the side of the GUI
 			vbox = self._parent.get_arduino_vbox()
-			infobar = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name="{} at Port: {}. Polling rate =".format(self._label, self._serial_com.arduino_port()),
+			infobar = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name="Arduino at Port: %s. Polling rate =" %
+														 self._serial_com.arduino_port(),
 													displayformat=".1f", unit="Hz")
 
 			vbox.pack_start(infobar, False, False, 4)
@@ -374,11 +375,7 @@ class SerialCOM:
 			# TODO: Handle these cases such that all other devices are still connecting!
 			raise SystemExit
 
-		self._baudrate = 115200
-		self._timeout = 2
-		self._ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
-
-		self._alive_timeout = 1	# In seconds.
+		self._ser = serial.Serial(self._arduino_port, baudrate=115200, timeout=2)
 
 	def arduino_id(self):
 		return self._arduino_id
@@ -399,23 +396,34 @@ class SerialCOM:
 		"""
 
 		if sys.platform.startswith('win'):
+
 			ports = ['COM%s' % (i + 1) for i in range(256)]
+
 		elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+
 			# this excludes your current terminal "/dev/tty"
 			ports = glob.glob('/dev/tty[A-Za-z]*')
+
 		elif sys.platform.startswith('darwin'):
+
 			ports = glob.glob('/dev/tty.*')
+
 		else:
-			raise EnvironmentError('Unsupported platform.')
+
+			raise EnvironmentError('Unsupported platform')
 
 		result = []
 
 		for port in ports:
+
 			try:
+
 				s = serial.Serial(port)
 				s.close()
 				result.append(port)
+
 			except (OSError, serial.SerialException):
+
 				pass
 
 		return result
@@ -431,21 +439,18 @@ class SerialCOM:
 
 			print "Connecting to", serial_port_name
 
-			ser = serial.Serial(serial_port_name, baudrate=115200, timeout=2)
+			ser = serial.Serial(serial_port_name, baudrate=115200, timeout=1)
 
 			input_message = "query:identification=?"
 
+			print input_message
+
 			timeout = 2  # in seconds.
 
-			first_attempt_time = time.time()
-
-			# while (time.time() - first_attempt_time) < timeout:
 			for i in range(timeout):
 
 				ser.write(input_message)
 				response = ser.readline().strip()
-
-				print response
 
 				if "output" in response and "device_id" in response and "=" in response:
 
@@ -457,83 +462,25 @@ class SerialCOM:
 
 						return serial_port_name
 
-				time.sleep(1)
+				time.sleep(1)  # Sleep for 1 second and send a query message again.
 
 		# If we can't find the corresponding port, return None
 		print "Couldn't find Arduino corresponding to UUID %s" % arduino_id
 
 		return None
 
-	def is_alive(self):
-		"""Summary
-		
-		Returns:
-		    TYPE: Description
-		"""
-
-		# Close the port first.
-		self.close_port()
-
-		try: 
-			ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
-			
-			ser.flushInput()
-			ser.flushOutput()
-			ser.write("query:identification=?")
-			
-			ser.flushInput()
-			ser.flushOutput()
-
-			response = ser.readline()
-
-			first_message_time = time.time()
-			while (response.strip() != "output:device_id=" + self._arduino_id) and ((time.time() - first_message_time) < self._alive_timeout):
-				ser.write("query:identification=?")
-				response = self.readline()
-
-			return (response.strip() == "output:device_id=" + self._arduino_id)
-
-		except:
-			print "There seems to be some problem with the port. It's not responding."
-			return False
-		finally:
-			self.open_port()
-
 	def send_message(self, message):
-		try:
-			self._ser.flushInput()
-			self._ser.flushOutput()
+		
+		self._ser.flushInput()
+		self._ser.flushOutput()
 
-			self._ser.write(message)
-		except:
-			raise Exception("Something's wrong! I cannot send any messages!")
+		self._ser.write(message)
 
 	def read_message(self):
 
-		try:
-			self._ser.flushInput()
-			self._ser.flushOutput()
+		self._ser.flushInput()
+		self._ser.flushOutput()
 
-			message = self._ser.readline()
-			return message
-		# except serial.SerialException as e:
-		# except IOError as e:
-		except:
-			raise Exception("Something's not right! I cannot read my messages!")
-
-
-	def close_port(self):
-		if self._ser.isOpen():
-			self._ser.close()
-
-	def open_port(self):	
-		"""Summary
+		message = self._ser.readline()
 		
-		Returns:
-		    TYPE: Description
-		"""
-
-		# Not super-sure about this. Might need to fix this.
-
-		if not self._ser.isOpen():
-			self._ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
+		return message

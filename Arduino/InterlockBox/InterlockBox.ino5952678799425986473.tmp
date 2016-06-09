@@ -33,8 +33,8 @@ volatile int flowSensorFreqs[] = {0, 0, 0, 0, 0};
 int flowSensorFreqsWrite[] = {0, 0, 0, 0, 0};
 
 // Solenoid Valve Variables. x5.
-const int solenoidValvePins[] = {34, 33}; // Make this 32, 33. 13 is for the in-built LED and so is for testing purpose only.
-bool solenoidValveValues[] = {HIGH, HIGH}; // Relays are closed when pulled to ground. Default should be open (HIGH).
+const int solenoidValvePins[] = {32, 33}; // Make this 30, 31. 13 is for the in-built LED and so is for testing purpose only.
+bool solenoidValveValues[] = {LOW, LOW};
 
 // Micro Switches for interlocks. x2.
 const int microSwitchPins[] = {28, 29}; 
@@ -57,7 +57,6 @@ void setup()   {
   // Solenoid Valves.
   for (unsigned i = 0; i < sizeof(solenoidValvePins) / sizeof(int); i++) {
     pinMode(solenoidValvePins[i], OUTPUT);
-    digitalWrite(solenoidValvePins[i], HIGH);
   }
 
   // Flow Meters.
@@ -130,12 +129,12 @@ void loop() {
 
 
   // For testing purpose only.
-//  if (solenoidValveValues[0]) {
-//    digitalWrite(13, HIGH);
-//  }
-//  else {
-//    digitalWrite(13, LOW);
-//  }
+  if (solenoidValveValues[0]) {
+    digitalWrite(13, HIGH);
+  }
+  else {
+    digitalWrite(13, LOW);
+  }
   
   
   // Read Flow Meters.
@@ -178,6 +177,8 @@ void loop() {
   }
 
   
+  
+
   // GUI Communication.
   
   if (Serial.available()) {
@@ -237,15 +238,15 @@ void loop() {
       }
       else if (filteredHeader == "solenoid_valve") {
         if (value == "1") {
-          if (digitalRead(solenoidValvePins[serialNumber.toInt() - 1]) == HIGH) {
-            digitalWrite(solenoidValvePins[serialNumber.toInt() - 1], LOW);   
-            solenoidValveValues[serialNumber.toInt() - 1] = LOW;   
+          if (digitalRead(solenoidValvePins[serialNumber.toInt() - 1]) == LOW) {
+            digitalWrite(solenoidValvePins[serialNumber.toInt() - 1], HIGH);   
+            solenoidValveValues[serialNumber.toInt() - 1] = HIGH;   
             Serial.println("assigned:solenoid_valve#" + serialNumber + "=1");
           }
         }
         else {
-          digitalWrite(solenoidValvePins[serialNumber.toInt() - 1], HIGH);        
-          solenoidValveValues[serialNumber.toInt() - 1] = HIGH;   
+          digitalWrite(solenoidValvePins[serialNumber.toInt() - 1], LOW);        
+          solenoidValveValues[serialNumber.toInt() - 1] = LOW;   
           Serial.println("assigned:solenoid_valve#" + serialNumber + "=0");
         }
       

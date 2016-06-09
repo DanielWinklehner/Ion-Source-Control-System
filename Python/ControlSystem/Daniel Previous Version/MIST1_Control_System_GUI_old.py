@@ -1,25 +1,14 @@
-import gi
-
-gi.require_version('Gtk', '3.0')
-
 import time
-import random
 import threading
-import datetime
-import uuid
-
-import serial
-
-from gi.repository import Gtk, GLib, GObject, Gdk
-
-from serial import SerialException
-from device import Device, Channel
 from MIST1_Control_System_GUI_Widgets import *
-
-import data_logging
+from device import Device, Channel
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, GLib, Gdk
+from DansPyMods import MPLCanvasWrapper3
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
-__doc__ = """GUI without actual functionality"""
+__doc__ = """The Control System for the MIST-1 Ion Source"""
 
 
 class MIST1ControlSystem:
@@ -66,6 +55,14 @@ class MIST1ControlSystem:
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
 
+        # --- Create a canvas for plotting --- #
+        self._canvas = MPLCanvasWrapper3(main_window=self._main_window, nbp=1)
+        self._builder.get_object("plot_alignment").add(self._canvas)
+        self._canvas.connect("button_press_event", self.mouse_event_callback)
+        self._canvas.connect("update_request", self.update_after_mplcw_settings_change)
+        self._canvas.xtime = True
+        self._canvas.draw_idle()
+
         # --- The main device dict --- #
         self._devices = {}
 
@@ -84,22 +81,6 @@ class MIST1ControlSystem:
         self._communication_threads_start_time = {}
         self._arduino_status_bars = {}
 
-        self._set_value_for_widget = None
-
-        # HDF5 logging.
-        self._data_logger = None
-
-        self._last_checked_for_devices_alive = time.time()
-        self._alive_device_names = set()
-        self._check_for_alive_interval = 5  # In seconds.
-
-    def register_data_logging_file(self, filename):
-        self._data_logger = data_logging.DataLogging(log_filename=filename)
-        self._data_logger.initialize()
-
-    def log_data(self, channel):
-        self._data_logger.log_value(channel=channel)
-
     def about_program_callback(self, menu_item):
         """
         :param menu_item:
@@ -110,19 +91,6 @@ class MIST1ControlSystem:
         dialog.destroy()
 
         return 0
-
-    def set_widget_connections(self):
-        for device_name, device in self._devices.items():
-            for channel_name, channel in device.channels().items():
-
-                if channel.mode() == "both" or channel.mode() == "write":  # TODO: Find a better way to do this.
-
-                    widget = channel.get_overview_page_display()
-
-                    try:  # According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-and-type-in-python, better to use try-except than check type / instanceof.
-                        widget.get_radio_buttons()[0].connect("toggled", self.set_value_callback, widget)
-                    except Exception as e:
-                        pass
 
     def add_arduino_status_bar(self, arduino_id, status_bar):
         self._arduino_status_bars[arduino_id] = status_bar
@@ -138,24 +106,10 @@ class MIST1ControlSystem:
         # Add device to the list of devices in the control system
         self._devices[device.name()] = device
 
-        # Add corresponding channels to the hdf5 log.
-        for channel_name, channel in device.channels().items():
-            if channel.mode() == "read" or channel.mode() == "both":
-                self._data_logger.add_channel(channel)
-
         return 0
 
     def add_serial_com(self, serial_com):
         self._serial_comms[serial_com.arduino_id()] = serial_com
-
-    def set_value_callback(self, button, widget):
-
-        # print "Set callback called by {}".format(widget.get_name())
-
-        parent_channel = widget.get_parent_channel()
-
-        self._set_value_for_widget = widget
-        self._communication_threads_mode[parent_channel.get_arduino_id()] = "write"
 
     def communicate(self, devices):
         """
@@ -163,23 +117,11 @@ class MIST1ControlSystem:
         :return:
         """
 
+        j = 0
+
         while self._keep_communicating:
-
-            if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
-
-                # Check which Arduinos are still alive.
-                #print "Checking for alive devices."
-
-                for device in devices:
-                    if device.get_serial_com().is_alive():
-                        self._alive_device_names.add(device.name())
-                    else:
-                        self._alive_device_names.discard(device.name())
-
-                self._last_checked_for_devices_alive = time.time()
-
-                #print self._alive_device_names, self._devices
-
+            # print "Communication thread running", j
+            # j += 1
             for device in devices:
 
                 # For each device that belonds to the same arduino (i.e same thread) we do this
@@ -195,46 +137,12 @@ class MIST1ControlSystem:
                     for channel_name, channel in device.channels().items():
 
                         if channel.mode() == "read" or channel.mode() == "both":
-                            channel.read_value()
 
-                            # Log data.
-                            self.log_data(channel)
+                            channel.read_value()
 
                             self._communication_threads_poll_count[arduino_id] += 1
 
                             GLib.idle_add(self.update_gui, channel)
-
-                elif self._communication_threads_mode[arduino_id] == "write" and self._set_value_for_widget is not None:
-
-                    print "Setting value."
-
-                    widget_to_set_value_for = self._set_value_for_widget
-                    channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
-
-                    print "Communicating updated value for widget {}".format(widget_to_set_value_for.get_name())
-
-                    # Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
-
-                    if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
-
-                        try:
-                            value_to_update = widget_to_set_value_for.get_value()
-                        except ValueError:
-                            value_to_update = -1
-
-                        print "Setting value = {}".format(value_to_update)
-
-                        try:
-                            channel_to_set_value_for.set_value(value_to_update)
-                        except Exception, e:
-                            # Setting value failed. There was some exception.
-                            # Write the error message to the status bar.
-                            self._status_bar.push(2, str(e))
-
-                    self._communication_threads_mode[arduino_id] = "read"
-                    self._set_value_for_widget = None
-
-        print "Closing communication thread."
 
         return 0
 
@@ -247,7 +155,6 @@ class MIST1ControlSystem:
         """
 
         self._status_bar.push(1, "Emergency stop button was pushed!")
-        self.shut_down_communication_threads()
 
         return 0
 
@@ -257,6 +164,7 @@ class MIST1ControlSystem:
         :return:
         """
         for arduino_id, serial_com in self._serial_comms.items():
+
             my_devices = [dev for devname, dev in self._devices.items() if arduino_id == dev.get_arduino_id()]
 
             communication_thread = threading.Thread(target=self.communicate,
@@ -301,10 +209,8 @@ class MIST1ControlSystem:
         """
         # Initialize the ankered devices first
         for device_name, device in self._devices.items():
-            device.initialize()
 
-        # Setup connections for widgets (for radio buttons for example).
-        self.set_widget_connections()
+            device.initialize()
 
         # Any and all remaining initializations go here
         self.initialize_communication_threads()
@@ -330,6 +236,15 @@ class MIST1ControlSystem:
         :return:
         """
         self._keep_communicating = False
+
+        return 0
+
+    def mouse_event_callback(self, widget, event):
+        """
+        Callback for mouse events in the MPLCanvasWrapper
+        :return:
+        """
+        print("Mouse event callback was called.")
 
         return 0
 
@@ -359,6 +274,14 @@ class MIST1ControlSystem:
 
         return 0
 
+    def update_after_mplcw_settings_change(self, widget, nbp=None):
+        """
+        :return:
+        """
+        print("Settings change callback was called from nbp %i." % nbp)
+
+        return 0
+
     def update_gui(self, channel):
         """
         Updates the GUI. This is called from the communication threads through idle_add()
@@ -369,6 +292,7 @@ class MIST1ControlSystem:
         count = self._communication_threads_poll_count[arduino_id]
 
         if count >= 10:
+
             elapsed = time.time() - self._communication_threads_start_time[arduino_id]
             frequency = self._communication_threads_poll_count[arduino_id] / elapsed
 
@@ -379,6 +303,7 @@ class MIST1ControlSystem:
 
         # If display on overview page is desired, update:
         if channel.get_parent_device().is_on_overview_page():
+
             channel.get_overview_page_display().set_value(channel.get_value())
 
         return 0
@@ -388,100 +313,68 @@ if __name__ == "__main__":
 
     control_system = MIST1ControlSystem()
 
-    # Setup data logging.
-    current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
-    control_system.register_data_logging_file(filename="log/{}.h5".format(current_time))
-
-    # Generate a device.
+    # Generate a test device
     # Each device is connected to a single arduino, several devices can be connected to the
     # same Arduino, but never several arduinos to a single device!
-
-    interlock_box_device = Device("interlock_box", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef",
-                                  label="Interlock Box")
-    interlock_box_device.set_overview_page_presence(True)
-
-    # Add channels to the interlock box device.
-
-    # Flow meters. x5.
-    for i in range(5):
-        ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-                     message_header="flow_meter#" + str(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=int,
-                     mode="read",
-                     unit="Hz",
-                     display_order=(11 - i))
-
-        interlock_box_device.add_channel(ch)
-
-    # Microswitches. x2.
-    for i in range(2):
-        ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-                     message_header="micro_switch#{}".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="read",
-                     display_order=(11 - 5 - i))
-
-        interlock_box_device.add_channel(ch)
-
-    # Solenoid valves. x2.
-    for i in range(2):
-        ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-                     message_header="solenoid_valve#{}".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="write",
-                     display_order=(11 - 5 - 2 - i))
-
-        interlock_box_device.add_channel(ch)
-
-    # Vacuum Valves. x2.
-    for i in range(2):
-        ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-                     message_header="vacuum_valve#{}".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="read",
-                     display_order=(11 - 5 - 2 - 2 - i))
-
-        interlock_box_device.add_channel(ch)
-
-    # Add all our devices to the control system.
-
-    control_system.add_device(interlock_box_device)
-
-    # ion_gauge = Device("ion_gauge", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", label="Ion Gauge")
-    # ion_gauge.set_overview_page_presence(True)
+    # test_device1 = Device("interlock_box", arduino_id="9de3d90f-cdf7-4ef8-9604-548243401df6",
+    #                       label="Interlock Box")
+    # test_device1.set_overview_page_presence(True)
     #
-    # for i in range(2):
-    #     ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-    #                  message_header="gauge_state#" + str(i + 1),
-    #                  upper_limit=1,
-    #                  lower_limit=0,
-    #                  data_type=bool,
-    #                  mode="read",
-    #                  display_order=(4 - i))
+    # # Generate a test channel as part of the test device
+    # test_channel1 = Channel(name="micro_switch_1", label="Micro Switch 1",
+    #                         message_header="micro_switch_1",
+    #                         upper_limit=1,
+    #                         lower_limit=0,
+    #                         data_type=int,
+    #                         mode="read")
     #
-    #     ion_gauge.add_channel(ch)
+    # test_channel1a = Channel(name="flow_meter_1", label="Flow Meter 1",
+    #                          message_header="flow_meter_1",
+    #                          upper_limit=1,
+    #                          lower_limit=0,
+    #                          data_type=int,
+    #                          unit="gps",
+    #                          mode="read")
     #
-    # for i in range(2):
-    #     ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-    #                  message_header="gauge_pressure#" + str(i + 1),
-    #                  upper_limit=1000,
-    #                  lower_limit=0,
-    #                  data_type=float,
-    #                  mode="read",
-    #                  unit="Torr",
-    #                  display_order=(4 - i))
-    #
-    #     ion_gauge.add_channel(ch)
-    #
-    # control_system.add_device(ion_gauge)
+    # # Add the channel to the device and the device to the control system
+    # test_device1.add_channel(test_channel1)
+    # test_device1.add_channel(test_channel1a)
+    # control_system.add_device(test_device1)
 
-    # Run the control system, this has to be last as it does all the initializations and adding to the GUI.
+    # Another test device
+    test_device2 = Device("vacuum_box", arduino_id="bd0f5a84-a2eb-4ff3-9ff2-597bf3b2c20a",
+                          label="Vacuum Box")
+    test_device2.set_overview_page_presence(True)
+
+    # Generate a test channel as part of the test device
+    test_channel2 = Channel(name="flow_meter_1", label="Flow Meter 1",
+                            message_header="flow_meter_1",
+                            upper_limit=1,
+                            lower_limit=0,
+                            data_type=int,
+                            unit="gps",
+                            mode="read")
+
+    # Add the channel to the device
+    test_device2.add_channel(test_channel2)
+    control_system.add_device(test_device2)
+
+    # Another test device
+    test_device3 = Device("dummy_device", arduino_id="bd0f5a84-a2eb-4ff3-9ff2-597bf3b2c20a",
+                          label="Dummy Device")
+    test_device3.set_overview_page_presence(True)
+
+    # Generate a test channel as part of the test device
+    test_channel3 = Channel(name="micro_switch_1", label="Micro Switch 1",
+                            message_header="micro_switch_1",
+                            upper_limit=1,
+                            lower_limit=0,
+                            data_type=bool,
+                            mode="read")
+
+    # Add the channel to the device
+    test_device3.add_channel(test_channel3)
+    control_system.add_device(test_device3)
+
+    # Run the control system, this has to be last as it does all the initializations and adding to the gui
     control_system.run()

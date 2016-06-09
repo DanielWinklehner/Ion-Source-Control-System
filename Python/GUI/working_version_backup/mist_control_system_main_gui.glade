@@ -186,21 +186,6 @@
           <object class="GtkToolbar" id="toolbar1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <child>
-              <object class="GtkToolButton" id="stop_toolbutton">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Quit</property>
-                <property name="label" translatable="yes">Stop</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-quit</property>
-                <signal name="clicked" handler="main_quit" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -229,8 +214,6 @@
                     <property name="margin_right">4</property>
                     <property name="margin_top">4</property>
                     <property name="margin_bottom">4</property>
-                    <property name="image_position">top</property>
-                    <property name="always_show_image">True</property>
                     <signal name="clicked" handler="stop_button_clicked_cb" swapped="no"/>
                   </object>
                   <packing>
