@@ -42,12 +42,14 @@ class DataLogging:
 		channel_name = channel.name()
 		value = channel.get_value()
 
-		dataset_name = "{}/{}/{}".format(self._main_group.name, device_name, channel_name)
-		dset = self._data_set[dataset_name]
+		if value != None:
+
+			dataset_name = "{}/{}/{}".format(self._main_group.name, device_name, channel_name)
+			dset = self._data_set[dataset_name]
 
 		
-		dset.resize((len(dset) + 1, 2))
+			dset.resize((len(dset) + 1, 2))
 
-		a = (time.time(), value)
-		dset[len(dset) - 1] = a
+			a = (time.time(), value)
+			dset[len(dset) - 1] = a
 		

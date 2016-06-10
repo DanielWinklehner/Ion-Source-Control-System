@@ -130,12 +130,12 @@ void loop() {
 
 
   // For testing purpose only.
-//  if (solenoidValveValues[0]) {
-//    digitalWrite(13, HIGH);
-//  }
-//  else {
-//    digitalWrite(13, LOW);
-//  }
+  if (solenoidValveValues[0]) {
+    digitalWrite(13, HIGH);
+  }
+  else {
+    digitalWrite(13, LOW);
+  }
   
   
   // Read Flow Meters.
@@ -217,8 +217,8 @@ void loop() {
       else if (filteredHeader == "flow_meter") {
         if (serialNumber.toInt() <= (sizeof(flowSensorPins) / sizeof(int))) {
           Serial.print("output:flow_meter#"  + serialNumber + "=");  
-          Serial.println(flowSensorFreqsWrite[serialNumber.toInt() - 1], DEC);
-          //Serial.println(random(100) - random(100));
+          //Serial.println(flowSensorFreqsWrite[serialNumber.toInt() - 1], DEC);
+          Serial.println(random(100) - random(100));
         } 
       }
       else if (filteredHeader == "vacuum_valve") {

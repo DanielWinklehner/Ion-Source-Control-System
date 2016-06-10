@@ -88,6 +88,24 @@ class Device:
 	def initialized(self):
 		return self._initialized
 
+	def reinitialize(self):
+		self._initialized = False
+
+		all_serial_comms = self._parent.get_serial_comms()
+		
+		try:
+			self._serial_com = SerialCOM(self._arduino_id)
+
+			# Also reinitialize all channels associated with this device.
+			for channel_name, channel in self._channels.items():
+				channel.reinitialize()
+		
+		except Exception as e:
+			print e
+		except SystemExit as e2:
+			print "got a system exit"
+			return
+
 	def initialize(self):
 		"""
 		Initializes the current device. This means, this method goes through all the channels associated
@@ -148,7 +166,7 @@ class Device:
 
 class Channel:
 	def __init__(self, name, label, message_header, upper_limit, lower_limit, data_type, unit="",
-				 scaling=1., mode="both", display_order=0):
+				 scaling=1., mode="both", display_order=0, displayformat=".2f"):
 
 		self._name = name
 		self._label = label
@@ -165,6 +183,7 @@ class Channel:
 		self._parent_device = None  # The device this channel belongs to will be set during add_channel().
 		self._initialized = False
 		self._overview_page_display = None
+		self._displayformat = displayformat
 
 		self._timeout = 2	# In seconds.
 
@@ -196,7 +215,7 @@ class Channel:
 				# Create a display
 				self._overview_page_display = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name=self._label,
 																			unit=self._unit,
-																			displayformat=".2f",
+																			displayformat=self._displayformat,
 																			set_flag=set_flag,
 																			parent_channel=self)
 
@@ -222,7 +241,7 @@ class Channel:
 	def initialize(self):
 		"""
 		Initializes the channel
-		:return:
+		:return:set_parent
 		"""
 		self.add_channel_to_gui()
 
@@ -232,6 +251,9 @@ class Channel:
 		self._initialized = True
 
 		return 0
+
+	def reinitialize(self):
+		self._serial_com = self._parent_device.get_serial_com()
 
 	def get_parent_device(self):
 		return self._parent_device
@@ -298,32 +320,44 @@ class Channel:
 		# Build a query message.
 		message = "query:{}={}".format(self._message_header, '?')
 
-		# Send the query message.
-		self._serial_com.send_message(message)
 
-		# Read the Arduino's response.
-		keyword, header, value = self.read_arduino_message()
-
-		# Ideally, we should have all we need. But in case the first message sent
-		# by the Arduino was dropped, keep querying until we get some response.
-
-		start_time = time.time()
-		while ( not (keyword == "output" and header == self._message_header) ) and (time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
-
-			print "Trying again!"
-
+		try:
+			# Send the query message.
 			self._serial_com.send_message(message)
 
-			# print "Message sent: ", message
+			# Read the Arduino's response.
 			keyword, header, value = self.read_arduino_message()
 
-		# print keyword, header, self._message_header, header == self._message_header
+			# Ideally, we should have all we need. But in case the first message sent
+			# by the Arduino was dropped, keep querying until we get some response.
 
-		# We have what we need.
+			start_time = time.time()
+			while ( not (keyword == "output" and header == self._message_header) ) and (time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
 
-		self._value = self._data_type(float(value))
+				print "Trying again!"
 
-		return self._value
+				self._serial_com.send_message(message)
+
+				# print "Message sent: ", message
+				keyword, header, value = self.read_arduino_message()
+
+			# print keyword, header, self._message_header, header == self._message_header
+
+			# We have what we need.
+
+			
+			if len(value) != 0:
+				self._value = self._data_type(value)
+			else:
+				self._value = None
+
+			
+		except Exception as e:
+			self._value = None
+			raise Exception(str(e))
+			
+		finally:
+			return self._value
 
 	def set_value(self, value_to_set):
 
@@ -372,13 +406,14 @@ class SerialCOM:
 		if self._arduino_port is None:
 
 			# TODO: Handle these cases such that all other devices are still connecting!
+			print "arduino port was None"
 			raise SystemExit
 
 		self._baudrate = 115200
-		self._timeout = 2
+		self._timeout = 5.
 		self._ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
 
-		self._alive_timeout = 1	# In seconds.
+		self._alive_timeout = 10.	# In seconds. Make sure this is float.
 
 	def arduino_id(self):
 		return self._arduino_id
@@ -427,37 +462,60 @@ class SerialCOM:
 
 		all_serial_ports = self.get_all_serial_ports()
 
+		print "all the serial ports connected to are"
+		print all_serial_ports
+		print
+
 		for serial_port_name in all_serial_ports:
 
 			print "Connecting to", serial_port_name
 
-			ser = serial.Serial(serial_port_name, baudrate=115200, timeout=2)
+			ser = serial.Serial(serial_port_name, baudrate=115200, timeout=1.)
 
 			input_message = "query:identification=?"
 
-			timeout = 2  # in seconds.
+			timeout = 5.  # in seconds.
 
 			first_attempt_time = time.time()
 
 			# while (time.time() - first_attempt_time) < timeout:
-			for i in range(timeout):
+			for i in range(int(timeout)):
+				
+				print "Couldn't connect. Trying again!"
 
-				ser.write(input_message)
-				response = ser.readline().strip()
+				try:
+					print "trying to send a message"
 
-				print response
+					# ser.flushInput()
+					# ser.flushOutput()
 
-				if "output" in response and "device_id" in response and "=" in response:
+					print ser.write(input_message)
+					
+					print "message sent"
 
-					# This is probably an Arduino designed for this Control System.
-					# Get the device id.
-					if arduino_id == response.split("=")[1]:
+					# ser.flushInput()
+					# ser.flushOutput()
 
-						print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
+					response = ser.readline().strip()
 
-						return serial_port_name
+					print "got a response back", response
+
+					if "output" in response and "device_id" in response and "=" in response:
+
+						# This is probably an Arduino designed for this Control System.
+						# Get the device id.
+						if arduino_id == response.split("=")[1]:
+
+							print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
+
+							return serial_port_name
+				except:
+					print "got an exception"
+					continue
 
 				time.sleep(1)
+
+				
 
 		# If we can't find the corresponding port, return None
 		print "Couldn't find Arduino corresponding to UUID %s" % arduino_id
@@ -472,32 +530,59 @@ class SerialCOM:
 		"""
 
 		# Close the port first.
-		self.close_port()
+		# self.close_port()
 
 		try: 
-			ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
-			
-			ser.flushInput()
-			ser.flushOutput()
-			ser.write("query:identification=?")
-			
-			ser.flushInput()
-			ser.flushOutput()
+			# ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
 
-			response = ser.readline()
+			# print ser
+
+			# ser.flushInput()
+			# ser.flushOutput()
+			
+			# ser.write("query:identification=?")
+				
+			self.send_message("query:identification=?")
+
+			print "Sent the first message"
+
+			# ser.flushInput()
+			# ser.flushOutput()
+
+			# response = ser.readline()
+
+			response = self.read_message()
+
+			print "got a response back", response
 
 			first_message_time = time.time()
-			while (response.strip() != "output:device_id=" + self._arduino_id) and ((time.time() - first_message_time) < self._alive_timeout):
-				ser.write("query:identification=?")
-				response = self.readline()
+
+			while (response.strip() != "output:device_id=" + self._arduino_id) and ((time.time() - first_message_time) < float(self._alive_timeout)):
+				
+				# ser.flushInput()
+				# ser.flushOutput()
+				
+				# ser.write("query:dentification=?")
+				self.send_message("query:identification=?")
+
+				print "sent message again"
+
+				# ser.flushInput()
+				# ser.flushOutput()
+				
+				# response = ser.readline()
+				response = self.read_message()
+
+				print "got response again", response
+			
+			# self.open_port()
 
 			return (response.strip() == "output:device_id=" + self._arduino_id)
 
 		except:
 			print "There seems to be some problem with the port. It's not responding."
 			return False
-		finally:
-			self.open_port()
+			
 
 	def send_message(self, message):
 		try:
@@ -524,6 +609,7 @@ class SerialCOM:
 
 	def close_port(self):
 		if self._ser.isOpen():
+			print "Closing the port."
 			self._ser.close()
 
 	def open_port(self):	

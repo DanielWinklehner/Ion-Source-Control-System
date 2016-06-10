@@ -168,7 +168,32 @@ class MIST1ControlSystem:
 		self._set_value_for_widget = widget
 		self._communication_threads_mode[parent_channel.get_arduino_id()] = "write"
 
+	def listen_for_reconnected_devices(self, devices):
+		for device in devices:
+			if device.name() in self._devices.keys() and device.name() not in self._alive_device_names:
+				print "Reinitalizing device ", device.name()
+				device.reinitialize()
 
+
+	def check_for_alive_devices(self, devices):
+		# Check which Arduinos are still alive.
+		print "Checking for alive devices."
+
+		for device in devices:
+			
+			print "The associated serial com is", device.get_serial_com()
+
+			print "Checked and got that {} is {}".format( device.name(), device.get_serial_com().is_alive())
+
+			if device.get_serial_com().is_alive():
+				self._alive_device_names.add(device.name())
+			else:
+				print "Device not alive."
+				self._alive_device_names.discard(device.name())
+
+		self._last_checked_for_devices_alive =  time.time()
+
+		print self._alive_device_names
 
 	def communicate(self, devices):
 		"""
@@ -177,80 +202,73 @@ class MIST1ControlSystem:
 		"""
 
 		while self._keep_communicating:
-			'''
+			
 			if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
-					
-				# Check which Arduinos are still alive.
-				print "Checking for alive devices."
-
-				for device in devices:
-					if device.get_serial_com().is_alive():
-						self._alive_device_names.add(device.name())
-					else:
-						self._alive_device_names.discard(device.name())
-
-				self._last_checked_for_devices_alive =  time.time()
-
-				print self._alive_device_names, self._devices
-			'''
-
+				self.check_for_alive_devices(devices)
+				self.listen_for_reconnected_devices(devices)
 
 			for device in devices:
 
 				# For each device that belonds to the same arduino (i.e same thread) we do this
 				# Find out whether we're supposed to read in values or write values at this time.
+				
+				if device.name() in self._alive_device_names:
 
-				arduino_id = device.get_arduino_id()
+					arduino_id = device.get_arduino_id()
 
-				if self._communication_threads_mode[arduino_id] == "read":
+					# print "Trying to communicate with device {} @ arduino {}".format(device.name(), arduino_id)
 
-					# Find all the channels, see if they are in 'read' or 'both' mode,
-					# then update the widgets with those values.
+					if self._communication_threads_mode[arduino_id] == "read":
 
-					for channel_name, channel in device.channels().items():
+						# Find all the channels, see if they are in 'read' or 'both' mode,
+						# then update the widgets with those values.
 
-						if channel.mode() == "read" or channel.mode() == "both":
+						for channel_name, channel in device.channels().items():
 
-							channel.read_value()
+							if channel.mode() == "read" or channel.mode() == "both":
 
-							# Log data.
-							self.log_data(channel)
+								try:
+									channel.read_value()
+									# Log data.
+									self.log_data(channel)
 
-							self._communication_threads_poll_count[arduino_id] += 1
+									self._communication_threads_poll_count[arduino_id] += 1
 
-							GLib.idle_add(self.update_gui, channel)
+									GLib.idle_add(self.update_gui, channel)
+								except Exception as e:
+									"Got an exception", e
 
-				elif self._communication_threads_mode[arduino_id] == "write" and self._set_value_for_widget is not None:
-					
-					print "Setting value."
-
-					widget_to_set_value_for = self._set_value_for_widget
-					channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
-
-					print "Communicating updated value for widget {}".format( widget_to_set_value_for.get_name() )
-
-					# Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
-					
-					if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
-	
-						try:
-							value_to_update = widget_to_set_value_for.get_value()
-						except ValueError:
-							value_to_update = -1
-
+					elif self._communication_threads_mode[arduino_id] == "write" and self._set_value_for_widget is not None:
 						
-						print "Setting value = {}".format(value_to_update)
+						print "Setting value."
 
-						try:
-							channel_to_set_value_for.set_value(value_to_update)
-						except Exception, e:
-							# Setting value failed. There was some exception.
-							# Write the error message to the status bar.
-							self._status_bar.push(2, str(e))
+						widget_to_set_value_for = self._set_value_for_widget
+						channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
+
+						print "Communicating updated value for widget {}".format( widget_to_set_value_for.get_name() )
+
+						# Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
+						
+						if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
+		
+							try:
+								value_to_update = widget_to_set_value_for.get_value()
+							except ValueError:
+								value_to_update = -1
+
+							
+							print "Setting value = {}".format(value_to_update)
+
+							try:
+								channel_to_set_value_for.set_value(value_to_update)
+							except Exception, e:
+								# Setting value failed. There was some exception.
+								# Write the error message to the status bar.
+								self._status_bar.push(2, str(e))
 
 
-					self._communication_threads_mode[arduino_id] = "read"
-					self._set_value_for_widget = None
+						self._communication_threads_mode[arduino_id] = "read"
+						self._set_value_for_widget = None
 
 		print "Closing communication thread."
 
@@ -420,7 +438,7 @@ if __name__ == "__main__":
 
 	# Aashish => 2cc580d6-fa29-44a7-9fec-035acd72340e
 	# Daniel => 49ffb802-50c5-4194-879d-20a87bcfc6ef
-	interlock_box_device = Device("interlock_box", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", label="Interlock Box")
+	interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")
 	interlock_box_device.set_overview_page_presence(True)
 
 	
@@ -479,7 +497,7 @@ if __name__ == "__main__":
 	
 	control_system.add_device(interlock_box_device)
 
-
+	'''
 	ion_gauge = Device("ion_gauge", arduino_id="cf436e6b-ba3d-479a-b221-bc387c37b858", label="Ion Gauge")
 	ion_gauge.set_overview_page_presence(True)
 
@@ -502,13 +520,13 @@ if __name__ == "__main__":
 					 data_type=float,
 					 mode="read",
 					 unit="Torr",
-					 display_order=(4 - i))
+					 display_order=(4 - i),
+					 displayformat=".2e")
 
 		ion_gauge.add_channel(ch)
 
-	# control_system.add_device(ion_gauge)
-	
+	control_system.add_device(ion_gauge)
+	'''
 
 	# Run the control system, this has to be last as it does all the initializations and adding to the GUI.
 	control_system.run()
-

@@ -108,7 +108,8 @@ class FrontPageDisplayValue(Gtk.Frame):
 		:param value:
 		:return:
 		"""
-		self.value_entry.set_text("{0:{1}}".format(value, self.displayformat))
+		if value != None:
+			self.value_entry.set_text("{0:{1}}".format(value, self.displayformat))
 
 		return 0
 
