@@ -177,14 +177,8 @@ class MIST1ControlSystem:
 
 	def check_for_alive_devices(self, devices):
 		# Check which Arduinos are still alive.
-		print "Checking for alive devices."
 
 		for device in devices:
-			
-			print "The associated serial com is", device.get_serial_com()
-
-			print "Checked and got that {} is {}".format( device.name(), device.get_serial_com().is_alive())
-
 			if device.get_serial_com().is_alive():
 				self._alive_device_names.add(device.name())
 			else:
@@ -207,12 +201,19 @@ class MIST1ControlSystem:
 				self.check_for_alive_devices(devices)
 				self.listen_for_reconnected_devices(devices)
 
+			GLib.idle_add(self.dummy_update)
+
 			for device in devices:
 
 				# For each device that belonds to the same arduino (i.e same thread) we do this
 				# Find out whether we're supposed to read in values or write values at this time.
+
+				# THOUGHT: Maybe implement a device.locked thing and don't operate on a given device unless that lock is released?
+				# Ideally, even all the methods in the Device class would respect that lock. 
 				
 				if device.name() in self._alive_device_names:
+
+					print "Communication is up and running."
 
 					arduino_id = device.get_arduino_id()
 
@@ -396,6 +397,10 @@ class MIST1ControlSystem:
 		self._log_textbuffer.insert(self._log_textbuffer.get_end_iter(), timestr + text + "\n")
 
 		return 0
+
+
+	def dummy_update(self):
+		pass
 
 	def update_gui(self, channel):
 		"""

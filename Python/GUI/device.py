@@ -28,6 +28,8 @@ class Device:
 		self._overview_frame = None
 		self._serial_com = None
 
+		self._locked = False
+
 	def get_arduino_id(self):
 		return self._arduino_id
 
@@ -528,54 +530,14 @@ class SerialCOM:
 		Returns:
 		    TYPE: Description
 		"""
-
-		# Close the port first.
-		# self.close_port()
-
 		try: 
-			# ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
-
-			# print ser
-
-			# ser.flushInput()
-			# ser.flushOutput()
-			
-			# ser.write("query:identification=?")
-				
 			self.send_message("query:identification=?")
-
-			print "Sent the first message"
-
-			# ser.flushInput()
-			# ser.flushOutput()
-
-			# response = ser.readline()
-
 			response = self.read_message()
-
-			print "got a response back", response
-
 			first_message_time = time.time()
 
 			while (response.strip() != "output:device_id=" + self._arduino_id) and ((time.time() - first_message_time) < float(self._alive_timeout)):
-				
-				# ser.flushInput()
-				# ser.flushOutput()
-				
-				# ser.write("query:dentification=?")
 				self.send_message("query:identification=?")
-
-				print "sent message again"
-
-				# ser.flushInput()
-				# ser.flushOutput()
-				
-				# response = ser.readline()
 				response = self.read_message()
-
-				print "got response again", response
-			
-			# self.open_port()
 
 			return (response.strip() == "output:device_id=" + self._arduino_id)
 
