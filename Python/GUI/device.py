@@ -101,7 +101,8 @@ class Device:
 			# Also reinitialize all channels associated with this device.
 			for channel_name, channel in self._channels.items():
 				channel.reinitialize()
-		
+			
+			self._initialized = True
 		except Exception as e:
 			print e
 		except SystemExit as e2:
@@ -150,12 +151,26 @@ class Device:
 
 		all_channels.sort(key=lambda tup: tup[0], reverse=True)
 
-
 		for display_order, channel in all_channels:
 			channel.initialize()
 
 		self._initialized = True
+	
+	def lock(self):
+		if not self._locked:
+			for channel_name, channel in self._channels.items():
+				channel.lock()
+			self._locked = True
 
+	def unlock(self):
+		if self._locked:
+			for channel_name, channel in self._channels.items():
+				channel.unlock()
+			self._locked = False
+
+	def locked(self):
+		return self._locked
+		
 	def is_on_overview_page(self):
 		return self._on_overview_page
 
@@ -190,6 +205,8 @@ class Channel:
 		self._timeout = 2	# In seconds.
 
 		self._display_order = display_order # Higher number on the top.
+
+		self._locked = False
 
 	def add_channel_to_gui(self):
 		"""
@@ -227,6 +244,21 @@ class Channel:
 		# TODO: Adding the device to its main page and to the settings page
 
 		return 0
+
+	def lock(self):
+		if not self._locked:
+			if not self._overview_page_display.locked():
+				self._overview_page_display.lock()
+			self._locked = True
+
+	def unlock(self):
+		if self._locked:
+			if self._overview_page_display.locked():
+				self._overview_page_display.unlock()
+			self._locked = False
+
+	def locked(self):
+		return self._locked
 
 	def get_arduino_id(self):
 		return self._arduino_id
@@ -316,6 +348,9 @@ class Channel:
 
 		# print "Reading value!"
 
+		if self._locked:
+			return None
+
 		if self._mode == "write":
 			raise ValueError("ERROR: You are trying to read in values from a write-only channel!")
 
@@ -363,6 +398,9 @@ class Channel:
 
 	def set_value(self, value_to_set):
 
+		if self._locked:
+			return None
+			
 		if self._mode == "read":
 			raise ValueError("ERROR: You are trying to write values to a read-only channel!")
 
@@ -464,9 +502,6 @@ class SerialCOM:
 
 		all_serial_ports = self.get_all_serial_ports()
 
-		print "all the serial ports connected to are"
-		print all_serial_ports
-		print
 
 		for serial_port_name in all_serial_ports:
 
@@ -483,25 +518,14 @@ class SerialCOM:
 			# while (time.time() - first_attempt_time) < timeout:
 			for i in range(int(timeout)):
 				
-				print "Couldn't connect. Trying again!"
 
 				try:
-					print "trying to send a message"
 
-					# ser.flushInput()
-					# ser.flushOutput()
-
-					print ser.write(input_message)
+					ser.write(input_message)
 					
-					print "message sent"
-
-					# ser.flushInput()
-					# ser.flushOutput()
-
 					response = ser.readline().strip()
 
-					print "got a response back", response
-
+					
 					if "output" in response and "device_id" in response and "=" in response:
 
 						# This is probably an Arduino designed for this Control System.

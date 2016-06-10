@@ -237,18 +237,19 @@ void loop() {
       }
       else if (filteredHeader == "solenoid_valve") {
         if (value == "1") {
-          if (digitalRead(solenoidValvePins[serialNumber.toInt() - 1]) == HIGH) {
-            digitalWrite(solenoidValvePins[serialNumber.toInt() - 1], LOW);   
-            solenoidValveValues[serialNumber.toInt() - 1] = LOW;   
+          if (digitalRead(solenoidValvePins[serialNumber.toInt() - 1]) == LOW) {
+            digitalWrite(solenoidValvePins[serialNumber.toInt() - 1], HIGH);   
+            solenoidValveValues[serialNumber.toInt() - 1] = HIGH;   
             Serial.println("assigned:solenoid_valve#" + serialNumber + "=1");
           }
         }
-        else {
-          digitalWrite(solenoidValvePins[serialNumber.toInt() - 1], HIGH);        
-          solenoidValveValues[serialNumber.toInt() - 1] = HIGH;   
-          Serial.println("assigned:solenoid_valve#" + serialNumber + "=0");
+        else if (value == "0") {
+          if (digitalRead(solenoidValvePins[serialNumber.toInt() - 1]) == HIGH) {
+            digitalWrite(solenoidValvePins[serialNumber.toInt() - 1], LOW);        
+            solenoidValveValues[serialNumber.toInt() - 1] = LOW;   
+            Serial.println("assigned:solenoid_valve#" + serialNumber + "=0");   
+          }
         }
-      
       }
     }
   }

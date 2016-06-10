@@ -40,6 +40,7 @@ class FrontPageDisplayValue(Gtk.Frame):
 
 
 		self._parent_channel = parent_channel
+		self._locked = False
 
 	def get_displayformat(self):
 		"""
@@ -121,6 +122,19 @@ class FrontPageDisplayValue(Gtk.Frame):
 		"""
 		return self._parent_channel
 
+	def lock(self):
+		self.value_entry.set_sensitive(False)
+		self._locked = True
+
+	def unlock(self):
+		
+		if self.set_flag:
+			self.value_entry.set_sensitive(True)
+
+		self._locked = False
+
+	def locked(self):
+		return self._locked
 
 
 class FrontPageDisplayBool(Gtk.Frame):
@@ -158,6 +172,7 @@ class FrontPageDisplayBool(Gtk.Frame):
 		self._false_rb.set_active(True)
 
 		self._parent_channel = parent_channel
+		self._locked = False
 
 	def get_name(self):
 		"""
@@ -208,8 +223,21 @@ class FrontPageDisplayBool(Gtk.Frame):
 		"""
 		return self._parent_channel
 
+	def lock(self):
+		self._true_rb.set_sensitive(False)
+		self._false_rb.set_sensitive(False)
+		self._locked = True
 
+	def unlock(self):
+		
+		if self._set_flag:
+			self._true_rb.set_sensitive(True)
+			self._false_rb.set_sensitive(True)
 
+		self._locked = False
+
+	def locked(self):
+		return self._locked
 
 class FrontPageDeviceFrame(Gtk.Frame):
 	"""

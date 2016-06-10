@@ -180,14 +180,20 @@ class MIST1ControlSystem:
 
 		for device in devices:
 			if device.get_serial_com().is_alive():
+				
 				self._alive_device_names.add(device.name())
+
+				if device.locked():
+					device.unlock()
 			else:
 				print "Device not alive."
+				print "Locking device", device.name()
+				device.lock()
 				self._alive_device_names.discard(device.name())
 
 		self._last_checked_for_devices_alive =  time.time()
 
-		print self._alive_device_names
+		print "The set of all alive devices = ", self._alive_device_names
 
 	def communicate(self, devices):
 		"""
@@ -213,7 +219,6 @@ class MIST1ControlSystem:
 				
 				if device.name() in self._alive_device_names:
 
-					print "Communication is up and running."
 
 					arduino_id = device.get_arduino_id()
 
