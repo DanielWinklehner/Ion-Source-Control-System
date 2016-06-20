@@ -232,15 +232,15 @@
               </packing>
             </child>
             <child>
-              <object class="GtkToolButton" id="save_devices_toolbutton">
+              <object class="GtkToolButton" id="save_as_devices_toolbutton">
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Quit</property>
                 <property name="label" translatable="yes">Save Devices</property>
                 <property name="use_underline">True</property>
-                <property name="stock_id">gtk-floppy</property>
-                <signal name="clicked" handler="save_devices_toolbutton_clicked_cb" swapped="no"/>
+                <property name="stock_id">gtk-save-as</property>
+                <signal name="clicked" handler="save_as_devices_toolbutton_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>

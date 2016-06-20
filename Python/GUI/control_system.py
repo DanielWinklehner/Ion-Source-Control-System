@@ -178,7 +178,8 @@ class MIST1ControlSystem:
 
 			self.initialize()
 
-			self._main_window.show_all()
+			
+			self._devices[device_name].get_overview_frame().show_all()
 
 		else:
 			print "Cancelled!"
@@ -216,7 +217,7 @@ class MIST1ControlSystem:
 
 				self.initialize()
 
-				self._main_window.show_all()
+				self._devices[device.name()].get_overview_frame().show_all()
 
 
 		elif response == Gtk.ResponseType.CANCEL:
@@ -312,11 +313,11 @@ class MIST1ControlSystem:
 
 		while self._keep_communicating:
 			
-			if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
-				self.check_for_alive_devices(devices)
-				self.listen_for_reconnected_devices(devices)
+			# if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
+			# 	self.check_for_alive_devices(devices)
+			# 	self.listen_for_reconnected_devices(devices)
 
-			GLib.idle_add(self.dummy_update)
+			# GLib.idle_add(self.dummy_update)
 
 			for device in devices:
 
@@ -431,19 +432,43 @@ class MIST1ControlSystem:
 	def add_device_dialog_button_callback(self, button):
 		pass
 
-	def save_devices_callback(self, button):
-		
-		for device_name, device in self._devices.items():
-			device.write_json("devices/all/" + device_name + ".json")
 
-		dialog = Gtk.MessageDialog(self._builder.get_object("main_window"), 0, Gtk.MessageType.INFO,
-		Gtk.ButtonsType.OK, "Device Save Successful")
-		dialog.format_secondary_text("Save {} devices to /devices/all/".format(len(devices.keys())))
-		dialog.run()
+
+	def save_as_devices_callback(self, button):
+		
+		dialog = Gtk.FileChooserDialog("Save Device", self._main_window,
+										Gtk.FileChooserAction.SELECT_FOLDER,
+										(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+										("_Select Directory"), Gtk.ResponseType.OK),
+										)
+
+		response = dialog.run()
+
+		if response == Gtk.ResponseType.OK:
+			directory = dialog.get_filename()
+
+			for device_name, device in self._devices.items():
+				device.write_json("devices/all/" + device_name + ".json")
+
+			msg_dialog = Gtk.MessageDialog(dialog, 0, Gtk.MessageType.INFO,
+			Gtk.ButtonsType.OK, "Device Save Successful")
+
+			noun = "device"
+			if len(self._devices.keys()) > 1:
+				noun += "s"
+
+			msg_dialog.format_secondary_text( "Successfully saved {} {} to /devices/all/.".format(len(self._devices.keys()), noun) )
+			msg_dialog.run()
+
+			msg_dialog.destroy()
+
+
+		elif response == Gtk.ResponseType.CANCEL:
+			print("Cancel clicked")
 
 		dialog.destroy()
 
-
+		
 
 
 	def get_connections(self):
@@ -457,7 +482,7 @@ class MIST1ControlSystem:
 			   "about_program_menu_item_activated": self.about_program_callback,
 			   "add_device_button_clicked_cb": self.add_device_callback,
 			   "load_device_from_file_button_cb": self.load_device_from_file_callback,
-			   "save_devices_toolbutton_clicked_cb": self.save_devices_callback,
+			   "save_as_devices_toolbutton_clicked_cb": self.save_as_devices_callback,
 			   }
 
 		return con
@@ -578,69 +603,69 @@ if __name__ == "__main__":
 
 	# Aashish => 2cc580d6-fa29-44a7-9fec-035acd72340e
 	# Daniel => 49ffb802-50c5-4194-879d-20a87bcfc6ef
-	interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")
-	interlock_box_device.set_overview_page_presence(True)
+	# interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")
+	# interlock_box_device.set_overview_page_presence(True)
 
 	
-	# Add channels to the interlock box device.
+	# # Add channels to the interlock box device.
 
-	# Flow meters. x5.
-	for i in range(5):
-		ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-					 message_header="flow_meter#" + str(i + 1),
-					 upper_limit=1,
-					 lower_limit=0,
-					 data_type=int,
-					 mode="read",
-					 unit="Hz",
-					 display_order=(11 - i))
+	# # Flow meters. x5.
+	# for i in range(5):
+	# 	ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+	# 				 message_header="flow_meter#" + str(i + 1),
+	# 				 upper_limit=1,
+	# 				 lower_limit=0,
+	# 				 data_type=int,
+	# 				 mode="read",
+	# 				 unit="Hz",
+	# 				 display_order=(11 - i))
 
-		interlock_box_device.add_channel(ch)
+	# 	interlock_box_device.add_channel(ch)
 
-	# Microswitches. x2.
-	for i in range(2):
-		ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-					message_header="micro_switch#{}".format(i + 1),
-					upper_limit=1,
-					lower_limit=0,
-					data_type=bool,
-					mode="read",
-					display_order=(11 - 5 - i))
+	# # Microswitches. x2.
+	# for i in range(2):
+	# 	ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
+	# 				message_header="micro_switch#{}".format(i + 1),
+	# 				upper_limit=1,
+	# 				lower_limit=0,
+	# 				data_type=bool,
+	# 				mode="read",
+	# 				display_order=(11 - 5 - i))
 
-		interlock_box_device.add_channel(ch)
+	# 	interlock_box_device.add_channel(ch)
 	
-	# Solenoid valves. x2.
-	for i in range(2):	
-		ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-					message_header="solenoid_valve#{}".format(i + 1),
-					upper_limit=1,
-					lower_limit=0,
-					data_type=bool,
-					mode="write",
-					display_order=(11 - 5 - 2 - i))
+	# # Solenoid valves. x2.
+	# for i in range(2):	
+	# 	ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
+	# 				message_header="solenoid_valve#{}".format(i + 1),
+	# 				upper_limit=1,
+	# 				lower_limit=0,
+	# 				data_type=bool,
+	# 				mode="write",
+	# 				display_order=(11 - 5 - 2 - i))
 
-		interlock_box_device.add_channel(ch)
+	# 	interlock_box_device.add_channel(ch)
 
-	# Vacuum Valves. x2.
-	for i in range(2):
-		ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-					message_header="vacuum_valve#{}".format(i + 1),
-					upper_limit=1,
-					lower_limit=0,
-					data_type=bool,
-					mode="read",
-					display_order=(11 - 5 - 2 - 2 - i))
+	# # Vacuum Valves. x2.
+	# for i in range(2):
+	# 	ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
+	# 				message_header="vacuum_valve#{}".format(i + 1),
+	# 				upper_limit=1,
+	# 				lower_limit=0,
+	# 				data_type=bool,
+	# 				mode="read",
+	# 				display_order=(11 - 5 - 2 - 2 - i))
 
-		interlock_box_device.add_channel(ch)
+	# 	interlock_box_device.add_channel(ch)
 
 	# Add all our devices to the control system.
 	
 	# control_system.add_device(interlock_box_device)
 
 
-	interlock_box_device.write_json("devices/interlock.json")
+	# interlock_box_device.write_json("devices/interlock.json")
 
-	interlock_box = Device.load_from_json("devices/interlock.json")
+	# interlock_box = Device.load_from_json("devices/interlock.json")
 
 	# control_system.add_device(interlock_box)
 
@@ -648,10 +673,12 @@ if __name__ == "__main__":
 	
 
 	
-	# 2cc580d6-fa29-44a7-9fec-035acd72340e
+	
 	# cf436e6b-ba3d-479a-b221-bc387c37b858
+	# AASHISH Interlock Box => 2cc580d6-fa29-44a7-9fec-035acd72340e
+	# AASHISH Ion Gauge => 41b70a36-a206-41c5-b743-1e5b8429b9a1
 
-	# ion_gauge = Device("ion_gauge", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Ion Gauge")
+	# ion_gauge = Device("ion_gauge", arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", label="Ion Gauge")
 	# ion_gauge.set_overview_page_presence(True)
 
 	# for i in range(2):
@@ -678,7 +705,8 @@ if __name__ == "__main__":
 
 	# 	ion_gauge.add_channel(ch)
 
-	# # control_system.add_device(ion_gauge)
+	# control_system.add_device(ion_gauge)
+
 
 	# ion_gauge.write_json("devices/ion_gauge.json")
 
