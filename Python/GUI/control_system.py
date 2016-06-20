@@ -436,28 +436,101 @@ class MIST1ControlSystem:
 
 	def save_as_devices_callback(self, button):
 		
+		def select_all_callback(widget, checkboxes):
+			for device_name, checkbox in checkboxes.items():
+				checkbox.set_active(True)
+
+		def unselect_all_callback(widget, checkboxes):
+			for device_name, checkbox in checkboxes.items():
+				checkbox.set_active(False)
+
+
 		dialog = Gtk.FileChooserDialog("Save Device", self._main_window,
 										Gtk.FileChooserAction.SELECT_FOLDER,
 										(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-										("_Select Directory"), Gtk.ResponseType.OK),
+										("_Save"), Gtk.ResponseType.OK),
 										)
 
+
+		content_area = dialog.get_content_area()
+	
+
+		select_all_label = Gtk.Button("Select All")
+		unselect_all_label = Gtk.Button("Unselect All")
+
+		device_checkboxes = {}
+		for device_name, device in self._devices.items():
+			device_checkboxes[device.name()] = Gtk.CheckButton(device.label())
+
+
+		
+
+
+		info_frame = Gtk.Frame(label="Select Devices To Save", margin=4)
+		info_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
+		info_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
+		info_frame.add( info_vbox )
+
+
+		select_all_hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1, margin=4)
+		
+		
+
+		select_all_hbox.pack_start(select_all_label, expand=False, fill=False, padding=5) 
+		select_all_hbox.pack_start(unselect_all_label, expand=False, fill=False, padding=5) 
+	
+		select_all_handler_id = select_all_label.connect("clicked", select_all_callback, device_checkboxes)
+		select_all_handler_id = unselect_all_label.connect("clicked", unselect_all_callback, device_checkboxes)
+
+		device_name_hboxes = []
+
+		for device_name, checkbox in device_checkboxes.items():
+			hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=1, margin=4)
+
+			hbox.pack_start(checkbox, expand=True, fill=True, padding=0) 
+
+			device_name_hboxes.append( hbox )
+
+
+		info_vbox.pack_start(select_all_hbox, expand=True, fill=True, padding=0) 
+
+		for hbox in device_name_hboxes:
+			info_vbox.pack_start(hbox, expand=True, fill=True, padding=0) 
+		
+
+		
+		
+
+		content_area.add( info_frame )
+
+		content_area.pack_start(info_vbox, expand=False, fill=False, padding=0)
+
+
+		info_vbox.reorder_child(info_vbox, 0)
+		
+		dialog.show_all()
+
 		response = dialog.run()
+
 
 		if response == Gtk.ResponseType.OK:
 			directory = dialog.get_filename()
 
+			device_count = 0
 			for device_name, device in self._devices.items():
-				device.write_json("devices/all/" + device_name + ".json")
+				
+				if device_checkboxes[device_name].get_active():
+					device.write_json(directory + "/" + device_name + ".json")
+					device_count += 1
 
 			msg_dialog = Gtk.MessageDialog(dialog, 0, Gtk.MessageType.INFO,
 			Gtk.ButtonsType.OK, "Device Save Successful")
 
 			noun = "device"
-			if len(self._devices.keys()) > 1:
+			if device_count > 1:
 				noun += "s"
 
-			msg_dialog.format_secondary_text( "Successfully saved {} {} to /devices/all/.".format(len(self._devices.keys()), noun) )
+			msg_dialog.format_secondary_text( "Successfully saved {} {} to {}.".format(device_count, noun, directory) )
 			msg_dialog.run()
 
 			msg_dialog.destroy()
@@ -603,64 +676,64 @@ if __name__ == "__main__":
 
 	# Aashish => 2cc580d6-fa29-44a7-9fec-035acd72340e
 	# Daniel => 49ffb802-50c5-4194-879d-20a87bcfc6ef
-	# interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")
-	# interlock_box_device.set_overview_page_presence(True)
+	interlock_box_device = Device("interlock_box", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")
+	interlock_box_device.set_overview_page_presence(True)
 
 	
-	# # Add channels to the interlock box device.
+	# Add channels to the interlock box device.
 
-	# # Flow meters. x5.
-	# for i in range(5):
-	# 	ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-	# 				 message_header="flow_meter#" + str(i + 1),
-	# 				 upper_limit=1,
-	# 				 lower_limit=0,
-	# 				 data_type=int,
-	# 				 mode="read",
-	# 				 unit="Hz",
-	# 				 display_order=(11 - i))
+	# Flow meters. x5.
+	for i in range(5):
+		ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+					 message_header="flow_meter#" + str(i + 1),
+					 upper_limit=1,
+					 lower_limit=0,
+					 data_type=int,
+					 mode="read",
+					 unit="Hz",
+					 display_order=(11 - i))
 
-	# 	interlock_box_device.add_channel(ch)
+		interlock_box_device.add_channel(ch)
 
-	# # Microswitches. x2.
-	# for i in range(2):
-	# 	ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-	# 				message_header="micro_switch#{}".format(i + 1),
-	# 				upper_limit=1,
-	# 				lower_limit=0,
-	# 				data_type=bool,
-	# 				mode="read",
-	# 				display_order=(11 - 5 - i))
+	# Microswitches. x2.
+	for i in range(2):
+		ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
+					message_header="micro_switch#{}".format(i + 1),
+					upper_limit=1,
+					lower_limit=0,
+					data_type=bool,
+					mode="read",
+					display_order=(11 - 5 - i))
 
-	# 	interlock_box_device.add_channel(ch)
+		interlock_box_device.add_channel(ch)
 	
-	# # Solenoid valves. x2.
-	# for i in range(2):	
-	# 	ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-	# 				message_header="solenoid_valve#{}".format(i + 1),
-	# 				upper_limit=1,
-	# 				lower_limit=0,
-	# 				data_type=bool,
-	# 				mode="write",
-	# 				display_order=(11 - 5 - 2 - i))
+	# Solenoid valves. x2.
+	for i in range(2):	
+		ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
+					message_header="solenoid_valve#{}".format(i + 1),
+					upper_limit=1,
+					lower_limit=0,
+					data_type=bool,
+					mode="write",
+					display_order=(11 - 5 - 2 - i))
 
-	# 	interlock_box_device.add_channel(ch)
+		interlock_box_device.add_channel(ch)
 
-	# # Vacuum Valves. x2.
-	# for i in range(2):
-	# 	ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-	# 				message_header="vacuum_valve#{}".format(i + 1),
-	# 				upper_limit=1,
-	# 				lower_limit=0,
-	# 				data_type=bool,
-	# 				mode="read",
-	# 				display_order=(11 - 5 - 2 - 2 - i))
+	# Vacuum Valves. x2.
+	for i in range(2):
+		ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
+					message_header="vacuum_valve#{}".format(i + 1),
+					upper_limit=1,
+					lower_limit=0,
+					data_type=bool,
+					mode="read",
+					display_order=(11 - 5 - 2 - 2 - i))
 
-	# 	interlock_box_device.add_channel(ch)
+		interlock_box_device.add_channel(ch)
 
 	# Add all our devices to the control system.
 	
-	# control_system.add_device(interlock_box_device)
+	control_system.add_device(interlock_box_device)
 
 
 	# interlock_box_device.write_json("devices/interlock.json")
