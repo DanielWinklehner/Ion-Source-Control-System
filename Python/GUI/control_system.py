@@ -20,6 +20,8 @@ from MIST1_Control_System_GUI_Widgets import *
 
 import data_logging
 
+import pickle
+
 
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
@@ -104,7 +106,8 @@ class MIST1ControlSystem:
 
 	
 	def log_data(self, channel):
-		self._data_logger.log_value(channel=channel)
+		# self._data_logger.log_value(channel=channel)
+		pass
 	
 
 	def about_program_callback(self, menu_item):
@@ -117,6 +120,112 @@ class MIST1ControlSystem:
 		dialog.destroy()
 
 		return 0
+
+	def add_device_callback(self, button):
+		dialog = Gtk.Dialog("My Dialog", self._builder.get_object("main_window"), 0, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK))
+
+		
+
+		# self.name_label = 
+		# self.unit_label = Gtk.Label(unit)
+		# self.value_entry = Gtk.Entry()
+		# self.value_entry.set_size_request(60, 40)
+
+		# self.set_flag = set_flag
+		# self.displayformat = displayformat
+
+		# self.add(hbox)
+
+		# hbox.pack_start(Gtk.Label("Device Name"), True, True, 0)
+		# hbox.pack_start(self.value_entry, True, True, 0)
+		# hbox.pack_start(self.unit_label, True, True, 0)
+
+
+		content_area = dialog.get_content_area()
+
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+		hbox.pack_start(Gtk.Label("Device Name"), True, True, 0)
+		device_name_entry = Gtk.Entry()
+		hbox.pack_start(device_name_entry, True, True, 0)
+		content_area.pack_start(hbox, True, True, 0)
+
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+		hbox.pack_start(Gtk.Label("Device Label"), True, True, 0)
+		device_label_entry = Gtk.Entry()
+		hbox.pack_start(device_label_entry, True, True, 0)
+		content_area.pack_start(hbox, True, True, 0)
+
+
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+		hbox.pack_start(Gtk.Label("Arduino ID"), True, True, 0)
+		arduino_id_entry = Gtk.Entry()
+		hbox.pack_start(arduino_id_entry, True, True, 0)
+		content_area.pack_start(hbox, True, True, 0)
+
+
+		dialog.show_all()
+		response = dialog.run()
+
+		if response == Gtk.ResponseType.OK:
+			device_name = device_name_entry.get_text()
+			device_label = device_label_entry.get_text()
+			arduino_id = arduino_id_entry.get_text()
+
+			device = Device(name=device_name, label=device_label, arduino_id=arduino_id)
+			device.set_overview_page_presence(True)
+			
+			self.add_device(device)
+
+			self.initialize()
+
+			self._main_window.show_all()
+
+		else:
+			print "Cancelled!"
+
+
+
+		dialog.destroy()
+
+
+	def load_device_from_file_callback(self, button):
+
+		dialog = Gtk.FileChooserDialog("Please choose a file.", self._main_window,
+										Gtk.FileChooserAction.OPEN,
+										(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+										Gtk.STOCK_OPEN, Gtk.ResponseType.OK),
+										)
+
+		filter_text = Gtk.FileFilter()
+		filter_text.set_name("JSON files")
+		filter_text.add_mime_type("application/json")
+		dialog.add_filter(filter_text)
+
+		response = dialog.run()
+
+		if response == Gtk.ResponseType.OK:
+			filename = dialog.get_filename()
+
+			print("Open clicked")
+			print("File selected: " + filename)
+
+			device = Device.load_from_json(filename)
+
+			if device.name() not in self._devices.keys():
+				self.add_device(device)
+
+				self.initialize()
+
+				self._main_window.show_all()
+
+
+		elif response == Gtk.ResponseType.CANCEL:
+			print("Cancel clicked")
+
+		dialog.destroy()
+
+		return 0
+
 
 	def set_widget_connections(self):
 		for device_name, device in self._devices.items():
@@ -171,7 +280,7 @@ class MIST1ControlSystem:
 	def listen_for_reconnected_devices(self, devices):
 		for device in devices:
 			if device.name() in self._devices.keys() and device.name() not in self._alive_device_names:
-				print "Reinitalizing device ", device.name()
+				print "Reinitializing device ", device.name()
 				device.reinitialize()
 
 
@@ -186,7 +295,7 @@ class MIST1ControlSystem:
 				if device.locked():
 					device.unlock()
 			else:
-				print "Device not alive."
+				print "Device = {} not alive.".format(device.name())
 				print "Locking device", device.name()
 				device.lock()
 				self._alive_device_names.discard(device.name())
@@ -217,7 +326,7 @@ class MIST1ControlSystem:
 				# THOUGHT: Maybe implement a device.locked thing and don't operate on a given device unless that lock is released?
 				# Ideally, even all the methods in the Device class would respect that lock. 
 				
-				if device.name() in self._alive_device_names:
+				if not device.locked():
 
 
 					arduino_id = device.get_arduino_id()
@@ -319,6 +428,24 @@ class MIST1ControlSystem:
 	def get_arduino_vbox(self):
 		return self._arduino_vbox
 
+	def add_device_dialog_button_callback(self, button):
+		pass
+
+	def save_devices_callback(self, button):
+		
+		for device_name, device in self._devices.items():
+			device.write_json("devices/all/" + device_name + ".json")
+
+		dialog = Gtk.MessageDialog(self._builder.get_object("main_window"), 0, Gtk.MessageType.INFO,
+		Gtk.ButtonsType.OK, "Device Save Successful")
+		dialog.format_secondary_text("Save {} devices to /devices/all/".format(len(devices.keys())))
+		dialog.run()
+
+		dialog.destroy()
+
+
+
+
 	def get_connections(self):
 		"""
 		This just returns a dictionary of connections
@@ -328,6 +455,9 @@ class MIST1ControlSystem:
 			   "stop_button_clicked_cb": self.emergency_stop,
 			   "on_main_statusbar_text_pushed": self.statusbar_changed_callback,
 			   "about_program_menu_item_activated": self.about_program_callback,
+			   "add_device_button_clicked_cb": self.add_device_callback,
+			   "load_device_from_file_button_cb": self.load_device_from_file_callback,
+			   "save_devices_toolbutton_clicked_cb": self.save_devices_callback,
 			   }
 
 		return con
@@ -505,38 +635,58 @@ if __name__ == "__main__":
 
 	# Add all our devices to the control system.
 	
-	control_system.add_device(interlock_box_device)
+	# control_system.add_device(interlock_box_device)
 
-	'''
-	ion_gauge = Device("ion_gauge", arduino_id="cf436e6b-ba3d-479a-b221-bc387c37b858", label="Ion Gauge")
-	ion_gauge.set_overview_page_presence(True)
 
-	for i in range(2):
-		ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-					 message_header="gauge_state#" + str(i + 1),
-					 upper_limit=1,
-					 lower_limit=0,
-					 data_type=bool,
-					 mode="read",
-					 display_order=(4 - i))
+	interlock_box_device.write_json("devices/interlock.json")
 
-		ion_gauge.add_channel(ch)
+	interlock_box = Device.load_from_json("devices/interlock.json")
 
-	for i in range(2):
-		ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-					 message_header="gauge_pressure#" + str(i + 1),
-					 upper_limit=1000,
-					 lower_limit=0,
-					 data_type=float,
-					 mode="read",
-					 unit="Torr",
-					 display_order=(4 - i),
-					 displayformat=".2e")
+	# control_system.add_device(interlock_box)
 
-		ion_gauge.add_channel(ch)
 
-	control_system.add_device(ion_gauge)
-	'''
+	
+
+	
+	# 2cc580d6-fa29-44a7-9fec-035acd72340e
+	# cf436e6b-ba3d-479a-b221-bc387c37b858
+
+	# ion_gauge = Device("ion_gauge", arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Ion Gauge")
+	# ion_gauge.set_overview_page_presence(True)
+
+	# for i in range(2):
+	# 	ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
+	# 				 message_header="gauge_state#" + str(i + 1),
+	# 				 upper_limit=1,
+	# 				 lower_limit=0,
+	# 				 data_type=bool,
+	# 				 mode="read",
+	# 				 display_order=(4 - i))
+
+	# 	ion_gauge.add_channel(ch)
+
+	# for i in range(2):
+	# 	ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
+	# 				 message_header="gauge_pressure#" + str(i + 1),
+	# 				 upper_limit=1000,
+	# 				 lower_limit=0,
+	# 				 data_type=float,
+	# 				 mode="read",
+	# 				 unit="Torr",
+	# 				 display_order=(4 - i),
+	# 				 displayformat=".2e")
+
+	# 	ion_gauge.add_channel(ch)
+
+	# # control_system.add_device(ion_gauge)
+
+	# ion_gauge.write_json("devices/ion_gauge.json")
+
+	# ion_gauge = Device.load_from_json("devices/ion_gauge.json")
+	
+	# control_system.add_device(ion_gauge)
+
+	
 
 	# Run the control system, this has to be last as it does all the initializations and adding to the GUI.
 	control_system.run()

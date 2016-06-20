@@ -4,6 +4,7 @@ import time
 import serial
 import sys
 import glob
+import json
 import MIST1_Control_System_GUI_Widgets
 
 class Device:
@@ -46,12 +47,30 @@ class Device:
 		return self._name
 
 	def label(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._label
 
 	def channels(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._channels
 
 	def get_channel_by_name(self, channel_name):
+		"""Summary
+		
+		Args:
+		    channel_name (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._channels[channel_name]
 
 	def add_channel(self, channel):
@@ -88,9 +107,19 @@ class Device:
 		return 0
 
 	def initialized(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._initialized
 
 	def reinitialize(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		self._initialized = False
 
 		all_serial_comms = self._parent.get_serial_comms()
@@ -157,34 +186,119 @@ class Device:
 		self._initialized = True
 	
 	def lock(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		if not self._locked:
 			for channel_name, channel in self._channels.items():
 				channel.lock()
 			self._locked = True
 
 	def unlock(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		if self._locked:
 			for channel_name, channel in self._channels.items():
 				channel.unlock()
 			self._locked = False
 
 	def locked(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._locked
 		
 	def is_on_overview_page(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._on_overview_page
 
 	def set_overview_page_presence(self, value):
+		"""Summary
+		
+		Args:
+		    value (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
 		self._on_overview_page = value
 
 	# def front_page_widgets(self):
 	#     return self._front_page_widgets
 
+	def get_json(self):
+		properties = {}
+
+		properties['name'] = self._name
+		properties['label'] = self._label
+		properties['arduino_id'] = self._arduino_id
+		properties['on_overview_page'] = self._on_overview_page
+
+		properties['channels'] = {}
+		for channel_name, channel in self._channels.items():
+			properties['channels'][channel_name] = channel.get_json()
+
+		return json.dumps(properties)
+
+
+	def write_json(self, filename):
+		json = self.get_json()
+		with open(filename, "wb") as f:
+			f.write(json)
+
+
+	@staticmethod
+	def load_from_json(filename):
+		with open(filename, "rb") as f:
+			data = json.load(f)
+
+
+		filtered_params = {}
+		for key, value in data.items():
+			 if not key == "channels":
+			 	filtered_params[key] = value
+		
+		device = Device(**filtered_params)
+
+		
+
+		for channel_name in data['channels']:
+			channel_json = data['channels'][channel_name]
+			ch = Channel.load_from_json(channel_json)
+
+			device.add_channel(ch)
+
+		return device
 
 class Channel:
 	def __init__(self, name, label, message_header, upper_limit, lower_limit, data_type, unit="",
 				 scaling=1., mode="both", display_order=0, displayformat=".2f"):
-
+		"""Summary
+		
+		Args:
+		    name (TYPE): Description
+		    label (TYPE): Description
+		    message_header (TYPE): Description
+		    upper_limit (TYPE): Description
+		    lower_limit (TYPE): Description
+		    data_type (TYPE): Description
+		    unit (str, optional): Description
+		    scaling (float, optional): Description
+		    mode (str, optional): Description
+		    display_order (int, optional): Description
+		    displayformat (str, optional): Description
+		"""
 		self._name = name
 		self._label = label
 		self._serial_com = None
@@ -246,30 +360,65 @@ class Channel:
 		return 0
 
 	def lock(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		if not self._locked:
 			if not self._overview_page_display.locked():
 				self._overview_page_display.lock()
 			self._locked = True
 
 	def unlock(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		if self._locked:
 			if self._overview_page_display.locked():
 				self._overview_page_display.unlock()
 			self._locked = False
 
 	def locked(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._locked
 
 	def get_arduino_id(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._arduino_id
 
 	def get_overview_page_display(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._overview_page_display
 
 	def get_value(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._value
 
 	def get_display_order(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._display_order
 
 	def initialize(self):
@@ -287,49 +436,162 @@ class Channel:
 		return 0
 
 	def reinitialize(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		self._serial_com = self._parent_device.get_serial_com()
 
 	def get_parent_device(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._parent_device
 
 	def set_parent_device(self, device):
+		"""Summary
+		
+		Args:
+		    device (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
 		self._parent_device = device
 
 	def set_arduino_id(self, arduino_id):
+		"""Summary
+		
+		Args:
+		    arduino_id (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
 		self._arduino_id = arduino_id
 
 	def label(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._label
 
 	def name(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._name
 
 	def serial_com(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._serial_com
 
 	def message_header(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._message_header
 
 	def upper_limit(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._upper_limit
 
 	def lower_limit(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._lower_limit
 
 	def data_type(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._data_type
 
 	def unit(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._unit
 
 	def scaling(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._scaling
 
 	def mode(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._mode
 
-	def read_arduino_message(self):
+	def get_json(self):
+		properties = {}
 
+		properties['name'] = self._name
+		properties['label'] = self._label
+
+		
+		properties['message_header'] = self._message_header
+		properties['upper_limit'] = self._upper_limit
+		properties['lower_limit'] = self._lower_limit
+		properties['data_type'] = str(self._data_type)
+		properties['unit'] = self._unit
+		properties['scaling'] = self._scaling
+		properties['mode'] = self._mode
+		
+
+		properties['displayformat'] = self._displayformat
+		properties['display_order'] = self._display_order
+
+		return json.dumps(properties)
+	
+	@staticmethod
+	def load_from_json(channel_json):
+
+		properties = json.loads(channel_json)
+
+		data_type_str = properties['data_type']
+
+		properties['data_type'] = eval( data_type_str.split("'")[1] )
+
+		return Channel(**properties)
+
+
+	def read_arduino_message(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		response = self._serial_com.read_message()
 
 		try:
@@ -345,7 +607,11 @@ class Channel:
 			return "", "", ""
 
 	def read_value(self):
-
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		# print "Reading value!"
 
 		if self._locked:
@@ -397,10 +663,17 @@ class Channel:
 			return self._value
 
 	def set_value(self, value_to_set):
-
+		"""Summary
+		
+		Args:
+		    value_to_set (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
 		if self._locked:
 			return None
-			
+
 		if self._mode == "read":
 			raise ValueError("ERROR: You are trying to write values to a read-only channel!")
 
@@ -423,7 +696,7 @@ class Channel:
 		start_time = time.time()
 		while ( not ((keyword == "assigned") and (header == self._message_header)) ) and (time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
 
-			print "Didn't work out the first time so trying again!"
+			print "Did not work out the first time so trying again!"
 
 			self._serial_com.send_message(message)
 			keyword, header, value = self.read_arduino_message()
@@ -440,6 +713,11 @@ class Channel:
 class SerialCOM:
 
 	def __init__(self, arduino_id):
+		"""Summary
+		
+		Args:
+		    arduino_id (TYPE): Description
+		"""
 		self._arduino_id = arduino_id
 		self._arduino_port = self.find_port(arduino_id)
 
@@ -456,9 +734,19 @@ class SerialCOM:
 		self._alive_timeout = 10.	# In seconds. Make sure this is float.
 
 	def arduino_id(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._arduino_id
 
 	def arduino_port(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		return self._arduino_port
 
 	@staticmethod
@@ -511,7 +799,7 @@ class SerialCOM:
 
 			input_message = "query:identification=?"
 
-			timeout = 5.  # in seconds.
+			timeout = 3.  # in seconds.
 
 			first_attempt_time = time.time()
 
@@ -539,12 +827,12 @@ class SerialCOM:
 					print "got an exception"
 					continue
 
-				time.sleep(1)
+				time.sleep(0.5)
 
 				
 
-		# If we can't find the corresponding port, return None
-		print "Couldn't find Arduino corresponding to UUID %s" % arduino_id
+		# If we cannot find the corresponding port, return None
+		print "Could not find Arduino corresponding to UUID %s" % arduino_id
 
 		return None
 
@@ -571,6 +859,14 @@ class SerialCOM:
 			
 
 	def send_message(self, message):
+		"""Summary
+		
+		Args:
+		    message (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
 		try:
 			self._ser.flushInput()
 			self._ser.flushOutput()
@@ -580,7 +876,11 @@ class SerialCOM:
 			raise Exception("Something's wrong! I cannot send any messages!")
 
 	def read_message(self):
-
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		try:
 			self._ser.flushInput()
 			self._ser.flushOutput()
@@ -592,20 +892,3 @@ class SerialCOM:
 		except:
 			raise Exception("Something's not right! I cannot read my messages!")
 
-
-	def close_port(self):
-		if self._ser.isOpen():
-			print "Closing the port."
-			self._ser.close()
-
-	def open_port(self):	
-		"""Summary
-		
-		Returns:
-		    TYPE: Description
-		"""
-
-		# Not super-sure about this. Might need to fix this.
-
-		if not self._ser.isOpen():
-			self._ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
