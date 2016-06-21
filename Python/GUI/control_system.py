@@ -20,8 +20,7 @@ from MIST1_Control_System_GUI_Widgets import *
 
 import data_logging
 
-import pickle
-
+import dialogs as MIST1Dialogs
 
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
@@ -122,24 +121,34 @@ class MIST1ControlSystem:
 		return 0
 
 	def add_device_callback(self, button):
-		dialog = Gtk.Dialog("My Dialog", self._builder.get_object("main_window"), 0, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK))
-
 		
+		dialog = MIST1Dialogs.AddDevicesDialog(self._main_window)
+		
+		dialog.add_pre_existing_devices(self._devices)
 
-		# self.name_label = 
-		# self.unit_label = Gtk.Label(unit)
-		# self.value_entry = Gtk.Entry()
-		# self.value_entry.set_size_request(60, 40)
+		dialog.initialize()
 
-		# self.set_flag = set_flag
-		# self.displayformat = displayformat
+		response = dialog.run()
 
-		# self.add(hbox)
+		if response == Gtk.ResponseType.OK:
+			# Reinitialize all devices.
+			for device_name, device in self._devices.items():
+				if not device.initialized():
+					del self._devices[device_name]
+					print "Adding a new device."
+					self.add_device(device)
 
-		# hbox.pack_start(Gtk.Label("Device Name"), True, True, 0)
-		# hbox.pack_start(self.value_entry, True, True, 0)
-		# hbox.pack_start(self.unit_label, True, True, 0)
+			self.reinitialize()
 
+		elif response == Gtk.ResponseType.CANCEL:
+			print("The Cancel button was clicked")
+
+		dialog.destroy()
+
+
+
+		'''
+		dialog = Gtk.Dialog("My Dialog", self._builder.get_object("main_window"), 0, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK))
 
 		content_area = dialog.get_content_area()
 
@@ -187,6 +196,9 @@ class MIST1ControlSystem:
 
 
 		dialog.destroy()
+		'''
+
+
 
 
 	def load_device_from_file_callback(self, button):
@@ -341,7 +353,7 @@ class MIST1ControlSystem:
 
 						for channel_name, channel in device.channels().items():
 
-							if channel.mode() == "read" or channel.mode() == "both":
+							if channel.initialized() and (channel.mode() == "read" or channel.mode() == "both"):
 
 								try:
 									channel.read_value()
@@ -403,26 +415,28 @@ class MIST1ControlSystem:
 
 		return 0
 
-	def initialize_communication_threads(self):
+	def setup_communication_threads(self):
 		"""
 		For each device, we create a thread to communicate with the corresponding Arduino.
 		:return:
 		"""
 		for arduino_id, serial_com in self._serial_comms.items():
 
-			my_devices = [dev for devname, dev in self._devices.items() if arduino_id == dev.get_arduino_id()]
+			if arduino_id not in self._communication_threads.keys():
 
-			communication_thread = threading.Thread(target=self.communicate,
-													kwargs=dict(devices=my_devices))
+				my_devices = [dev for devname, dev in self._devices.items() if arduino_id == dev.get_arduino_id()]
 
-			self._communication_threads[arduino_id] = communication_thread
-			self._communication_threads_mode[arduino_id] = 'read'
-			self._communication_threads_poll_count[arduino_id] = 0
-			self._communication_threads_start_time[arduino_id] = time.time()
+				communication_thread = threading.Thread(target=self.communicate,
+														kwargs=dict(devices=my_devices))
 
-			self._keep_communicating = True
+				self._communication_threads[arduino_id] = communication_thread
+				self._communication_threads_mode[arduino_id] = 'read'
+				self._communication_threads_poll_count[arduino_id] = 0
+				self._communication_threads_start_time[arduino_id] = time.time()
 
-			self._communication_threads[arduino_id].start()
+				self._keep_communicating = True
+
+				self._communication_threads[arduino_id].start()
 
 		return 0
 
@@ -579,11 +593,26 @@ class MIST1ControlSystem:
 		self.set_widget_connections()
 
 		# Any and all remaining initializations go here
-		self.initialize_communication_threads()
+		self.setup_communication_threads()
 
 		self._initialized = True
 
 		return 0
+
+
+	def reinitialize(self):
+		for device_name, device in self._devices.items():
+			if device.initialized():
+				device.reinitialize_channels()
+			else:
+				device.initialize()
+				
+		self.set_widget_connections()
+
+		self.setup_communication_threads()
+
+		self._main_window.show_all()
+
 
 	def main_quit(self, widget):
 		"""
@@ -733,7 +762,7 @@ if __name__ == "__main__":
 
 	# Add all our devices to the control system.
 	
-	control_system.add_device(interlock_box_device)
+	# control_system.add_device(interlock_box_device)
 
 
 	# interlock_box_device.write_json("devices/interlock.json")

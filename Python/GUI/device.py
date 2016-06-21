@@ -96,6 +96,9 @@ class Device:
 
 		# Add device to GUI overview page if desired
 		if self._on_overview_page:
+			
+			print "Adding a device to the overview page."
+
 			# Create a frame
 			self._overview_frame = MIST1_Control_System_GUI_Widgets.FrontPageDeviceFrame(label=self._label)
 
@@ -114,6 +117,15 @@ class Device:
 		"""
 		return self._initialized
 
+	def reinitialize_channels(self):
+		for channel_name, channel in self._channels.items():
+			if channel.initialized():
+				channel.reinitialize()
+			else:
+				channel.initialize()
+
+			
+
 	def reinitialize(self):
 		"""Summary
 		
@@ -129,7 +141,10 @@ class Device:
 
 			# Also reinitialize all channels associated with this device.
 			for channel_name, channel in self._channels.items():
-				channel.reinitialize()
+				if channel.initialized():
+					channel.reinitialize()
+				else:
+					channel.initialize()
 			
 			self._initialized = True
 		except Exception as e:
@@ -182,6 +197,12 @@ class Device:
 
 		for display_order, channel in all_channels:
 			channel.initialize()
+
+		# Initialize rest of the channels (i.e. channels without displayorder).
+		for ch_name, ch in self._channels.items():
+			if not ch.initialized():
+				ch.initialize()
+
 
 		self._initialized = True
 	
@@ -327,6 +348,9 @@ class Channel:
 		Adds a device to the GUI
 		:return:
 		"""
+
+		print "adding channel = {} to gui".format(self._name)
+
 		parent_device = self._parent_device
 
 		set_flag = True
@@ -421,11 +445,25 @@ class Channel:
 		"""
 		return self._display_order
 
+
+
+	def initialized(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		return self._initialized
+
+
 	def initialize(self):
 		"""
 		Initializes the channel
 		:return:set_parent
 		"""
+
+		print "Initializing channel = " + str(self._name)
+
 		self.add_channel_to_gui()
 
 		# Set the SerialCOM object according to parent

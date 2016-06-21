@@ -12,6 +12,11 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-missing-image</property>
+  </object>
   <object class="GtkTextBuffer" id="log_texbuffer"/>
   <object class="GtkWindow" id="main_window">
     <property name="can_focus">False</property>
@@ -144,11 +149,27 @@
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="menuitem3">
+              <object class="GtkMenuItem" id="menuitem5">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">_View</property>
+                <property name="label" translatable="yes">_Devices </property>
                 <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="menu4">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="imagemenuitem5">
+                        <property name="label">_Add Device</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="image">image1</property>
+                        <property name="use_stock">False</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
               </object>
             </child>
             <child>
@@ -205,7 +226,7 @@
               <object class="GtkToolButton" id="load_device_from_file_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Quit</property>
+                <property name="tooltip_text" translatable="yes">Load Device</property>
                 <property name="label" translatable="yes">Load Device from File</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-open</property>
@@ -220,7 +241,7 @@
               <object class="GtkToolButton" id="add_device_toolbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Quit</property>
+                <property name="tooltip_text" translatable="yes">Add Device</property>
                 <property name="label" translatable="yes">Add Device</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-add</property>
@@ -236,7 +257,7 @@
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Quit</property>
+                <property name="tooltip_text" translatable="yes">Save Devices</property>
                 <property name="label" translatable="yes">Save Devices</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-save-as</property>
