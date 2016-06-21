@@ -621,12 +621,13 @@ class MIST1ControlSystem:
 			label = model[treeiter][0]
 			selection_type = model[treeiter][1]
 			name = model[treeiter][2]
+			device_name = model[treeiter][3]
 			
+			device = self._devices[device_name]
+
 			if selection_type == "device":
 				
-				# Populate the right window with fields to edit device information.
-
-				device = self._devices[name]
+				# Populate the right-side-box with fields to edit device information.
 
 				self._edit_device_frame = Gtk.Frame(label="Edit {}".format(label))
 				self._edit_device_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
@@ -648,6 +649,65 @@ class MIST1ControlSystem:
 
 				self._builder.get_object("settings_page_settings_box").add(self._edit_device_frame)
 
+			elif selection_type == "channel":
+				channel = device.channels()[name]
+
+				self._edit_device_frame = Gtk.Frame(label="Edit {}".format(label))
+				self._edit_device_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
+
+				edit_device_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
+				self._edit_device_frame.add( edit_device_vbox )
+
+				labels = ["Name", "Label", "Message Header", "Lower Limit", "Upper Limit", "Unit"]
+				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
+				values = [channel.name(), channel.label(), channel.message_header(), channel.lower_limit(), channel.upper_limit(), channel.unit() ]
+
+				for label, entry, value in zip(labels, entries, values):
+					hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+					hbox.pack_start(Gtk.Label(label), True, True, 0)
+					entry.set_text(str(value))
+					hbox.pack_start(entry, True, True, 0)
+					edit_device_vbox.add(hbox)
+
+
+				data_type_model_view = Gtk.ListStore(str, str)
+				data_type_options = [ ["bool", "Boolean"], ["int", "Integer"], ["float", "Float"] ]
+
+				for option in data_type_options:
+					data_type_model_view.append( option )
+				
+				data_type_combo = Gtk.ComboBox.new_with_model_and_entry(data_type_model_view)
+				data_type_combo.set_entry_text_column(1)
+				data_type_combo.set_active( [x for x, y in data_type_options].index( str(channel.data_type()).split("'")[1] ) )
+				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+				hbox.pack_start(Gtk.Label("Data Type"), True, True, 0)
+				hbox.pack_start(data_type_combo, True, True, 0)
+				edit_device_vbox.add(hbox)
+
+
+
+				mode_model_view = Gtk.ListStore(str, str)
+				mode_options = [ ["read", "Read"], ["write", "Write"], ["both", "Both"] ]
+
+				for option in mode_options:
+					mode_model_view.append( option )
+				
+				mode_combo = Gtk.ComboBox.new_with_model_and_entry(mode_model_view)
+				mode_combo.set_entry_text_column(1)
+				mode_combo.set_active( [x for x, y in mode_options].index( channel.mode() ) )
+				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+				hbox.pack_start(Gtk.Label("Mode"), True, True, 0)
+				hbox.pack_start(mode_combo, True, True, 0)
+				edit_device_vbox.add(hbox)
+
+
+
+
+				self._builder.get_object("settings_page_settings_box").add(self._edit_device_frame)
+
+
+
+
 		self._main_window.show_all()
 
 
@@ -655,14 +715,14 @@ class MIST1ControlSystem:
 
 		scrolled_window = self._builder.get_object("settings_scrolled_window")
 
-		store = Gtk.TreeStore(str, str, str)
+		store = Gtk.TreeStore(str, str, str, str)
 		
 		for device_name, device in self._devices.items():
 
-			device_iter = store.append(None, [device.label(), "device", device.name()])
+			device_iter = store.append(None, [device.label(), "device", device.name(), device.name()])
 
 			for channel_name, channel in device.channels().items():
-				channel_iter = store.append(device_iter, [channel.label(), "channel", channel.name()])
+				channel_iter = store.append(device_iter, [channel.label(), "channel", channel.name(), device.name()])
 		
 
 		treeView = Gtk.TreeView(store)
