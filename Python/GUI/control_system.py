@@ -98,6 +98,9 @@ class MIST1ControlSystem:
 		self._check_for_alive_interval = 5	# In seconds.
 
 
+		self._edit_device_frame = None
+
+
 
 	def register_data_logging_file(self, filename):
 		self._data_logger = data_logging.DataLogging(log_filename=filename)
@@ -105,8 +108,8 @@ class MIST1ControlSystem:
 
 	
 	def log_data(self, channel):
-		# self._data_logger.log_value(channel=channel)
-		pass
+		self._data_logger.log_value(channel=channel)
+		# pass
 	
 
 	def about_program_callback(self, menu_item):
@@ -120,7 +123,34 @@ class MIST1ControlSystem:
 
 		return 0
 
+
 	def add_device_callback(self, button):
+		dialog = MIST1Dialogs.AddDevicesDialog(self._main_window)
+		
+		dialog.add_pre_existing_devices(self._devices)
+
+		dialog.initialize()
+
+		response = dialog.run()
+
+		if response == Gtk.ResponseType.OK:
+			# Reinitialize all devices.
+			for device_name, device in self._devices.items():
+				if not device.initialized():
+					del self._devices[device_name]
+					print "Adding a new device."
+					self.add_device(device)
+
+			self.reinitialize()
+
+		elif response == Gtk.ResponseType.CANCEL:
+			print("The Cancel button was clicked")
+
+		dialog.destroy()
+
+
+
+	def add_device_callback_outdated(self, button):
 		
 		dialog = MIST1Dialogs.AddDevicesDialog(self._main_window)
 		
@@ -147,58 +177,38 @@ class MIST1ControlSystem:
 
 
 
-		'''
-		dialog = Gtk.Dialog("My Dialog", self._builder.get_object("main_window"), 0, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK))
+	def edit_device_callback(self, button):
+		
+		dialog = MIST1Dialogs.EditDevicesDialog(self._main_window)
+		
+		dialog.add_pre_existing_devices(self._devices)
 
-		content_area = dialog.get_content_area()
+		dialog.initialize()
 
-		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-		hbox.pack_start(Gtk.Label("Device Name"), True, True, 0)
-		device_name_entry = Gtk.Entry()
-		hbox.pack_start(device_name_entry, True, True, 0)
-		content_area.pack_start(hbox, True, True, 0)
-
-		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-		hbox.pack_start(Gtk.Label("Device Label"), True, True, 0)
-		device_label_entry = Gtk.Entry()
-		hbox.pack_start(device_label_entry, True, True, 0)
-		content_area.pack_start(hbox, True, True, 0)
-
-
-		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-		hbox.pack_start(Gtk.Label("Arduino ID"), True, True, 0)
-		arduino_id_entry = Gtk.Entry()
-		hbox.pack_start(arduino_id_entry, True, True, 0)
-		content_area.pack_start(hbox, True, True, 0)
-
-
-		dialog.show_all()
 		response = dialog.run()
 
 		if response == Gtk.ResponseType.OK:
-			device_name = device_name_entry.get_text()
-			device_label = device_label_entry.get_text()
-			arduino_id = arduino_id_entry.get_text()
-
-			device = Device(name=device_name, label=device_label, arduino_id=arduino_id)
-			device.set_overview_page_presence(True)
+			# Reinitialize all devices.
 			
-			self.add_device(device)
+			print "Save Changes clicked."
 
-			self.initialize()
+			# for device_name, device in self._devices.items():
+				
+			# 	# if not device.initialized():
+			# 	# 	del self._devices[device_name]
+			# 	# 	print "Adding a new device."
+			# 	# 	self.add_device(device)
 
-			
-			self._devices[device_name].get_overview_frame().show_all()
+			self.reinitialize()
 
-		else:
-			print "Cancelled!"
-
-
+		elif response == Gtk.ResponseType.CANCEL:
+			print("The Cancel button was clicked")
 
 		dialog.destroy()
-		'''
 
 
+
+		
 
 
 	def load_device_from_file_callback(self, button):
@@ -443,10 +453,6 @@ class MIST1ControlSystem:
 	def get_arduino_vbox(self):
 		return self._arduino_vbox
 
-	def add_device_dialog_button_callback(self, button):
-		pass
-
-
 
 	def save_as_devices_callback(self, button):
 		
@@ -567,8 +573,9 @@ class MIST1ControlSystem:
 			   "stop_button_clicked_cb": self.emergency_stop,
 			   "on_main_statusbar_text_pushed": self.statusbar_changed_callback,
 			   "about_program_menu_item_activated": self.about_program_callback,
-			   "add_device_button_clicked_cb": self.add_device_callback,
-			   "load_device_from_file_button_cb": self.load_device_from_file_callback,
+			   "add_device_toolbutton_clicked_cb": self.add_device_callback,
+			   "edit_device_toolbutton_clicked_cb": self.edit_device_callback,
+			   "load_device_from_file_toolbutton_cb": self.load_device_from_file_callback,
 			   "save_as_devices_toolbutton_clicked_cb": self.save_as_devices_callback,
 			   }
 
@@ -595,9 +602,92 @@ class MIST1ControlSystem:
 		# Any and all remaining initializations go here
 		self.setup_communication_threads()
 
+		self.setup_settings_page()
+
 		self._initialized = True
 
 		return 0
+
+	def device_settings_tree_selection_callback(self, selection):
+		
+		if self._edit_device_frame != None:
+			self._builder.get_object("settings_page_settings_box").remove(self._edit_device_frame)
+
+
+		model, treeiter = selection.get_selected()
+		
+		if treeiter != None:
+
+			label = model[treeiter][0]
+			selection_type = model[treeiter][1]
+			name = model[treeiter][2]
+			
+			if selection_type == "device":
+				
+				# Populate the right window with fields to edit device information.
+
+				device = self._devices[name]
+
+				self._edit_device_frame = Gtk.Frame(label="Edit {}".format(label))
+				self._edit_device_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
+
+				edit_device_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
+				self._edit_device_frame.add( edit_device_vbox )
+
+				labels = ["Name", "Label", "Arduino ID"]
+				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
+				values = [device.name(), device.label(), device.get_arduino_id()]
+
+				for label, entry, value in zip(labels, entries, values):
+					hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+					hbox.pack_start(Gtk.Label(label), True, True, 0)
+					entry.set_text(value)
+					hbox.pack_start(entry, True, True, 0)
+					edit_device_vbox.add(hbox)
+
+
+				self._builder.get_object("settings_page_settings_box").add(self._edit_device_frame)
+
+		self._main_window.show_all()
+
+
+	def setup_settings_page(self):
+
+		scrolled_window = self._builder.get_object("settings_scrolled_window")
+
+		store = Gtk.TreeStore(str, str, str)
+		
+		for device_name, device in self._devices.items():
+
+			device_iter = store.append(None, [device.label(), "device", device.name()])
+
+			for channel_name, channel in device.channels().items():
+				channel_iter = store.append(device_iter, [channel.label(), "channel", channel.name()])
+		
+
+		treeView = Gtk.TreeView(store)
+
+
+		column = Gtk.TreeViewColumn("Label")
+
+		title = Gtk.CellRendererText()
+		column.pack_start(title, True)
+		column.add_attribute(title, "text", 0)
+		
+		treeView.append_column(column)
+
+
+
+		select = treeView.get_selection()
+		select.connect("changed", self.device_settings_tree_selection_callback)
+
+		scrolled_window.add(treeView)
+
+		
+		self._main_window.show_all()
+
+
+
 
 
 	def reinitialize(self):
@@ -606,7 +696,7 @@ class MIST1ControlSystem:
 				device.reinitialize_channels()
 			else:
 				device.initialize()
-				
+
 		self.set_widget_connections()
 
 		self.setup_communication_threads()
@@ -762,15 +852,17 @@ if __name__ == "__main__":
 
 	# Add all our devices to the control system.
 	
-	# control_system.add_device(interlock_box_device)
+	control_system.add_device(interlock_box_device)
 
 
+	'''
+	# # This is for reading / writing from json files.
 	# interlock_box_device.write_json("devices/interlock.json")
 
 	# interlock_box = Device.load_from_json("devices/interlock.json")
 
 	# control_system.add_device(interlock_box)
-
+	'''
 
 	
 
@@ -780,42 +872,46 @@ if __name__ == "__main__":
 	# AASHISH Interlock Box => 2cc580d6-fa29-44a7-9fec-035acd72340e
 	# AASHISH Ion Gauge => 41b70a36-a206-41c5-b743-1e5b8429b9a1
 
-	# ion_gauge = Device("ion_gauge", arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", label="Ion Gauge")
-	# ion_gauge.set_overview_page_presence(True)
+	ion_gauge = Device("ion_gauge", arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", label="Ion Gauge")
+	ion_gauge.set_overview_page_presence(True)
 
-	# for i in range(2):
-	# 	ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-	# 				 message_header="gauge_state#" + str(i + 1),
-	# 				 upper_limit=1,
-	# 				 lower_limit=0,
-	# 				 data_type=bool,
-	# 				 mode="read",
-	# 				 display_order=(4 - i))
+	for i in range(2):
+		ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
+					 message_header="gauge_state#" + str(i + 1),
+					 upper_limit=1,
+					 lower_limit=0,
+					 data_type=bool,
+					 mode="read",
+					 display_order=(4 - i))
 
-	# 	ion_gauge.add_channel(ch)
+		ion_gauge.add_channel(ch)
 
-	# for i in range(2):
-	# 	ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-	# 				 message_header="gauge_pressure#" + str(i + 1),
-	# 				 upper_limit=1000,
-	# 				 lower_limit=0,
-	# 				 data_type=float,
-	# 				 mode="read",
-	# 				 unit="Torr",
-	# 				 display_order=(4 - i),
-	# 				 displayformat=".2e")
+	for i in range(2):
+		ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
+					 message_header="gauge_pressure#" + str(i + 1),
+					 upper_limit=1000,
+					 lower_limit=0,
+					 data_type=float,
+					 mode="read",
+					 unit="Torr",
+					 display_order=(4 - i),
+					 displayformat=".2e")
 
-	# 	ion_gauge.add_channel(ch)
+		ion_gauge.add_channel(ch)
 
-	# control_system.add_device(ion_gauge)
+	control_system.add_device(ion_gauge)
 
+
+
+	'''
+	# # This is for reading / writing from json files.
 
 	# ion_gauge.write_json("devices/ion_gauge.json")
 
 	# ion_gauge = Device.load_from_json("devices/ion_gauge.json")
 	
 	# control_system.add_device(ion_gauge)
-
+	'''
 	
 
 	# Run the control system, this has to be last as it does all the initializations and adding to the GUI.

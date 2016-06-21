@@ -349,8 +349,6 @@ class Channel:
 		:return:
 		"""
 
-		print "adding channel = {} to gui".format(self._name)
-
 		parent_device = self._parent_device
 
 		set_flag = True
@@ -461,8 +459,6 @@ class Channel:
 		Initializes the channel
 		:return:set_parent
 		"""
-
-		print "Initializing channel = " + str(self._name)
 
 		self.add_channel_to_gui()
 

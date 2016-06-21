@@ -12,6 +12,11 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-missing-image</property>
+  </object>
   <object class="GtkTextBuffer" id="log_texbuffer"/>
   <object class="GtkWindow" id="main_window">
     <property name="can_focus">False</property>
@@ -155,11 +160,12 @@
                     <property name="can_focus">False</property>
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem5">
-                        <property name="label">gtk-about</property>
+                        <property name="label">_Add Device</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="image">image1</property>
+                        <property name="use_stock">False</property>
                       </object>
                     </child>
                   </object>
@@ -206,7 +212,8 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Quit</property>
-                <property name="label" translatable="yes">toolbutton</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Quit</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-quit</property>
                 <signal name="clicked" handler="main_quit" swapped="no"/>
@@ -221,25 +228,11 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Load Device</property>
+                <property name="is_important">True</property>
                 <property name="label" translatable="yes">Load Device from File</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-open</property>
-                <signal name="clicked" handler="load_device_from_file_button_cb" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">True</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkToolButton" id="add_device_toolbutton">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Add Device</property>
-                <property name="label" translatable="yes">Add Device</property>
-                <property name="use_underline">True</property>
-                <property name="stock_id">gtk-add</property>
-                <signal name="clicked" handler="add_device_button_clicked_cb" swapped="no"/>
+                <signal name="clicked" handler="load_device_from_file_toolbutton_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -252,10 +245,43 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Save Devices</property>
+                <property name="is_important">True</property>
                 <property name="label" translatable="yes">Save Devices</property>
                 <property name="use_underline">True</property>
                 <property name="stock_id">gtk-save-as</property>
                 <signal name="clicked" handler="save_as_devices_toolbutton_clicked_cb" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="add_device_toolbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Add Device/Channel</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Add Device/Channel</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">gtk-add</property>
+                <signal name="clicked" handler="add_device_toolbutton_clicked_cb" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">True</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToolButton" id="edit_device_toolbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Edit Device/Channel</property>
+                <property name="is_important">True</property>
+                <property name="label" translatable="yes">Edit Device/Channel</property>
+                <property name="use_underline">True</property>
+                <property name="stock_id">gtk-edit</property>
+                <signal name="clicked" handler="edit_device_toolbutton_clicked_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -430,7 +456,50 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <placeholder/>
+                      <object class="GtkBox" id="box3">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="hexpand">True</property>
+                        <property name="vexpand">True</property>
+                        <child>
+                          <object class="GtkAlignment" id="alignment2">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="hexpand">True</property>
+                            <child>
+                              <object class="GtkScrolledWindow" id="settings_scrolled_window">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="hexpand">True</property>
+                                <property name="shadow_type">in</property>
+                                <child>
+                                  <placeholder/>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkAlignment" id="settings_page_settings_alignment">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="hexpand">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
                     </child>
                   </object>
                   <packing>
