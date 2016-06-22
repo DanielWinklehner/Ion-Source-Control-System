@@ -23,6 +23,8 @@ import data_logging
 import dialogs as MIST1Dialogs
 
 
+# Maybe have a dedicated add_channel() method just like add_device() so that it can take care of everything, like adding the correct channel to the logger, updating the tree view, etc.
+
 __author__ = "Aashish Tripathee and Daniel Winklehner"
 __doc__ = """GUI without actual functionality"""
 
@@ -368,12 +370,19 @@ class MIST1ControlSystem:
 
 								try:
 									channel.read_value()
-									# Log data.
-									self.log_data(channel)
+
+									try:
+										# Log data.
+										self.log_data(channel)
+									except Exception as e:
+										# print "Exception caught while trying to log data."
+										# print e
+										pass
 
 									self._communication_threads_poll_count[arduino_id] += 1
 
 									GLib.idle_add(self.update_gui, channel)
+
 								except Exception as e:
 									"Got an exception", e
 
@@ -617,7 +626,61 @@ class MIST1ControlSystem:
 
 		return 0
 
+	def settings_add_device_callback(self, button, params):
 
+		device_name = params['name'].get_text()
+		device_label = params['label'].get_text()
+		arduino_id = params['arduino_id'].get_text()
+		overview_page_presence = params['overview_page_presence'].get_active()
+
+		print "Got a new device!"
+
+		new_device = Device(name=device_name, label=device_label, arduino_id=arduino_id)
+		new_device.set_overview_page_presence(overview_page_presence)
+
+		self.add_device(new_device)
+
+		self.reinitialize()
+
+	def settings_add_channel_callback(self, button, device_name, params):
+		# Default values.
+		data_type, mode = float, "both"
+
+		data_type_iter = params['data_type'].get_active_iter()
+
+		if data_type_iter != None:
+			model = params['data_type'].get_model()
+			data_type, data_type_str = model[data_type_iter][:2]
+			data_type = eval(data_type)
+
+
+		mode_iter = params['mode'].get_active_iter()
+
+		if mode_iter != None:
+			model = params['mode'].get_model()
+			mode, mode_str = model[mode_iter][:2]
+
+
+		# Create a new channel.
+		ch = Channel(name=params['name'].get_text(), 
+					 label=params['label'].get_text(),
+					 message_header=params['message_header'].get_text(),
+					 upper_limit=float(params['upper_limit'].get_text()),
+					 lower_limit=float(params['lower_limit'].get_text()),
+					 data_type=data_type,
+					 mode=mode,
+					 unit=params['unit'].get_text())
+
+
+		# Add the newly created channel to the correct device.
+
+		if device_name in self._devices.keys():
+			self._devices[device_name].add_channel( ch )
+			device_label = self._devices[device_name].label()
+
+		self.reinitialize()
+
+		
 
 	def device_settings_tree_selection_callback(self, selection):
 		
@@ -630,15 +693,16 @@ class MIST1ControlSystem:
 		if treeiter != None:
 
 			label = model[treeiter][0]
-			selection_type = model[treeiter][1]
-			name = model[treeiter][2]
-			device_name = model[treeiter][3]
+			object_type = model[treeiter][1]
+			selection_type = model[treeiter][2]
+			name = model[treeiter][3]
+			device_name = model[treeiter][4]
 			
 
 			
 			edit_device_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin=12)
 
-			if selection_type == "device":
+			if selection_type == "edit_device":
 
 				# Populate the right-side-box with fields to edit device information.
 				device = self._devices[device_name]
@@ -650,9 +714,9 @@ class MIST1ControlSystem:
 				grid = Gtk.Grid(column_spacing=20, row_spacing=15)
 				edit_device_vbox.add(grid)
 
-				labels = ["Name", "Label", "Arduino ID"]
-				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
-				values = [device.name(), device.label(), device.get_arduino_id()]
+				labels = ["Name", "Label", "Arduino ID", "Overview Page Presence"]
+				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.CheckButton()]
+				values = [device.name(), device.label(), device.get_arduino_id(), device.is_on_overview_page()]
 
 				for label_text, entry, value in zip(labels, entries, values):
 
@@ -666,15 +730,17 @@ class MIST1ControlSystem:
 						grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
 						grid.attach_next_to(entry, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 					
-					entry.set_text(value)
+					entry_type = str(type(entry)).split("'")[1]
 
-					last_entry = entry
-					last_label = label
+					if entry_type == "gi.repository.Gtk.Entry":
+						entry.set_text(value)
+					elif entry_type == "gi.repository.Gtk.CheckButton":
+						entry.set_active(value)
+
+					last_entry, last_label = entry, label
 
 				edit_device_save_button = Gtk.Button(label="Save Changes to Device")
-				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-				hbox.pack_start(edit_device_save_button, expand=True, fill=False, padding=0)
-				edit_device_vbox.add(hbox)
+				grid.attach_next_to(edit_device_save_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
 			elif selection_type == "add_new_device":
 
@@ -685,8 +751,8 @@ class MIST1ControlSystem:
 				grid = Gtk.Grid(column_spacing=20, row_spacing=15)
 				edit_device_vbox.add(grid)
 
-				labels = ["Name", "Label", "Arduino ID"]
-				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
+				labels = ["Name", "Label", "Arduino ID", "Overview Page Presence"]
+				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.CheckButton()]
 
 				
 				for label_text, entry in zip(labels, entries):
@@ -701,16 +767,15 @@ class MIST1ControlSystem:
 						grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
 						grid.attach_next_to(entry, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
-					last_entry = entry
-					last_label = label
+					last_entry, last_label = entry, label
 
-					
-				add_device_button = Gtk.Button(label="Add Device")
-				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-				hbox.pack_start(add_device_button, expand=True, fill=False, padding=0)
-				edit_device_vbox.add(hbox)
+				add_device_button = Gtk.Button(label="Add Device")	
+				add_device_button.connect("clicked", self.settings_add_device_callback, dict(name=entries[0], label=entries[1], arduino_id=entries[2], overview_page_presence=entries[3]))
+				grid.attach_next_to(add_device_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
+				
 
-			elif selection_type == "channel":
+			elif selection_type == "edit_channel":
+
 				device = self._devices[device_name]
 				channel = device.channels()[name]
 
@@ -739,8 +804,7 @@ class MIST1ControlSystem:
 
 					entry.set_text(str(value))
 
-					last_entry = entry
-					last_label = label
+					last_entry, last_label = entry, label
 
 
 
@@ -780,11 +844,10 @@ class MIST1ControlSystem:
 				grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
 				grid.attach_next_to(mode_combo, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
+				last_entry, last_label = mode_combo, label
 				
 				edit_channel_save_button = Gtk.Button(label="Save Changes to Channel")
-				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-				hbox.pack_start(edit_channel_save_button, expand=True, fill=False, padding=0)
-				edit_device_vbox.add(hbox)
+				grid.attach_next_to(edit_channel_save_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
 			elif selection_type == "add_new_channel":
 				device = self._devices[device_name]
@@ -854,12 +917,12 @@ class MIST1ControlSystem:
 				grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
 				grid.attach_next_to(mode_combo, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
+				last_entry, last_label = mode_combo, label
 
 
 				add_device_button = Gtk.Button(label="Add Channel")
-				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-				hbox.pack_start(add_device_button, expand=True, fill=False, padding=0)
-				edit_device_vbox.add(hbox)
+				add_device_button.connect("clicked", self.settings_add_channel_callback, device_name, dict( name=entries[0], label=entries[1], message_header=entries[2], lower_limit=entries[3], upper_limit=entries[4], unit=entries[5], data_type=data_type_combo, mode=mode_combo ) )
+				grid.attach_next_to(add_device_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
 			self._builder.get_object("settings_page_settings_box").add(self._edit_device_frame)
 
@@ -873,31 +936,28 @@ class MIST1ControlSystem:
 
 		scrolled_window = self._builder.get_object("settings_scrolled_window")
 
-		store = Gtk.TreeStore(str, str, str, str)
+		store = Gtk.TreeStore(str, str, str, str, str)
 		
 		for device_name, device in self._devices.items():
 
-			device_iter = store.append(None, [device.label(), "device", device.name(), device.name()])
+			device_iter = store.append(None, [device.label(), "Device", "edit_device", device.name(), device.name()])
 
 			for channel_name, channel in device.channels().items():
-				channel_iter = store.append(device_iter, [channel.label(), "channel", channel.name(), device.name()])
+				channel_iter = store.append(device_iter, [channel.label(), "Channel", "edit_channel", channel.name(), device.name()])
 
-			channel_iter = store.append(device_iter, ["[ Add a New Channel ]", "add_new_channel", device.name(), device.name()])
+			channel_iter = store.append(device_iter, ["<b>[ Add a New Channel ]</b>", "", "add_new_channel", device.name(), device.name()])
 
-		device_iter = store.append(None, ["[ Add a New Device ]", "add_new_device", "", ""])
+		device_iter = store.append(None, ["<b>[ Add a New Device ]</b>", "", "add_new_device", "", ""])
 		
 
 		self._settings_tree_view = Gtk.TreeView(store)
 
-
-		column = Gtk.TreeViewColumn("Label")
-
 		title = Gtk.CellRendererText()
-		column.pack_start(title, True)
-		column.add_attribute(title, "text", 0)
-		
+		column = Gtk.TreeViewColumn("Label", title, markup=0)
 		self._settings_tree_view.append_column(column)
 
+		column = Gtk.TreeViewColumn("Object Type", title, markup=1)
+		self._settings_tree_view.append_column(column)
 
 
 		select = self._settings_tree_view.get_selection()
@@ -995,9 +1055,9 @@ class MIST1ControlSystem:
 
 			self._arduino_status_bars[arduino_id].set_value(frequency)
 
+
 		# If display on overview page is desired, update:
 		if channel.get_parent_device().is_on_overview_page():
-
 			channel.get_overview_page_display().set_value(channel.get_value())
 
 		return 0
@@ -1024,7 +1084,8 @@ if __name__ == "__main__":
 	# Add channels to the interlock box device.
 
 	# Flow meters. x5.
-	for i in range(5):
+	# for i in range(5):
+	for i in range(1):
 		ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
 					 message_header="flow_meter#" + str(i + 1),
 					 upper_limit=1,
@@ -1037,40 +1098,40 @@ if __name__ == "__main__":
 		interlock_box_device.add_channel(ch)
 
 	# Microswitches. x2.
-	for i in range(2):
-		ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-					message_header="micro_switch#{}".format(i + 1),
-					upper_limit=1,
-					lower_limit=0,
-					data_type=bool,
-					mode="read",
-					display_order=(11 - 5 - i))
+	# for i in range(2):
+	# 	ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
+	# 				message_header="micro_switch#{}".format(i + 1),
+	# 				upper_limit=1,
+	# 				lower_limit=0,
+	# 				data_type=bool,
+	# 				mode="read",
+	# 				display_order=(11 - 5 - i))
 
-		interlock_box_device.add_channel(ch)
+	# 	interlock_box_device.add_channel(ch)
 	
-	# Solenoid valves. x2.
-	for i in range(2):	
-		ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-					message_header="solenoid_valve#{}".format(i + 1),
-					upper_limit=1,
-					lower_limit=0,
-					data_type=bool,
-					mode="write",
-					display_order=(11 - 5 - 2 - i))
+	# # Solenoid valves. x2.
+	# for i in range(2):	
+	# 	ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
+	# 				message_header="solenoid_valve#{}".format(i + 1),
+	# 				upper_limit=1,
+	# 				lower_limit=0,
+	# 				data_type=bool,
+	# 				mode="write",
+	# 				display_order=(11 - 5 - 2 - i))
 
-		interlock_box_device.add_channel(ch)
+	# 	interlock_box_device.add_channel(ch)
 
-	# Vacuum Valves. x2.
-	for i in range(2):
-		ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-					message_header="vacuum_valve#{}".format(i + 1),
-					upper_limit=1,
-					lower_limit=0,
-					data_type=bool,
-					mode="read",
-					display_order=(11 - 5 - 2 - 2 - i))
+	# # Vacuum Valves. x2.
+	# for i in range(2):
+	# 	ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
+	# 				message_header="vacuum_valve#{}".format(i + 1),
+	# 				upper_limit=1,
+	# 				lower_limit=0,
+	# 				data_type=bool,
+	# 				mode="read",
+	# 				display_order=(11 - 5 - 2 - 2 - i))
 
-		interlock_box_device.add_channel(ch)
+	# 	interlock_box_device.add_channel(ch)
 
 	# Add all our devices to the control system.
 	
@@ -1116,7 +1177,7 @@ if __name__ == "__main__":
 
 		ion_gauge.add_channel(ch)
 
-	control_system.add_device(ion_gauge)
+	# control_system.add_device(ion_gauge)
 
 
 

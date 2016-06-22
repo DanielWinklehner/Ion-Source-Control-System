@@ -120,8 +120,10 @@ class Device:
 	def reinitialize_channels(self):
 		for channel_name, channel in self._channels.items():
 			if channel.initialized():
+				print "Reinitializing channel ", channel.name()
 				channel.reinitialize()
 			else:
+				print "Initializing channel ", channel.name()
 				channel.initialize()
 
 			
@@ -477,6 +479,8 @@ class Channel:
 		"""
 		self._serial_com = self._parent_device.get_serial_com()
 
+
+
 	def get_parent_device(self):
 		"""Summary
 		
@@ -688,7 +692,7 @@ class Channel:
 			else:
 				self._value = None
 
-			
+
 		except Exception as e:
 			self._value = None
 			raise Exception(str(e))
