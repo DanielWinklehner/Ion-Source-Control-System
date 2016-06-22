@@ -617,8 +617,6 @@ class MIST1ControlSystem:
 
 		return 0
 
-
-
 	def device_settings_tree_selection_callback(self, selection):
 		
 		if self._edit_device_frame != None:
@@ -636,7 +634,6 @@ class MIST1ControlSystem:
 			
 
 			
-			edit_device_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin=12)
 
 			if selection_type == "device":
 
@@ -645,70 +642,42 @@ class MIST1ControlSystem:
 
 				self._edit_device_frame = Gtk.Frame(label="Edit {}".format(label))
 				self._edit_device_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
-				self._edit_device_frame.add( edit_device_vbox )
 
-				grid = Gtk.Grid(column_spacing=20, row_spacing=15)
-				edit_device_vbox.add(grid)
+				edit_device_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
+				self._edit_device_frame.add( edit_device_vbox )
 
 				labels = ["Name", "Label", "Arduino ID"]
 				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
 				values = [device.name(), device.label(), device.get_arduino_id()]
 
-				for label_text, entry, value in zip(labels, entries, values):
-
-					label = Gtk.Label(xalign=1)
-					label.set_markup("<span foreground='#888a85'>" + label_text + "</span>")
-
-					if label_text == "Name":
-						grid.add(label)
-						grid.attach_next_to(entry, label, Gtk.PositionType.RIGHT, width=20, height=1)
-					else:
-						grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
-						grid.attach_next_to(entry, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
-					
+				for label, entry, value in zip(labels, entries, values):
+					hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+					hbox.pack_start(Gtk.Label(label), True, True, 0)
 					entry.set_text(value)
+					hbox.pack_start(entry, True, True, 0)
+					edit_device_vbox.add(hbox)
 
-					last_entry = entry
-					last_label = label
-
-				edit_device_save_button = Gtk.Button(label="Save Changes to Device")
+				edit_device_button = Gtk.Button(label="Save Changes to Device")
 				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-				hbox.pack_start(edit_device_save_button, expand=True, fill=False, padding=0)
+				hbox.pack_start(edit_device_button, True, True, 0)
 				edit_device_vbox.add(hbox)
 
 			elif selection_type == "add_new_device":
 
 				self._edit_device_frame = Gtk.Frame(label="Add a New Device")
 				self._edit_device_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
-				self._edit_device_frame.add( edit_device_vbox )
 
-				grid = Gtk.Grid(column_spacing=20, row_spacing=15)
-				edit_device_vbox.add(grid)
+				edit_device_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
+				self._edit_device_frame.add( edit_device_vbox )
 
 				labels = ["Name", "Label", "Arduino ID"]
 				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
 
-				
-				for label_text, entry in zip(labels, entries):
-					
-					label = Gtk.Label(xalign=1)
-					label.set_markup("<span foreground='#888a85'>" + label_text + "</span>");
-
-					if label_text == "Name":
-						grid.add(label)
-						grid.attach_next_to(entry, label, Gtk.PositionType.RIGHT, width=20, height=1)
-					else:
-						grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
-						grid.attach_next_to(entry, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
-
-					last_entry = entry
-					last_label = label
-
-					
-				add_device_button = Gtk.Button(label="Add Device")
-				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-				hbox.pack_start(add_device_button, expand=True, fill=False, padding=0)
-				edit_device_vbox.add(hbox)
+				for label, entry in zip(labels, entries):
+					hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+					hbox.pack_start(Gtk.Label(label), True, True, 0)
+					hbox.pack_start(entry, True, True, 0)
+					edit_device_vbox.add(hbox)
 
 			elif selection_type == "channel":
 				device = self._devices[device_name]
@@ -716,32 +685,20 @@ class MIST1ControlSystem:
 
 				self._edit_device_frame = Gtk.Frame(label="Edit {}".format(label))
 				self._edit_device_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
-				self._edit_device_frame.add( edit_device_vbox )
 
-				grid = Gtk.Grid(column_spacing=20, row_spacing=15)
-				edit_device_vbox.add(grid)
+				edit_device_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
+				self._edit_device_frame.add( edit_device_vbox )
 
 				labels = ["Name", "Label", "Message Header", "Lower Limit", "Upper Limit", "Unit"]
 				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
 				values = [channel.name(), channel.label(), channel.message_header(), channel.lower_limit(), channel.upper_limit(), channel.unit() ]
 
-				for label_text, entry, value in zip(labels, entries, values):
-
-					label = Gtk.Label(xalign=1)
-					label.set_markup("<span foreground='#888a85'>" + label_text + "</span>")
-
-					if label_text == "Name":
-						grid.add(label)
-						grid.attach_next_to(entry, label, Gtk.PositionType.RIGHT, width=20, height=1)
-					else:
-						grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
-						grid.attach_next_to(entry, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
-
+				for label, entry, value in zip(labels, entries, values):
+					hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+					hbox.pack_start(Gtk.Label(label), True, True, 0)
 					entry.set_text(str(value))
-
-					last_entry = entry
-					last_label = label
-
+					hbox.pack_start(entry, True, True, 0)
+					edit_device_vbox.add(hbox)
 
 
 				data_type_model_view = Gtk.ListStore(str, str)
@@ -753,16 +710,12 @@ class MIST1ControlSystem:
 				data_type_combo = Gtk.ComboBox.new_with_model_and_entry(data_type_model_view)
 				data_type_combo.set_entry_text_column(1)
 				data_type_combo.set_active( [x for x, y in data_type_options].index( str(channel.data_type()).split("'")[1] ) )
-				
-				label = Gtk.Label(xalign=1)
-				label.set_markup("<span foreground='#888a85'>Data Type</span>")
+				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+				hbox.pack_start(Gtk.Label("Data Type"), True, True, 0)
+				hbox.pack_start(data_type_combo, True, True, 0)
+				edit_device_vbox.add(hbox)
 
-				grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
-				grid.attach_next_to(data_type_combo, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
-				last_entry = data_type_combo
-				last_label = label
-				
 
 				mode_model_view = Gtk.ListStore(str, str)
 				mode_options = [ ["read", "Read"], ["write", "Write"], ["both", "Both"] ]
@@ -773,17 +726,9 @@ class MIST1ControlSystem:
 				mode_combo = Gtk.ComboBox.new_with_model_and_entry(mode_model_view)
 				mode_combo.set_entry_text_column(1)
 				mode_combo.set_active( [x for x, y in mode_options].index( channel.mode() ) )
-				
-				label = Gtk.Label(xalign=1)
-				label.set_markup("<span foreground='#888a85'>Mode</span>")
-
-				grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
-				grid.attach_next_to(mode_combo, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
-
-				
-				edit_channel_save_button = Gtk.Button(label="Save Changes to Channel")
 				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-				hbox.pack_start(edit_channel_save_button, expand=True, fill=False, padding=0)
+				hbox.pack_start(Gtk.Label("Mode"), True, True, 0)
+				hbox.pack_start(mode_combo, True, True, 0)
 				edit_device_vbox.add(hbox)
 
 			elif selection_type == "add_new_channel":
@@ -792,30 +737,18 @@ class MIST1ControlSystem:
 
 				self._edit_device_frame = Gtk.Frame(label="Add a New Channel to {}".format(device.label()))
 				self._edit_device_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
+
+				edit_device_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
 				self._edit_device_frame.add( edit_device_vbox )
-
-				grid = Gtk.Grid(column_spacing=20, row_spacing=15)
-				edit_device_vbox.add(grid)
-
-
 
 				labels = ["Name", "Label", "Message Header", "Lower Limit", "Upper Limit", "Unit"]
 				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
 
-				for label_text, entry in zip(labels, entries):
-					
-					label = Gtk.Label(xalign=1)
-					label.set_markup("<span foreground='#888a85'>" + label_text + "</span>")
-
-					if label_text == "Name":
-						grid.add(label)
-						grid.attach_next_to(entry, label, Gtk.PositionType.RIGHT, width=20, height=1)
-					else:
-						grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
-						grid.attach_next_to(entry, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
-
-					last_entry = entry
-					last_label = label
+				for label, entry in zip(labels, entries):
+					hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+					hbox.pack_start(Gtk.Label(label), True, True, 0)
+					hbox.pack_start(entry, True, True, 0)
+					edit_device_vbox.add(hbox)
 
 
 				data_type_model_view = Gtk.ListStore(str, str)
@@ -826,17 +759,12 @@ class MIST1ControlSystem:
 				
 				data_type_combo = Gtk.ComboBox.new_with_model_and_entry(data_type_model_view)
 				data_type_combo.set_entry_text_column(1)
-				data_type_combo.set_active( [x for x, y in data_type_options].index( "float" ) )
-				
-				label = Gtk.Label(xalign=1)
-				label.set_markup("<span foreground='#888a85'>Data Type</span>")
+				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
+				hbox.pack_start(Gtk.Label("Data Type"), True, True, 0)
+				hbox.pack_start(data_type_combo, True, True, 0)
+				edit_device_vbox.add(hbox)
 
-				grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
-				grid.attach_next_to(data_type_combo, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
-				last_entry = data_type_combo
-				last_label = label
-				
 
 				mode_model_view = Gtk.ListStore(str, str)
 				mode_options = [ ["read", "Read"], ["write", "Write"], ["both", "Both"] ]
@@ -846,19 +774,9 @@ class MIST1ControlSystem:
 				
 				mode_combo = Gtk.ComboBox.new_with_model_and_entry(mode_model_view)
 				mode_combo.set_entry_text_column(1)
-				mode_combo.set_active( [x for x, y in mode_options].index( "read" ) )
-				
-				label = Gtk.Label(xalign=1)
-				label.set_markup("<span foreground='#888a85'>Mode</span>")
-
-				grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
-				grid.attach_next_to(mode_combo, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
-
-
-
-				add_device_button = Gtk.Button(label="Add Channel")
 				hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2, margin=4)
-				hbox.pack_start(add_device_button, expand=True, fill=False, padding=0)
+				hbox.pack_start(Gtk.Label("Mode"), True, True, 0)
+				hbox.pack_start(mode_combo, True, True, 0)
 				edit_device_vbox.add(hbox)
 
 			self._builder.get_object("settings_page_settings_box").add(self._edit_device_frame)

@@ -852,6 +852,7 @@ class SerialCOM:
 
 						# This is probably an Arduino designed for this Control System.
 						# Get the device id.
+						print response
 						if arduino_id == response.split("=")[1]:
 
 							print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)

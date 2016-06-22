@@ -396,92 +396,92 @@ if __name__ == "__main__":
     # Each device is connected to a single arduino, several devices can be connected to the
     # same Arduino, but never several arduinos to a single device!
 
-    interlock_box_device = Device("interlock_box", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef",
-                                  label="Interlock Box")
-    interlock_box_device.set_overview_page_presence(True)
-
-    # Add channels to the interlock box device.
-
-    # Flow meters. x5.
-    for i in range(5):
-        ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-                     message_header="flow_meter#" + str(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=int,
-                     mode="read",
-                     unit="Hz",
-                     display_order=(11 - i))
-
-        interlock_box_device.add_channel(ch)
-
-    # Microswitches. x2.
-    for i in range(2):
-        ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-                     message_header="micro_switch#{}".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="read",
-                     display_order=(11 - 5 - i))
-
-        interlock_box_device.add_channel(ch)
-
-    # Solenoid valves. x2.
-    for i in range(2):
-        ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-                     message_header="solenoid_valve#{}".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="write",
-                     display_order=(11 - 5 - 2 - i))
-
-        interlock_box_device.add_channel(ch)
-
-    # Vacuum Valves. x2.
-    for i in range(2):
-        ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-                     message_header="vacuum_valve#{}".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="read",
-                     display_order=(11 - 5 - 2 - 2 - i))
-
-        interlock_box_device.add_channel(ch)
-
-    # Add all our devices to the control system.
-
-    control_system.add_device(interlock_box_device)
-
-    # ion_gauge = Device("ion_gauge", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", label="Ion Gauge")
-    # ion_gauge.set_overview_page_presence(True)
+    # interlock_box_device = Device("interlock_box", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef",
+    #                               label="Interlock Box")
+    # interlock_box_device.set_overview_page_presence(True)
     #
+    # # Add channels to the interlock box device.
+    #
+    # # Flow meters. x5.
+    # for i in range(5):
+    #     ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+    #                  message_header="flow_meter#" + str(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=int,
+    #                  mode="read",
+    #                  unit="Hz",
+    #                  display_order=(11 - i))
+    #
+    #     interlock_box_device.add_channel(ch)
+    #
+    # # Microswitches. x2.
     # for i in range(2):
-    #     ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-    #                  message_header="gauge_state#" + str(i + 1),
+    #     ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
+    #                  message_header="micro_switch#{}".format(i + 1),
     #                  upper_limit=1,
     #                  lower_limit=0,
     #                  data_type=bool,
     #                  mode="read",
-    #                  display_order=(4 - i))
+    #                  display_order=(11 - 5 - i))
     #
-    #     ion_gauge.add_channel(ch)
+    #     interlock_box_device.add_channel(ch)
     #
+    # # Solenoid valves. x2.
     # for i in range(2):
-    #     ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-    #                  message_header="gauge_pressure#" + str(i + 1),
-    #                  upper_limit=1000,
+    #     ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
+    #                  message_header="solenoid_valve#{}".format(i + 1),
+    #                  upper_limit=1,
     #                  lower_limit=0,
-    #                  data_type=float,
+    #                  data_type=bool,
+    #                  mode="write",
+    #                  display_order=(11 - 5 - 2 - i))
+    #
+    #     interlock_box_device.add_channel(ch)
+    #
+    # # Vacuum Valves. x2.
+    # for i in range(2):
+    #     ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
+    #                  message_header="vacuum_valve#{}".format(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=bool,
     #                  mode="read",
-    #                  unit="Torr",
-    #                  display_order=(4 - i))
+    #                  display_order=(11 - 5 - 2 - 2 - i))
     #
-    #     ion_gauge.add_channel(ch)
+    #     interlock_box_device.add_channel(ch)
     #
-    # control_system.add_device(ion_gauge)
+    # # Add all our devices to the control system.
+    #
+    # control_system.add_device(interlock_box_device)
+
+    ion_gauge = Device("ion_gauge", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", label="Ion Gauge")
+    ion_gauge.set_overview_page_presence(True)
+
+    for i in range(2):
+        ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
+                     message_header="gauge_state#" + str(i + 1),
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=bool,
+                     mode="read",
+                     display_order=(4 - i))
+
+        ion_gauge.add_channel(ch)
+
+    for i in range(2):
+        ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
+                     message_header="gauge_pressure#" + str(i + 1),
+                     upper_limit=1000,
+                     lower_limit=0,
+                     data_type=float,
+                     mode="read",
+                     unit="Torr",
+                     display_order=(4 - i))
+
+        ion_gauge.add_channel(ch)
+
+    control_system.add_device(ion_gauge)
 
     # Run the control system, this has to be last as it does all the initializations and adding to the GUI.
     control_system.run()

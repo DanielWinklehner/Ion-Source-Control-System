@@ -21,31 +21,21 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="MIST1_Control_System_GUI.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI.py">
+      <file leaf-file-name="control_system.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="476">
-              <caret line="28" column="0" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
+            <state relative-caret-position="510">
+              <caret line="793" column="16" selection-start-line="793" selection-start-column="16" selection-end-line="793" selection-end-column="16" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
       <file leaf-file-name="device.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/device.py">
+        <entry file="file://$PROJECT_DIR$/../GUI/device.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="381">
-              <caret line="495" column="0" selection-start-line="495" selection-start-column="0" selection-end-line="495" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="MIST1_Control_System_GUI_Widgets.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1020">
-              <caret line="193" column="43" selection-start-line="193" selection-start-column="43" selection-end-line="193" selection-end-column="43" />
+            <state relative-caret-position="320">
+              <caret line="849" column="20" selection-start-line="849" selection-start-column="20" selection-end-line="849" selection-end-column="20" />
               <folding />
             </state>
           </provider>
@@ -65,28 +55,29 @@
       <list>
         <option value="$PROJECT_DIR$/arduino_gui.py" />
         <option value="$PROJECT_DIR$/MIST1_Control_System_GUI_ONLY.py" />
-        <option value="$PROJECT_DIR$/../GUI/device.py" />
         <option value="$PROJECT_DIR$/../GUI/control_system_serial.py" />
         <option value="$PROJECT_DIR$/control_system.py" />
         <option value="$APPLICATION_HOME_DIR$/bin/idea.properties" />
         <option value="C:/Python27/Lib/site-packages/gnome/share/themes/DeLorean-Dark-Unity-3.18/gtk-3.0/gtk-contained.css" />
         <option value="$PROJECT_DIR$/RadioButtions.py" />
         <option value="$PROJECT_DIR$/MyFirstWidget.py" />
-        <option value="$PROJECT_DIR$/../GUI/control_system.py" />
         <option value="C:/Python27/Lib/site-packages/DansPyMods/Dialog3.py" />
         <option value="C:/Python27/Lib/site-packages/DansPyMods/MPLCanvasWrapper3.py" />
         <option value="$PROJECT_DIR$/data_logging.py" />
-        <option value="$PROJECT_DIR$/MIST1_Control_System_GUI.py" />
         <option value="$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py" />
         <option value="$PROJECT_DIR$/Daniel Previous Version/device_old.py" />
         <option value="$PROJECT_DIR$/device.py" />
+        <option value="$PROJECT_DIR$/MIST1_Control_System_GUI.py" />
+        <option value="$PROJECT_DIR$/../GUI/device.py" />
+        <option value="$PROJECT_DIR$/../GUI/control_system.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-7" />
-    <option name="width" value="1294" />
-    <option name="height" value="1047" />
+    <option name="x" value="-8" />
+    <option name="y" value="-8" />
+    <option name="width" value="2576" />
+    <option name="height" value="1056" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -120,7 +111,7 @@
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../GUI/device.py" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
@@ -134,7 +125,7 @@
       <recent name="D:\Daniel\Dropbox (MIT)\Projects\IsoDAR\Ion Source\Control System\Python\ControlSystem" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.MIST1_Control_System_GUI">
+  <component name="RunManager" selected="Python.control_system">
     <configuration default="false" name="MIST1_Control_System_GUI_Widgets" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -363,8 +354,8 @@
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI" />
-        <item index="1" class="java.lang.String" itemvalue="Python.control_system" />
+        <item index="0" class="java.lang.String" itemvalue="Python.control_system" />
+        <item index="1" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI" />
         <item index="2" class="java.lang.String" itemvalue="Python.MyFirstWidget" />
         <item index="3" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_Widgets" />
         <item index="4" class="java.lang.String" itemvalue="Python.RadioButtions" />
@@ -388,7 +379,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-7" y="0" width="1294" height="1047" extended-state="0" />
+    <frame x="-8" y="-8" width="2576" height="1056" extended-state="6" />
     <editor active="false" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24973656" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -396,8 +387,8 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32936078" sideWeight="0.5021075" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32900432" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21857923" sideWeight="0.49789253" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22372611" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21776815" sideWeight="0.49789253" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22340426" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3997833" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -541,13 +532,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../GUI/device.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="861">
-          <caret line="206" column="27" selection-start-line="206" selection-start-column="27" selection-end-line="206" selection-end-column="27" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/Python27/Lib/threading.py" />
     <entry file="file://$PROJECT_DIR$/control_system.py" />
     <entry file="file://$PROJECT_DIR$/control_system_serial.py" />
@@ -600,28 +584,18 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_old.py" />
-    <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="11" column="28" selection-start-line="11" selection-start-column="28" selection-end-line="11" selection-end-column="28" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/Python27/Lib/site-packages/h5py/_hl/files.py" />
     <entry file="file://C:/Python27/Lib/site-packages/DansPyMods/MPLCanvasWrapper3.py" />
     <entry file="file://$PROJECT_DIR$/data_logging.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="187">
           <caret line="11" column="32" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
-          <folding>
-            <element signature="e#0#31#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1020">
+        <state relative-caret-position="3281">
           <caret line="193" column="43" selection-start-line="193" selection-start-column="43" selection-end-line="193" selection-end-column="43" />
           <folding />
         </state>
@@ -631,13 +605,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="501">
           <caret line="337" column="8" selection-start-line="337" selection-start-column="8" selection-end-line="337" selection-end-column="36" />
-          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/device.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="381">
+        <state relative-caret-position="8313">
           <caret line="495" column="0" selection-start-line="495" selection-start-column="0" selection-end-line="495" selection-end-column="0" />
           <folding />
         </state>
@@ -645,8 +618,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="476">
-          <caret line="28" column="0" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
+        <state relative-caret-position="269">
+          <caret line="465" column="36" selection-start-line="465" selection-start-column="36" selection-end-line="465" selection-end-column="36" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI/device.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="320">
+          <caret line="849" column="20" selection-start-line="849" selection-start-column="20" selection-end-line="849" selection-end-column="20" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="510">
+          <caret line="793" column="16" selection-start-line="793" selection-start-column="16" selection-end-line="793" selection-end-column="16" />
           <folding />
         </state>
       </provider>

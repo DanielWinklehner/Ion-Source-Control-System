@@ -532,6 +532,7 @@
                                 <property name="label" translatable="yes">Expand All</property>
                                 <property name="use_underline">True</property>
                                 <property name="stock_id">gtk-zoom-in</property>
+                                <signal name="clicked" handler="settings_expand_all_clicked_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -547,6 +548,7 @@
                                 <property name="label" translatable="yes">Collapse All</property>
                                 <property name="use_underline">True</property>
                                 <property name="stock_id">gtk-zoom-out</property>
+                                <signal name="clicked" handler="settings_collapse_all_clicked_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
