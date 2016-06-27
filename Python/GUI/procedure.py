@@ -10,13 +10,15 @@ class Procedure:
 		Args:
 		    name (TYPE): Description
 		    conditions (list[ tuple(function, channel) ]): A list of tuples of two elements- (lambda) function and channel. e.g., [ (lambda x: return not x, interlock_box.micro_switch#1) ]
-		    actions (list[ tuple(channel, string) ]): A list of tuples of two elements- channel and action. Action must be a string. If channel is not applicable (for example for an emergency stop), put None. 
+		    actions (list[ tuple(function, kwargs) ]): A list of tuples of two elements- function and kwargs. For function, the string "emergency_stop" is also accepted. If you use "emergency_stop" as the "function", use None or an empty dict for kwargs. 
 		    priority (int, optional): lower number = higher priority. A priority of -1 gets its own thread.
 		
 		Deleted Parameters:
 		    channel_to_act_on (TYPE): Description
 		    action (TYPE): Description
 		"""
+
+		print actions[0][1]
 
 		self._name = name
 		self._conditions = conditions
@@ -65,13 +67,24 @@ class Procedure:
 									False => The procedure was not successful.
 		"""
 
-		if self.should_do_procedure():
-			for channel, action in self._actions:
+		print "acting the procedure"
+
+		if self.should_perform_procedure():
+			for action, kwargs in self._actions:
 				if action == "emergency_stop":
 					return "STOP"
 				else:
-					# What would other "actions" be? Set certain values to something? Then should there be another parameter about what values to set to the channels given in self._actions?
-					pass
+					action_function = action
+
+					def dummy_func(**kwargs):
+						print kwargs.keys()
+						# func(kwargs)
+
+
+					# print kwargs
+					# dummy_func(**kwargs)
+
+					action_function(**kwargs)
 
 
 		return False

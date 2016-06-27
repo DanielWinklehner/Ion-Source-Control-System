@@ -14,6 +14,7 @@ import serial
 
 from gi.repository import Gtk, GLib, GObject, Gdk
 
+from procedure import Procedure
 from serial import SerialException
 from device import Device, Channel
 from MIST1_Control_System_GUI_Widgets import *
@@ -107,9 +108,13 @@ class MIST1ControlSystem:
 
 		self.setup_settings_page()
 
+
+		self._keep_procedure_thread_running = False
 		self._procedures = {}
 		self._procedure_thread = None
 
+
+		self._keep_critical_procedure_threads_running = False
 		self._critical_procedures = {}	 # These get their own threads.
 		self._critical_procedure_threads = {}
 
@@ -482,28 +487,40 @@ class MIST1ControlSystem:
 
 		# This is the method that all non-critical procedure threads run.
 
-		# TODO:
-		# THOUGHT: Should this also have a while loop? I mean, so that we keep on trying to do the procedure until it succeeds.
+		while self._keep_procedure_thread_running:
 
-		for procedure_name, procedure in self._procedures.items():
-			if procedure.should_perform_procedure():
-				procedure.act()
-		
+			print "Monitoring all non-critical threads here."
+
+			# TODO:
+			# THOUGHT: Should this also have a while loop? I mean, so that we keep on trying to do the procedure until it succeeds.
+
+			for procedure_name, procedure in self._procedures.items():
+				if procedure.should_perform_procedure():
+					procedure.act()
+			
 
 	def monitor_critical_procedure(self, critical_procedure):
+
 		# TODO: NOT IN USE RIGHT NOW.
 
 		# This is the method that all critical procedure threads run. Each of them run in a separate thread.
 
-		# Technically, we don't have to check this here since it's checked in the Procedure class before actually performing the procedure.
-		# But double-checking it probably won't hurt (will have some non-zero cost associated with retrieving values and then computing whether or not all the conditions are satisfied).
-		
 
-		# The second conditional is so that we can keep trying to perform the procedure until we succeed. This is crucial for "critical" procedures.
-		while critical_procedure.should_perform_procedure() and (not critical_procedure.act()):	
-			critical_procedure.act()
+		while self._keep_critical_procedure_threads_running:
 
-		
+
+			print "Critical thread running on its own thread."
+			
+
+			# Technically, we don't have to check this here since it's checked in the Procedure class before actually performing the procedure.
+			# But double-checking it probably won't hurt (will have some non-zero cost associated with retrieving values and then computing whether or not all the conditions are satisfied).
+			
+
+			# The second conditional is so that we can keep trying to perform the procedure until we succeed. This is crucial for "critical" procedures.
+			while critical_procedure.should_perform_procedure() and (not critical_procedure.act()):	
+				critical_procedure.act()
+
+			
 
 
 	def setup_procedure_threads(self):
@@ -521,13 +538,23 @@ class MIST1ControlSystem:
 		# But, that way, the thread would only act only on those procedures that were created at the very beginning. 
 		# There wouldn't be a straightforward way for this thread to also handle the procedures that were added later on.
 
-		if self._procedure_thread != None:
+		if self._procedure_thread == None:
 			self._procedure_thread = threading.Thread(target=self.monitor_procedures)
+			
+			self._keep_procedure_thread_running = True
+
+			self._procedure_thread.start()
 
 		# Next, setup one thread each for each of the critical procedures we have.
 		for critical_procedure_name, critical_procedure in self._critical_procedures.items():
+			
 			critical_procedure_thread = threading.Thread(target=self.monitor_critical_procedure)
 
+			self._critical_procedure_threads[critical_procedure_name] = critical_procedure_thread
+
+			self._keep_critical_procedure_threads_running = True
+
+			self._critical_procedure_threads[critical_procedure_name].start()
 
 		pass
 
@@ -714,6 +741,14 @@ class MIST1ControlSystem:
 		self.setup_communication_threads()
 
 		self.setup_settings_page()
+
+
+
+
+		self.setup_procedure_threads() 
+
+
+
 
 		self._initialized = True
 
@@ -1089,9 +1124,18 @@ class MIST1ControlSystem:
 
 		self._main_window.destroy()
 		self.shut_down_communication_threads()
+
+		self.shut_down_procedure_threads()
+
 		Gtk.main_quit()
 
 		return 0
+
+
+	def shut_down_procedure_threads(self):
+		self._keep_critical_procedure_threads_running = False
+		self._keep_procedure_thread_running = False
+
 
 	def shut_down_communication_threads(self):
 		"""
@@ -1236,6 +1280,22 @@ if __name__ == "__main__":
 	control_system.add_device(interlock_box_device)
 
 
+	interlock_shutdown_conditions = [ (lambda x: x > 100, interlock_box_device.channels()['flow_meter#1'] ) ]
+
+	def action_function(some_string, some_int, some_channel):
+		print "Some string", some_string
+		print "Some int", some_int
+		print "Some channel", some_channel.get_value()
+
+
+	# interlock_shutdown_action = [ (action_function, dict(some_string="hey there", some_int=42, some_channel=interlock_box_device.channels()['flow_meter#1'])) ]
+
+	# interlock_procedure = Procedure(name="interlock_proc", conditions=interlock_shutdown_conditions, actions=interlock_shutdown_action)
+
+	# control_system.add_procedure(interlock_procedure)
+
+
+
 	'''
 	# # This is for reading / writing from json files.
 	# interlock_box_device.write_json("devices/interlock.json")
@@ -1278,6 +1338,8 @@ if __name__ == "__main__":
 
 	# control_system.add_device(ion_gauge)
 
+	
+
 
 
 	'''
@@ -1293,3 +1355,6 @@ if __name__ == "__main__":
 
 	# Run the control system, this has to be last as it does all the initializations and adding to the GUI.
 	control_system.run()
+
+
+
