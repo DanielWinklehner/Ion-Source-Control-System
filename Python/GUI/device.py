@@ -376,9 +376,8 @@ class Channel:
 																			set_flag=set_flag,
 																			parent_channel=self)
 
-
 			parent_device.get_overview_frame().pack_start(self._overview_page_display, False, False, 4)
-
+			
 		# TODO: Adding the device to its main page and to the settings page
 
 		return 0
@@ -687,8 +686,8 @@ class Channel:
 			# We have what we need.
 
 			
-			if len(value) != 0:
-				self._value = self._data_type(value)
+			if len(str(value)) != 0:
+				self._value = self._data_type(float(value))	# TODO: This is hacky. Fix this.
 			else:
 				self._value = None
 
