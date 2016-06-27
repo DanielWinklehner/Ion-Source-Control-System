@@ -107,6 +107,12 @@ class MIST1ControlSystem:
 
 		self.setup_settings_page()
 
+		self._procedures = {}
+		self._procedure_thread = None
+
+		self._critical_procedures = {}	 # These get their own threads.
+		self._critical_procedure_threads = {}
+
 
 
 	def register_data_logging_file(self, filename):
@@ -287,6 +293,16 @@ class MIST1ControlSystem:
 
 		return 0
 
+	def add_procedure(self, procedure):
+		# TODO: NOT IN USE RIGHT NOW.
+
+		if procedure.get_priority() == -1:
+			# Gets its own thread so is a "critical" procedure.
+			self._critical_procedures[procedure.get_name()] = procedure
+		else:
+			self._procedures[procedure.get_name()] = procedure
+
+
 
 	def add_device(self, device):
 		"""
@@ -460,6 +476,61 @@ class MIST1ControlSystem:
 
 		return 0
 
+
+	def monitor_procedures(self):
+		# TODO: NOT IN USE RIGHT NOW.
+
+		# This is the method that all non-critical procedure threads run.
+
+		# TODO:
+		# THOUGHT: Should this also have a while loop? I mean, so that we keep on trying to do the procedure until it succeeds.
+
+		for procedure_name, procedure in self._procedures.items():
+			if procedure.should_perform_procedure():
+				procedure.act()
+		
+
+	def monitor_critical_procedure(self, critical_procedure):
+		# TODO: NOT IN USE RIGHT NOW.
+
+		# This is the method that all critical procedure threads run. Each of them run in a separate thread.
+
+		# Technically, we don't have to check this here since it's checked in the Procedure class before actually performing the procedure.
+		# But double-checking it probably won't hurt (will have some non-zero cost associated with retrieving values and then computing whether or not all the conditions are satisfied).
+		
+
+		# The second conditional is so that we can keep trying to perform the procedure until we succeed. This is crucial for "critical" procedures.
+		while critical_procedure.should_perform_procedure() and (not critical_procedure.act()):	
+			critical_procedure.act()
+
+		
+
+
+	def setup_procedure_threads(self):
+		# TODO: NOT IN USE RIGHT NOW.
+		
+		# For N critical threads, there's going to be (N + 1) total threads. The N threads are one each for the "crtical" (procedure.priority = -1) procedures. All remaining procedures are processed with just 1 thread.
+
+		# TODO: Need to implement proper thread waiting, especially for "critical" threads. 
+		# Because critical threads need to have higher priorities than "communication threads". 
+
+		# First, setup a general thread i.e. one thread for all non-critical procedures.
+
+
+		# TODO: THOUGHT: We could pass a list / dictionary of all the procedures we want to monitor here as kwargs.
+		# But, that way, the thread would only act only on those procedures that were created at the very beginning. 
+		# There wouldn't be a straightforward way for this thread to also handle the procedures that were added later on.
+
+		if self._procedure_thread != None:
+			self._procedure_thread = threading.Thread(target=self.monitor_procedures)
+
+		# Next, setup one thread each for each of the critical procedures we have.
+		for critical_procedure_name, critical_procedure in self._critical_procedures.items():
+			critical_procedure_thread = threading.Thread(target=self.monitor_critical_procedure)
+
+
+		pass
+
 	def setup_communication_threads(self):
 		"""
 		For each device, we create a thread to communicate with the corresponding Arduino.
@@ -516,9 +587,6 @@ class MIST1ControlSystem:
 		device_checkboxes = {}
 		for device_name, device in self._devices.items():
 			device_checkboxes[device.name()] = Gtk.CheckButton(device.label())
-
-
-		
 
 
 		info_frame = Gtk.Frame(label="Select Devices To Save", margin=4)
