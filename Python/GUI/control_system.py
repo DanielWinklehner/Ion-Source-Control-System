@@ -24,6 +24,18 @@ import data_logging
 import dialogs as MIST1Dialogs
 
 
+
+
+import numpy as np
+from matplotlib.figure import Figure
+import matplotlib.cm as cm
+
+
+
+from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
+from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
+
+
 # Maybe have a dedicated add_channel() method just like add_device() so that it can take care of everything, like adding the correct channel to the logger, updating the tree view, etc.
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
@@ -118,6 +130,8 @@ class MIST1ControlSystem:
 		self._critical_procedures = {}	 # These get their own threads.
 		self._critical_procedure_threads = {}
 
+
+		self.setup_plotting_page()
 
 
 	def register_data_logging_file(self, filename):
@@ -489,7 +503,7 @@ class MIST1ControlSystem:
 
 		while self._keep_procedure_thread_running:
 
-			print "Monitoring all non-critical threads here."
+			# print "Monitoring all non-critical threads here."
 
 			# TODO:
 			# THOUGHT: Should this also have a while loop? I mean, so that we keep on trying to do the procedure until it succeeds.
@@ -509,7 +523,7 @@ class MIST1ControlSystem:
 		while self._keep_critical_procedure_threads_running:
 
 
-			print "Critical thread running on its own thread."
+			# print "Critical thread running on its own thread."
 			
 
 			# Technically, we don't have to check this here since it's checked in the Procedure class before actually performing the procedure.
@@ -745,7 +759,7 @@ class MIST1ControlSystem:
 
 
 
-		self.setup_procedure_threads() 
+		# self.setup_procedure_threads() 
 
 
 
@@ -1101,6 +1115,109 @@ class MIST1ControlSystem:
 		self._main_window.show_all()
 
 
+	def get_plotting_canvas(self, title=""):
+		fig = Figure(figsize=(1,1), dpi=60)
+		ax = fig.add_subplot(111)
+
+		n = 1000
+		xsin = np.linspace(-np.pi, np.pi, n, endpoint=True)
+		xcos = np.linspace(-np.pi, np.pi, n, endpoint=True)
+		ysin = np.sin(xsin)
+		ycos = np.cos(xcos)
+
+		sinwave = ax.plot(xsin, ysin, color='black', label='sin(x)')
+		coswave = ax.plot(xcos, ycos, color='black', label='cos(x)', linestyle='--')
+
+		ax.set_xlim(-np.pi,np.pi)
+		ax.set_ylim(-1.2,1.2)
+
+		ax.fill_between(xsin, 0, ysin, (ysin - 1) > -1, color='blue', alpha=.3)
+		ax.fill_between(xsin, 0, ysin, (ysin - 1) < -1, color='red',  alpha=.3)
+		ax.fill_between(xcos, 0, ycos, (ycos - 1) > -1, color='blue', alpha=.3)
+		ax.fill_between(xcos, 0, ycos, (ycos - 1) < -1, color='red',  alpha=.3)
+
+		ax.legend(loc='upper left')
+
+		ax = fig.gca()
+		ax.spines['right'].set_color('none')
+		ax.spines['top'].set_color('none')
+		ax.xaxis.set_ticks_position('bottom')
+		ax.spines['bottom'].set_position(('data',0))
+		ax.yaxis.set_ticks_position('left')
+		ax.spines['left'].set_position(('data',0))
+
+		fig.tight_layout(pad=0.5, h_pad=0.5, w_pad=0.1)
+
+		canvas = FigureCanvas(fig)
+
+		ax.set_title(title)
+
+		canvas.resize(5, 5)
+
+
+
+		return canvas
+
+
+	def setup_plotting_page(self):
+
+
+		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		self._builder.get_object("plot_scrolled_window").add(box)
+
+
+		grid = Gtk.Grid(column_spacing=30, row_spacing=150, margin=100)
+		grid.set_column_homogeneous(True)
+		grid.set_row_homogeneous(True)
+
+
+		box.add(grid)
+
+		canvas_1 = self.get_plotting_canvas("Plot 1")
+		canvas_2 = self.get_plotting_canvas("Plot 2")
+		canvas_4 = self.get_plotting_canvas("Plot 4")
+		canvas_5 = self.get_plotting_canvas("Plot 5")
+		canvas_6 = self.get_plotting_canvas("Plot 6")
+		
+		
+
+		box_1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		box_2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		box_4 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		box_5 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		box_6 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		
+		box_1.pack_start(canvas_1, True, True, 0)
+		box_2.pack_start(canvas_2, True, True, 0)
+		box_4.pack_start(canvas_4, True, True, 0)
+		box_5.pack_start(canvas_5, True, True, 0)
+		box_6.pack_start(canvas_6, True, True, 0)
+		
+		
+		box_1.pack_start(NavigationToolbar(canvas_1, self._builder.get_object("plot_scrolled_window")), False, True, 0)
+		box_2.pack_start(NavigationToolbar(canvas_2, self._builder.get_object("plot_scrolled_window")), False, True, 0)
+		box_4.pack_start(NavigationToolbar(canvas_4, self._builder.get_object("plot_scrolled_window")), False, True, 0)
+		box_5.pack_start(NavigationToolbar(canvas_5, self._builder.get_object("plot_scrolled_window")), False, True, 0)
+		box_6.pack_start(NavigationToolbar(canvas_6, self._builder.get_object("plot_scrolled_window")), False, True, 0)
+		
+
+		grid.attach_next_to(box_1, None, Gtk.PositionType.LEFT, width=1, height=3)
+		grid.attach_next_to(box_2, box_1, Gtk.PositionType.RIGHT, width=1, height=3)
+		grid.attach_next_to(box_4, box_1, Gtk.PositionType.BOTTOM, width=2, height=6)
+		grid.attach_next_to(box_5, box_4, Gtk.PositionType.BOTTOM, width=1, height=3)
+		grid.attach_next_to(box_6, box_5, Gtk.PositionType.RIGHT, width=1, height=3)
+		
+		
+		
+
+		
+
+		
+
+		grid.show_all()
+		self._builder.get_object("plot_scrolled_window").show_all()
+
+
 
 
 
@@ -1226,8 +1343,8 @@ if __name__ == "__main__":
 	# Add channels to the interlock box device.
 
 	# Flow meters. x5.
-	# for i in range(5):
-	for i in range(1):
+	for i in range(5):
+	# for i in range(1):
 		ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
 					 message_header="flow_meter#" + str(i + 1),
 					 upper_limit=1,
@@ -1249,7 +1366,7 @@ if __name__ == "__main__":
 					mode="read",
 					display_order=(11 - 5 - i))
 
-		# interlock_box_device.add_channel(ch)
+		interlock_box_device.add_channel(ch)
 	
 	# Solenoid valves. x2.
 	for i in range(2):
@@ -1261,7 +1378,7 @@ if __name__ == "__main__":
 					mode="write",
 					display_order=(11 - 5 - 2 - i))
 
-		# interlock_box_device.add_channel(ch)
+		interlock_box_device.add_channel(ch)
 
 	# Vacuum Valves. x2.
 	for i in range(2):
@@ -1273,13 +1390,17 @@ if __name__ == "__main__":
 					mode="read",
 					display_order=(11 - 5 - 2 - 2 - i))
 
-		# interlock_box_device.add_channel(ch)
+		interlock_box_device.add_channel(ch)
 
 	# Add all our devices to the control system.
 	
 	control_system.add_device(interlock_box_device)
 
 
+
+	'''
+	# # This is for adding procedures. 
+	# # TODO: Needs more work. Work on this later.
 	interlock_shutdown_conditions = [ (lambda x: x > 100, interlock_box_device.channels()['flow_meter#1'] ) ]
 
 	def action_function(some_string, some_int, some_channel):
@@ -1288,12 +1409,12 @@ if __name__ == "__main__":
 		print "Some channel", some_channel.get_value()
 
 
-	# interlock_shutdown_action = [ (action_function, dict(some_string="hey there", some_int=42, some_channel=interlock_box_device.channels()['flow_meter#1'])) ]
+	interlock_shutdown_action = [ (action_function, dict(some_string="hey there", some_int=42, some_channel=interlock_box_device.channels()['flow_meter#1'])) ]
 
-	# interlock_procedure = Procedure(name="interlock_proc", conditions=interlock_shutdown_conditions, actions=interlock_shutdown_action)
+	interlock_procedure = Procedure(name="interlock_proc", conditions=interlock_shutdown_conditions, actions=interlock_shutdown_action)
 
-	# control_system.add_procedure(interlock_procedure)
-
+	control_system.add_procedure(interlock_procedure)
+	'''
 
 
 	'''
