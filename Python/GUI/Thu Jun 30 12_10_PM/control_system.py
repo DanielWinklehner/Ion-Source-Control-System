@@ -743,7 +743,7 @@ class MIST1ControlSystem:
 			   "save_as_devices_toolbutton_clicked_cb": self.save_as_devices_callback,
 			   "settings_expand_all_clicked_cb": self.settings_expand_all_callback,
 			   "settings_collapse_all_clicked_cb": self.settings_collapse_all_callback,
-			   "plotting_setup_channels_clicked_cb": self.plotting_setup_channels_callback,
+
 			   }
 
 		return con
@@ -1178,26 +1178,26 @@ class MIST1ControlSystem:
 
 		self._plot_page_channels_tree_view.show_all()
 			
-	def plotting_setup_channels_callback(self, button):
 
-		print "Opening Plotting Channels Dialog"
-
-		dialog = MIST1Dialogs.PlottingChannelsDialog(self._main_window, self._plot_page_channels_tree_store, self._plot_page_channels_tree_view)
-
-		response = dialog.run()
-
-		if response == Gtk.ResponseType.OK:
-			print "The OK button was clicked."
-		elif response == Gtk.ResponseType.CANCEL:
-			print("The Cancel button was clicked.")
-
-		dialog.destroy()
+	def setup_plotting_page(self):
 
 
-	def setup_channels_for_plotting(self):
-		# self._plotting_page_grid.set_column_homogeneous(True)
-		# self._plotting_page_grid.set_row_homogeneous(True)
+		self._plotting_page_grid = Gtk.Grid(column_spacing=30, row_spacing=150, margin=100)
+		self._plotting_page_grid.set_column_homogeneous(True)
+		self._plotting_page_grid.set_row_homogeneous(True)
 
+		plotting_page_plots_box = self._builder.get_object("plotting_page_plots_box")
+		plotting_page_plots_box.add(self._plotting_page_grid)
+
+
+
+
+		plotting_scrolled_window = self._builder.get_object("plotting_scrolled_window")
+		
+		# _plot_page_channels_tree_view
+		# _plot_page_channels_tree_store
+
+		
 		checkbox_title = Gtk.CellRendererToggle()
 		checkbox_title.connect("toggled", self.plotting_page_on_channel_toggle, self._plot_page_channels_tree_store)
 		column = Gtk.TreeViewColumn("Select", checkbox_title)
@@ -1218,24 +1218,36 @@ class MIST1ControlSystem:
 				if channel.mode() == "read" or channel.mode() == "both" and ( channel.data_type() == float or channel.data_type() == int ):
 					channel_iter = self._plot_page_channels_tree_store.append( device_iter, [Gtk.CheckButton(channel.label()), channel.label(), "Channel", device.name(), channel.name()] )
 
+		
+		
 
+		
 		
 
 
+		self._builder.get_object("plotting_scrolled_window").add(self._plot_page_channels_tree_view)
 
+		self._plot_page_channels_tree_view.show()
 
+		self._main_window.show_all()
+
+		
+
+	'''
 	def setup_plotting_page(self):
 
-		self._plotting_page_grid = Gtk.Grid(column_spacing=30, row_spacing=150, margin=100)
-		self._plotting_page_grid.set_column_homogeneous(True)
-		self._plotting_page_grid.set_row_homogeneous(True)
+		box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		self._builder.get_object("plots_box").add(box)
 
-		plotting_box = self._builder.get_object("plotting_box")
-		plotting_box.add(self._plotting_page_grid)
+		grid = Gtk.Grid(column_spacing=30, row_spacing=150, margin=100)
+		grid.set_column_homogeneous(True)
+		grid.set_row_homogeneous(True)
 
+		box.add(grid)		
 
-		self.setup_channels_for_plotting()
-
+		grid.show_all()
+		self._builder.get_object("plots_box").show_all()
+	'''
 
 
 

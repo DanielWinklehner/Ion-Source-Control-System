@@ -429,15 +429,64 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkAlignment" id="plot_alignment">
+                  <object class="GtkAlignment" id="plotting_alignment">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <placeholder/>
+                      <object class="GtkBox" id="box3">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkBox" id="plotting_box">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="hexpand">True</property>
+                            <property name="vexpand">True</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="pack_type">end</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkToolbar" id="toolbar2">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkToolButton" id="plotting_setup_channels">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_text" translatable="yes">Expand All</property>
+                                <property name="is_important">True</property>
+                                <property name="label" translatable="yes">Setup Channels</property>
+                                <property name="use_underline">True</property>
+                                <property name="stock_id">gtk-preferences</property>
+                                <signal name="clicked" handler="plotting_setup_channels_clicked_cb" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="homogeneous">True</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
                     </child>
                   </object>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child type="tab">
@@ -452,23 +501,23 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkAlignment" id="settings_alignment">
+                  <object class="GtkAlignment" id="settings_alignment1">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkBox" id="box3">
+                      <object class="GtkBox" id="box5">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="orientation">vertical</property>
                         <child>
-                          <object class="GtkBox" id="box4">
+                          <object class="GtkBox" id="box6">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="hexpand">True</property>
                             <property name="vexpand">True</property>
                             <property name="homogeneous">True</property>
                             <child>
-                              <object class="GtkAlignment" id="alignment2">
+                              <object class="GtkAlignment" id="alignment">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="hexpand">True</property>
@@ -491,7 +540,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkAlignment" id="alignment3">
+                              <object class="GtkAlignment" id="alignment4">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="hexpand">True</property>
@@ -521,7 +570,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToolbar" id="toolbar2">
+                          <object class="GtkToolbar" id="toolbar3">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <child>
@@ -634,7 +683,7 @@
             <property name="label_yalign">0</property>
             <property name="shadow_type">etched-out</property>
             <child>
-              <object class="GtkAlignment" id="alignment1">
+              <object class="GtkAlignment" id="alignment5">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
