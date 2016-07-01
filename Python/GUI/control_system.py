@@ -1197,8 +1197,10 @@ class MIST1ControlSystem:
 					if x < position[0]:
 						# Elements before the column where the remove happened. These need not do anything either.
 						pass
-					elif x > position[1]:	
+					elif x >= position[1]:	
 						# Just shift it one step to the left.
+
+						print "I need to move {} one step to the left.".format( widget.get_label() )
 						self._plotting_page_grid.remove(widget)
 						self._plotting_page_grid.attach(widget, x - 1, y, width=1, height=1)
 
@@ -1213,10 +1215,16 @@ class MIST1ControlSystem:
 
 					if x == 0:
 						# This needs to move to the previous row.
+
+						print "I need to move {} to the previous row.".format( widget.get_label() )
+
 						self._plotting_page_grid.remove(widget)
 						self._plotting_page_grid.attach(widget, int(number_of_plots_per_row) - 1, y - 1, width=1, height=1)
 					else:
 						# Just move it one step to the left.
+
+						print "I need to move {} one step to the left.".format( widget.get_label() )
+
 						self._plotting_page_grid.remove(widget)
 						self._plotting_page_grid.attach(widget, x - 1, y, width=1, height=1)
 
