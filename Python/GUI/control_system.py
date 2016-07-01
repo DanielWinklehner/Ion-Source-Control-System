@@ -1,3 +1,5 @@
+from __future__ import division
+
 import gi
 
 gi.require_version('Gtk', '3.0')
@@ -13,6 +15,8 @@ import uuid
 import control_system_serial
 import serial
 
+from collections import deque
+
 from gi.repository import Gtk, GLib, GObject, Gdk
 
 from procedure import Procedure
@@ -24,7 +28,7 @@ import data_logging
 
 import dialogs as MIST1Dialogs
 from MPLCanvasWrapper3 import MPLCanvasWrapper3
-
+from MIST1Plot import MIST1Plot
 
 
 import numpy as np
@@ -135,10 +139,16 @@ class MIST1ControlSystem:
 		self._critical_procedure_threads = {}
 
 		self._plot_page_channels_tree_store = Gtk.TreeStore(Gtk.CheckButton, str, str, str, str)
-		self._plot_page_channels_tree_view = Gtk.TreeView(self._plot_page_channels_tree_store)
 
 		self._plotting_page_grid = None
-		self._plotting_frames = {}	# Dictionary of all plotting frames. Keys = Tuples(device_name, channel_name).
+		self._plotting_frames = {}	# Dictionary of all plotting frames. Key = Tuple(device_name, channel_name).
+		self._mist1_plots = {}	# Dictionary of all plotting frames. Key = Tuple(device_name, channel_name).
+
+		self._retain_last_n_values = 10
+		
+		# x below will be just timestamp.
+		self._x_values = {}	# Dictionary of last self._retain_last_n_values. Key = Tuple(device_name, channel_name), Value = collection.deque(maxlen=self._retain_last_n_values)
+		self._y_values = {}	# Dictionary of last self._retain_last_n_values. Key = Tuple(device_name, channel_name), Value = collection.deque(maxlen=self._retain_last_n_values)
 
 
 		
@@ -357,6 +367,10 @@ class MIST1ControlSystem:
 		for channel_name, channel in device.channels().items():
 			channel_iter = self._settings_page_tree_store.append(device_iter, [channel.label(), "Channel", "edit_channel", channel.name(), device.name()])
 
+			# Add to "values".
+			self._x_values[(device.name(), channel_name)] = deque(maxlen=self._retain_last_n_values)
+			self._y_values[(device.name(), channel_name)] = deque(maxlen=self._retain_last_n_values)
+
 		channel_iter = self._settings_page_tree_store.append(device_iter, ["<b>[ Add a New Channel ]</b>", "", "add_new_channel", device.name(), device.name()])
 
 
@@ -403,6 +417,15 @@ class MIST1ControlSystem:
 		self._last_checked_for_devices_alive =  time.time()
 
 		print "The set of all alive devices = ", self._alive_device_names
+
+
+
+
+
+	def update_stored_values(self, device_name, channel_name):
+		self._x_values[(device_name, channel_name)].append(time.time())
+		self._y_values[(device_name, channel_name)].append(self._devices[device_name].channels()[channel_name].get_value())
+
 
 	def communicate(self, devices):
 		"""
@@ -454,9 +477,20 @@ class MIST1ControlSystem:
 										# print e
 										pass
 
+									try:
+										self.update_stored_values(device.name(), channel_name)
+										self.update_plots(device.name(), channel_name)
+										
+									except Exception as e:
+										print "Exception caught while updating stored values."
+										print e
+										pass
+
+
 									self._communication_threads_poll_count[arduino_id] += 1
 
 									GLib.idle_add(self.update_gui, channel)
+									# GLib.idle_add(self.update_plots, device_name, channel_name)
 
 								except Exception as e:
 									"Got an exception", e
@@ -1095,33 +1129,103 @@ class MIST1ControlSystem:
 
 
 
-	def test_function(self, axis):
-
-		X = np.arange(100)
-		Y = X * X
-
-		axis.plot(X, Y, c = "blue", label = "test0", linestyle = "solid")
-		self.canvas.append_legend_entries_flag(True)
-
-		axis.plot(X, X, c = "green", label = "test1", linestyle = "solid")
-		self.canvas.append_legend_entries_flag(True)
-
-		axis.scatter(X, Y*1.2, s = 5**2, c = "red", edgecolor = "red", label = "test2", marker = "o")
-		self.canvas.append_legend_entries_flag(True)
-
-		return 0
+	
 
 
 	def remove_plotting_frame(self, device_name, channel_name):
 		plotting_frame = self._plotting_frames[(device_name, channel_name)]
 
+		
+
+
+		# Need to readjust position of the plots on the grid.
+
+		# First, find the position that this plotting frame used to take.
+
+
+		window_width = self._main_window.get_size().width
+		plot_frame_min_width = 500
+		number_of_plots_per_row = int(window_width / plot_frame_min_width)
+
+		total_number_of_plot_frames = len(self._plotting_frames.keys())
+		n_rows = np.ceil( total_number_of_plot_frames / number_of_plots_per_row )
+
+		for x in range(int(number_of_plots_per_row) - 1):
+			for y in range(int(n_rows)):
+				widget = self._plotting_page_grid.get_child_at(x, y)
+
+				if widget == plotting_frame:
+					position = (x, y)
+					break
+
+
+				
 		self._plotting_page_grid.remove(plotting_frame)
 
+		# Move all other frames so that the cell that we just removed the frame from does not remain empty.
+
+		# # max_y depends on whether or not the bottom-most row has just one plot. If it is, that row will eventually be removed since all the plots move one step back.
+		# if (total_number_of_plot_frames % number_of_plots_per_row) == 1:
+		# 	print "bingo! new max_y is",
+		# 	max_y = int(n_rows) - 1
+		# 	print max_y
+		# else:
+		# 	max_y = int(n_rows)
+		
+		for y in range(int(n_rows)):
+
+			if y < int(n_rows) - 1:
+				max_x = int(number_of_plots_per_row)
+			else:
+				print "bingo"
+				max_x = total_number_of_plot_frames % number_of_plots_per_row
+
+			print "max x is", max_x
+
+			if y < position[1]:
+				# Elements before the row where the removal happened. These need not do anything.
+				pass
+			elif y == position[1]:
+				# Elements in the row where the removal happened. What happens to each frame depends on what column it occupied.
+
+				for x in range(max_x):
+					
+					print "Current x, y = ", (x, y)
+
+					widget = self._plotting_page_grid.get_child_at(x, y)
+
+					if x < position[0]:
+						# Elements before the column where the remove happened. These need not do anything either.
+						pass
+					elif x > position[1]:	
+						# Just shift it one step to the left.
+						self._plotting_page_grid.remove(widget)
+						self._plotting_page_grid.attach(widget, x - 1, y, width=1, height=1)
+
+			elif y > position[1]:
+				# 
+				
+				for x in range(max_x):
+
+					print "Current x, y = ", (x, y)
+
+					widget = self._plotting_page_grid.get_child_at(x, y)
+
+					if x == 0:
+						# This needs to move to the previous row.
+						self._plotting_page_grid.remove(widget)
+						self._plotting_page_grid.attach(widget, int(number_of_plots_per_row) - 1, y - 1, width=1, height=1)
+					else:
+						# Just move it one step to the left.
+						self._plotting_page_grid.remove(widget)
+						self._plotting_page_grid.attach(widget, x - 1, y, width=1, height=1)
+
 		del self._plotting_frames[(device_name, channel_name)]
+		del self._mist1_plots[(device_name, channel_name)]
+		
 
 	def show_plotting_frame(self, device_name, channel_name):
 			
-		print "Showing plotting frame for", device_name, channel_name
 
 		device = self._devices[device_name]
 		channel = device.channels()[channel_name]
@@ -1138,75 +1242,100 @@ class MIST1ControlSystem:
 
 		plot_frame.add(box)
 
-		self.canvas = MPLCanvasWrapper3(nbp=0)
-		box.pack_start(self.canvas, True, True, 0)
+		if (device_name, channel_name) not in self._mist1_plots.keys():
+			mist1_plot = MIST1Plot( variable_name="{}:{}".format( self._devices[device_name].label(), self._devices[device_name].channels()[channel_name].label() ) )
+			self._mist1_plots[(device_name, channel_name)] = mist1_plot
+		else:
+			
+			# This does not work for some reason.
 
-		self.test_function(self.canvas.axis)
-		self.canvas.set_autoscale(True)
+			mist1_plot = self._mist1_plots[(device_name, channel_name)]
+
+
+
+		box.pack_start(mist1_plot.get_canvas(), True, True, 0)
 		
+		window_width = self._main_window.get_size().width
+		plot_frame_min_width = 500
+		number_of_plots_per_row = int(window_width / plot_frame_min_width)
 
-		self._plotting_page_grid.add(plot_frame)
+		total_number_of_plot_frames = len(self._plotting_frames.keys())
+
+		print "Total plots = ", total_number_of_plot_frames
+
+		if total_number_of_plot_frames == 1:
+			
+			print "Total number = 0"
+
+			self._plotting_page_grid.add(plot_frame)
+		else:
+			# First find the number of rows.
+			n_rows = np.ceil( total_number_of_plot_frames / number_of_plots_per_row )
+
+			if (total_number_of_plot_frames % number_of_plots_per_row ) == 0:
+				current_column_number = number_of_plots_per_row
+			else:
+				current_column_number = (total_number_of_plot_frames % number_of_plots_per_row )
+
+			print "Total rows =", n_rows
+			print "Current col.  =", current_column_number
+
+			if n_rows == 1.:
+				# Always insert "RIGHT TO SIBLING".
+				
+				sibling = self._plotting_page_grid.get_child_at(total_number_of_plot_frames - 2, 0)
+				print "Inserting to the Right of", (total_number_of_plot_frames - 2, 0) 
+
+				# grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
+				self._plotting_page_grid.attach_next_to(plot_frame, sibling, Gtk.PositionType.RIGHT, width=1, height=1)
+			else:
+				# Always insert "BOTTOM TO SIBLING."
+
+				sibling = self._plotting_page_grid.get_child_at( current_column_number - 1, n_rows - 2 )
+				
+				print "Inserting to the Bottom of ", (current_column_number - 1, n_rows - 2)
+
+				self._plotting_page_grid.attach_next_to(plot_frame, sibling, Gtk.PositionType.BOTTOM, width=1, height=1)
+
 
 		self._plotting_page_grid.show_all()
 
 
-	def plotting_page_on_channel_toggle(self, cell, path, store, *ignore):
-		if path is not None:
-			it = store.get_iter(path)
-
-			print "The current state is", store[it][0].get_active()
-
-			store[it][0].set_active( not store[it][0].get_active() )
-
-			print "After changing it, the updated state is", store[it][0].get_active()
-
-			# Find out which channel it was.
-			device_name = store.get_value( store.get_iter(path), 3 )
-
-			if device_name == store.get_value( store.get_iter(path), 4 ):
-				# This means the users selected a checkbox for a device. 
-				# Activate all channels under this device.
-				pass
-
-			else:
-				channel_name = store.get_value( store.get_iter(path), 4 )
-				
-				if store[it][0].get_active():
-					self.show_plotting_frame(device_name, channel_name)
-				else:
-					self.remove_plotting_frame(device_name, channel_name)
-
-		self._plot_page_channels_tree_view.show_all()
+	
 			
 	def plotting_setup_channels_callback(self, button):
 
 		print "Opening Plotting Channels Dialog"
 
-		dialog = MIST1Dialogs.PlottingChannelsDialog(self._main_window, self._plot_page_channels_tree_store, self._plot_page_channels_tree_view)
+		dialog = MIST1Dialogs.PlottingChannelsDialog(self._main_window, self._plot_page_channels_tree_store, self._plotting_frames.keys())
 
 		response = dialog.run()
 
 		if response == Gtk.ResponseType.OK:
 			print "The OK button was clicked."
-		elif response == Gtk.ResponseType.CANCEL:
-			print("The Cancel button was clicked.")
+			selections = dialog.get_selection()
+
+			
+			# Go throught the list of self._plotting_frames.keys() and for each key that's not on selection, remove that element.
+
+			for (device_name, channel_name) in self._plotting_frames.keys():
+				if (device_name, channel_name) not in selections:
+					self.remove_plotting_frame(device_name, channel_name)
+			
+			for (device_name, channel_name) in selections:
+				if (device_name, channel_name) not in self._plotting_frames.keys():
+					print "Recreating a new frame for", device_name, channel_name
+					self.show_plotting_frame(device_name, channel_name)
+		
 
 		dialog.destroy()
+
+		return 0
 
 
 	def setup_channels_for_plotting(self):
 		# self._plotting_page_grid.set_column_homogeneous(True)
 		# self._plotting_page_grid.set_row_homogeneous(True)
-
-		checkbox_title = Gtk.CellRendererToggle()
-		checkbox_title.connect("toggled", self.plotting_page_on_channel_toggle, self._plot_page_channels_tree_store)
-		column = Gtk.TreeViewColumn("Select", checkbox_title)
-		self._plot_page_channels_tree_view.append_column(column)
-
-		text_title = Gtk.CellRendererText()
-		column = Gtk.TreeViewColumn("Label", text_title, markup=1)
-		self._plot_page_channels_tree_view.append_column(column)
-
 
 
 		for device_name, device in self._devices.items():
@@ -1226,7 +1355,7 @@ class MIST1ControlSystem:
 
 	def setup_plotting_page(self):
 
-		self._plotting_page_grid = Gtk.Grid(column_spacing=30, row_spacing=150, margin=100)
+		self._plotting_page_grid = Gtk.Grid(column_spacing=10, row_spacing=10, margin=10)
 		self._plotting_page_grid.set_column_homogeneous(True)
 		self._plotting_page_grid.set_row_homogeneous(True)
 
@@ -1393,6 +1522,26 @@ class MIST1ControlSystem:
 	def dummy_update(self):
 		pass
 
+
+	def update_plots(self, device_name, channel_name):
+
+		if (device_name, channel_name) in self._mist1_plots.keys() and (device_name, channel_name) in self._x_values and (device_name, channel_name) in self._y_values:
+			
+			# print "updating plot", (device_name, channel_name)
+
+			mist1_plot = self._mist1_plots[(device_name, channel_name)]
+
+			x_s = np.array( self._x_values[(device_name, channel_name)] )
+			y_s = np.array( self._y_values[(device_name, channel_name)] )
+
+
+			mist1_plot.update_values(x_s, y_s)
+			mist1_plot.plot()
+
+
+			mist1_plot.get_canvas().show()
+			
+
 	def update_gui(self, channel):
 		"""
 		Updates the GUI. This is called from the communication threads through idle_add()
@@ -1444,8 +1593,8 @@ if __name__ == "__main__":
 	# Add channels to the interlock box device.
 
 	# Flow meters. x5.
-	for i in range(5):
-	# for i in range(1):
+	# for i in range(5):
+	for i in range(1):
 		ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
 					 message_header="flow_meter#" + str(i + 1),
 					 upper_limit=1,

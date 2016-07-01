@@ -328,8 +328,6 @@ class EditDevicesDialog(Gtk.Dialog):
 		self._edit_channel_frame = None
 
 
-		
-
 	def set_content_frame(self):
 
 		self._content_frame = Gtk.Frame(label="Edit Device / Channel", margin=4)
@@ -586,19 +584,28 @@ class EditDevicesDialog(Gtk.Dialog):
 
 class PlottingChannelsDialog(Gtk.Dialog):
 
-	def __init__(self, parent, tree_store, tree_view):
+	def __init__(self, parent, tree_store, selections=[]):
 
 		Gtk.Dialog.__init__(self, "Select Plotting Channels", parent, 0,
-			(("Close"), Gtk.ResponseType.OK,
+			(("Save Changes"), Gtk.ResponseType.OK,
 			 ))
 
 		self.set_default_size(450, 700)
 
 		self._tree_store = tree_store
-		self._tree_view = tree_view
-		
 		self._box = self.get_content_area()
+		self._selections = copy.deepcopy( selections )
 
+		self.setup_tree_view()		
+		self.setup_display()
+		
+		print "The selection is", self._selections
+
+		self._box.show_all()
+
+
+	def setup_display(self):
+	
 		self._select_channels_frame = Gtk.Frame(label="Edit Device / Channel", margin=4)
 		self._select_channels_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
 		
@@ -612,8 +619,61 @@ class PlottingChannelsDialog(Gtk.Dialog):
 
 		self._box.pack_start(self._select_channels_frame, True, True, 0)
 
-		# self.show_all()
-		self._select_channels_frame.show_all()
+
+	def get_selection(self):
+		return self._selections
 
 
+	def on_channel_toggle(self, cell, path, store, *ignore):
+		
+		if path is not None:
+			it = store.get_iter(path)
 
+			print "The current state is", store[it][0].get_active()
+
+			store[it][0].set_active( not store[it][0].get_active() )
+
+			print "After changing it, the updated state is", store[it][0].get_active()
+
+			# Find out which channel it was.
+			device_name = store.get_value( store.get_iter(path), 3 )
+
+			if device_name == store.get_value( store.get_iter(path), 4 ):
+				# This means the users selected a checkbox for a device. 
+				# Activate all channels under this device.
+				pass
+
+			else:
+				channel_name = store.get_value( store.get_iter(path), 4 )
+				
+				print "toggled for ", device_name, channel_name
+
+				if store[it][0].get_active():
+					# self.show_plotting_frame(device_name, channel_name)
+					self._selections.append((device_name, channel_name))
+				else:
+					# self.remove_plotting_frame(device_name, channel_name)
+					
+					print (device_name, channel_name), (device_name, channel_name) in self._selections, self._selections
+
+					if (device_name, channel_name) in self._selections:
+						index = self._selections.index((device_name, channel_name))
+						print index
+						del self._selections[index]
+
+		self._tree_view.show_all()
+
+
+	def setup_tree_view(self):
+
+		self._tree_view = Gtk.TreeView(self._tree_store)
+
+
+		checkbox_title = Gtk.CellRendererToggle()
+		checkbox_title.connect("toggled", self.on_channel_toggle, self._tree_store)
+		column = Gtk.TreeViewColumn("Select", checkbox_title)
+		self._tree_view.append_column(column)
+
+		text_title = Gtk.CellRendererText()
+		column = Gtk.TreeViewColumn("Label", text_title, markup=1)
+		self._tree_view.append_column(column)
