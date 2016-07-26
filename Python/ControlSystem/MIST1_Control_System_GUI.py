@@ -455,7 +455,7 @@ if __name__ == "__main__":
     #
     # control_system.add_device(interlock_box_device)
 
-    ion_gauge = Device("ion_gauge", arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", label="Ion Gauge")
+    ion_gauge = Device("ion_gauge", arduino_id="cf436e6b-ba3d-479a-b221-bc387c37b858", label="Ion Gauge")
     ion_gauge.set_overview_page_presence(True)
 
     for i in range(2):

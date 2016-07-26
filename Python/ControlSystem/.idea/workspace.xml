@@ -20,28 +20,7 @@
     <favorites_list name="ControlSystem" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="control_system.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="196">
-              <caret line="1101" column="0" selection-start-line="1101" selection-start-column="0" selection-end-line="1101" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="device.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../GUI/device.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="370">
-              <caret line="690" column="92" selection-start-line="690" selection-start-column="92" selection-end-line="690" selection-end-column="92" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-    </leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -67,9 +46,11 @@
         <option value="$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py" />
         <option value="$PROJECT_DIR$/Daniel Previous Version/device_old.py" />
         <option value="$PROJECT_DIR$/device.py" />
-        <option value="$PROJECT_DIR$/MIST1_Control_System_GUI.py" />
         <option value="$PROJECT_DIR$/../GUI/device.py" />
         <option value="$PROJECT_DIR$/../GUI/control_system.py" />
+        <option value="$PROJECT_DIR$/MIST1_Control_System_GUI.py" />
+        <option value="$PROJECT_DIR$/../GUI_PSFC_WorkingCopy/control_system.py" />
+        <option value="$PROJECT_DIR$/../GUI_PSFC_WorkingCopy/MIST1Plot.py" />
       </list>
     </option>
   </component>
@@ -111,7 +92,7 @@
     <property name="options.splitter.details.proportions" value="0.2" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../GUI/device.py" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../GUI_PSFC_WorkingCopy" />
   </component>
   <component name="PyConsoleOptionsProvider">
     <option name="myPythonConsoleState">
@@ -125,7 +106,7 @@
       <recent name="D:\Daniel\Dropbox (MIT)\Projects\IsoDAR\Ion Source\Control System\Python\ControlSystem" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.control_system">
+  <component name="RunManager" selected="Python.control_system (1)">
     <configuration default="false" name="MIST1_Control_System_GUI_Widgets" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -177,23 +158,6 @@
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
     </configuration>
-    <configuration default="false" name="RadioButtions" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="ControlSystem" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/RadioButtions.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
     <configuration default="false" name="MyFirstWidget" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -207,6 +171,23 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="ControlSystem" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/MyFirstWidget.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="control_system (1)" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../GUI_PSFC_WorkingCopy" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="ControlSystem" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../GUI_PSFC_WorkingCopy/control_system.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -349,16 +330,16 @@
       <item index="0" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_Widgets" />
       <item index="1" class="java.lang.String" itemvalue="Python.control_system" />
       <item index="2" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI" />
-      <item index="3" class="java.lang.String" itemvalue="Python.RadioButtions" />
-      <item index="4" class="java.lang.String" itemvalue="Python.MyFirstWidget" />
+      <item index="3" class="java.lang.String" itemvalue="Python.MyFirstWidget" />
+      <item index="4" class="java.lang.String" itemvalue="Python.control_system (1)" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.control_system" />
+        <item index="0" class="java.lang.String" itemvalue="Python.control_system (1)" />
         <item index="1" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI" />
-        <item index="2" class="java.lang.String" itemvalue="Python.MyFirstWidget" />
-        <item index="3" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_Widgets" />
-        <item index="4" class="java.lang.String" itemvalue="Python.RadioButtions" />
+        <item index="2" class="java.lang.String" itemvalue="Python.control_system" />
+        <item index="3" class="java.lang.String" itemvalue="Python.MyFirstWidget" />
+        <item index="4" class="java.lang.String" itemvalue="Python.MIST1_Control_System_GUI_Widgets" />
       </list>
     </recent_temporary>
   </component>
@@ -387,18 +368,18 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32936078" sideWeight="0.5021075" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32900432" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21753247" sideWeight="0.49789253" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.22340426" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3997833" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.21753247" sideWeight="0.49789253" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3997833" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -422,27 +403,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2176">
-          <caret line="128" column="29" selection-start-line="128" selection-start-column="29" selection-end-line="128" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../../../../../Code/Python/WARPPostprocessing/Postprocessor_v4.4.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="64243">
-          <caret line="3785" column="18" selection-start-line="3785" selection-start-column="18" selection-end-line="3785" selection-end-column="18" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../../../../../../Code/Python/ElectrodeDesigner/ElectrodeDesigner_v4.0.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="816">
-          <caret line="48" column="0" selection-start-line="48" selection-start-column="0" selection-end-line="48" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_ONLY.py" />
     <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -472,13 +432,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../GUI/Version 1/arduino_gui_dw.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="561">
-          <caret line="35" column="43" selection-start-line="35" selection-start-column="43" selection-end-line="35" selection-end-column="43" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI/Version 1/arduino_gui_dw.py" />
     <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI_Widgets.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2176">
@@ -535,13 +489,7 @@
     <entry file="file://C:/Python27/Lib/threading.py" />
     <entry file="file://$PROJECT_DIR$/control_system.py" />
     <entry file="file://$PROJECT_DIR$/control_system_serial.py" />
-    <entry file="file://$PROJECT_DIR$/../GUI/Version 1/arduino_gui_dw.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="349">
-          <caret line="23" column="16" selection-start-line="23" selection-start-column="16" selection-end-line="23" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI/Version 1/arduino_gui_dw.py" />
     <entry file="file://$APPLICATION_HOME_DIR$/bin/idea.properties">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="527">
@@ -607,33 +555,56 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/device.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="8313">
-          <caret line="495" column="0" selection-start-line="495" selection-start-column="0" selection-end-line="495" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="269">
-          <caret line="465" column="36" selection-start-line="465" selection-start-column="36" selection-end-line="465" selection-end-column="36" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../GUI/device.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="370">
-          <caret line="690" column="92" selection-start-line="690" selection-start-column="92" selection-end-line="690" selection-end-column="92" />
-          <folding />
+        <state relative-caret-position="11611">
+          <caret line="690" column="17" selection-start-line="690" selection-start-column="17" selection-end-line="690" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/device.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="321">
+          <caret line="475" column="29" selection-start-line="475" selection-start-column="29" selection-end-line="475" selection-end-column="29" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="196">
-          <caret line="1101" column="0" selection-start-line="1101" selection-start-column="0" selection-end-line="1101" selection-end-column="0" />
+          <caret line="1615" column="0" selection-start-line="1615" selection-start-column="0" selection-end-line="1615" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MIST1_Control_System_GUI.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="474">
+          <caret line="480" column="0" selection-start-line="480" selection-start-column="0" selection-end-line="480" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI_PSFC_WorkingCopy/control_system.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="1177" column="71" selection-start-line="1177" selection-start-column="71" selection-end-line="1177" selection-end-column="71" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI_PSFC_WorkingCopy/MIST1Plot.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="454">
+          <caret line="46" column="0" selection-start-line="46" selection-start-column="0" selection-end-line="46" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI_PSFC_WorkingCopy/MPLCanvasWrapper3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="188">
+          <caret line="636" column="0" selection-start-line="636" selection-start-column="0" selection-end-line="636" selection-end-column="0" />
           <folding />
         </state>
       </provider>

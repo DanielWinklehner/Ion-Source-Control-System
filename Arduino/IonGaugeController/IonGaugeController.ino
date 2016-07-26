@@ -22,8 +22,6 @@ All text above, and the splash screen must be included in any redistribution
 #include <Adafruit_SSD1306.h>
 #include <EEPROM.h>
 
-
-
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 
@@ -385,7 +383,7 @@ void loop() {
       }
       else if (header == "gauge_state#1") {
         if (value == "1") {
-          gauge1_interrupt();
+          //gauge1_interrupt();
           Serial.println("assigned:gauge_state#1=" + value);
         }
         else {
@@ -395,7 +393,7 @@ void loop() {
       }
       else if (header == "gauge_state#2") {
         if (value == "1") {
-          gauge2_interrupt();
+          //gauge2_interrupt();
           Serial.println("assigned:gauge_state#2=" + value);
         }
         else {
@@ -403,14 +401,8 @@ void loop() {
           Serial.println("assigned:gauge_state#2=" + value);
         }
       }
-  
-      
-      
     }
   }
-  
-  
-  
 }
 
 
@@ -586,94 +578,3 @@ void gauge2_interrupt()
   }
 }
 
-void testfillrect(void) {
-  uint8_t color = 1;
-  for (int16_t i=0; i<display.height()/2; i+=3) {
-    // alternate colors
-    display.fillRect(i, i, display.width()-i*2, display.height()-i*2, color%2);
-    display.display();
-    color++;
-  }
-}
-
-void testdrawchar(void) {
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0,0);
-
-  for (uint8_t i=0; i < 168; i++) {
-    if (i == '\n') continue;
-    display.write(i);
-    if ((i > 0) && (i % 21 == 0))
-      display.println();
-  }    
-  display.display();
-}
-
-void testdrawline() {  
-  for (int16_t i=0; i<display.width(); i+=4) {
-    display.drawLine(0, 0, i, display.height()-1, WHITE);
-    display.display();
-  }
-  for (int16_t i=0; i<display.height(); i+=4) {
-    display.drawLine(0, 0, display.width()-1, i, WHITE);
-    display.display();
-  }
-  delay(250);
-  
-  display.clearDisplay();
-  for (int16_t i=0; i<display.width(); i+=4) {
-    display.drawLine(0, display.height()-1, i, 0, WHITE);
-    display.display();
-  }
-  for (int16_t i=display.height()-1; i>=0; i-=4) {
-    display.drawLine(0, display.height()-1, display.width()-1, i, WHITE);
-    display.display();
-  }
-  delay(250);
-  
-  display.clearDisplay();
-  for (int16_t i=display.width()-1; i>=0; i-=4) {
-    display.drawLine(display.width()-1, display.height()-1, i, 0, WHITE);
-    display.display();
-  }
-  for (int16_t i=display.height()-1; i>=0; i-=4) {
-    display.drawLine(display.width()-1, display.height()-1, 0, i, WHITE);
-    display.display();
-  }
-  delay(250);
-
-  display.clearDisplay();
-  for (int16_t i=0; i<display.height(); i+=4) {
-    display.drawLine(display.width()-1, 0, 0, i, WHITE);
-    display.display();
-  }
-  for (int16_t i=0; i<display.width(); i+=4) {
-    display.drawLine(display.width()-1, 0, i, display.height()-1, WHITE); 
-    display.display();
-  }
-  delay(250);
-}
-
-void testscrolltext(void) {
-  display.setTextSize(2);
-  display.setTextColor(WHITE);
-  display.setCursor(10,0);
-  display.clearDisplay();
-  display.println("scroll");
-  display.display();
- 
-  display.startscrollright(0x00, 0x0F);
-  delay(2000);
-  display.stopscroll();
-  delay(1000);
-  display.startscrollleft(0x00, 0x0F);
-  delay(2000);
-  display.stopscroll();
-  delay(1000);    
-  display.startscrolldiagright(0x00, 0x07);
-  delay(2000);
-  display.startscrolldiagleft(0x00, 0x07);
-  delay(2000);
-  display.stopscroll();
-}
