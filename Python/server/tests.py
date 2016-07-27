@@ -70,6 +70,18 @@ some_client.send_message("q@{}:f0,f1,f2".format(arduino_key))
 some_client.close_connection()
 
 
+### Communication messages protocol design.
+
+# Query Message:
+# q{2f}{2s}{1f}.format(number_of_channels, channel_name, precision)
+# e.g., q01f18
+#
+#
+# Output Message:
+# o{2f}{2s}{1f}{+/-}{1f}{pf}{1f}{+/-}.format(number_of_channels, channel_name, precision, +/-, digit_before_decimal, digit_after_decimal_upto_p_precision, index(power), sign_of_index(+/-) )
+
+
+
 # Messages begin with arduino id and a number of lines thing. That tells the server to pass the next N lines to that arduino.
 
 # Or a better option would be to have a connect and disconnect message.

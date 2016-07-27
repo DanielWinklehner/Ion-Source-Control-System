@@ -181,25 +181,25 @@ void get_serial_data(char * message) {
 }
 
 int get_number_of_channels_queried(char * inputMessage ) {
-  int index = 1;
-  char entry = inputMessage[index];
 
-  if (inputMessage[2] == '\0') {
-    return 0;
-  }
-  else {
-    int number = 0;
+  char reportedNumberOfChannels[2] = {inputMessage[1], inputMessage[2]};
   
-    while(entry != '\0') {
-      index++;
-      entry = inputMessage[index];
-      if (entry == ',') {
-        number++;
-      }
-    }
-  
-    return number + 1;
+  // First, find the message length i.e. the length of the message upto the termination character of \0.
+  int messageLength = 0;
+  char entry = inputMessage[messageLength];
+  while (entry != '\0') {
+    messageLength++;
+    entry = inputMessage[messageLength];
   }
+  
+  // The query message always begins with a 'q' character. So that's 1 byte. Plus 2 bytes for total number of channels. Then, 3 bytes (2 bytes for name + 1 byte for precision) per channel.
+  int numberOfChannels = (messageLength - 3) / 3;
+
+  if (numberOfChannels == atoi(reportedNumberOfChannels)) {
+    return numberOfChannels;
+  }
+
+  return 0;
   
 }
 
@@ -207,6 +207,9 @@ int get_number_of_channels_queried(char * inputMessage ) {
 
 void loop() {
 
+  // Example query message.
+  // q01f18 => This means the user wants 01 channels with the names f1 upto a precision of 8.
+  
   memset (inputMessage, '\0', 128);
   //Serial.print("Did a main loop");
 
@@ -254,31 +257,39 @@ void loop() {
       // Find what the user is querying for.
       int numberOfChannels = get_number_of_channels_queried(inputMessage);
 
-      Serial.println("Queried!");
-      Serial.print("No. of channels queried!");
-      Serial.println(numberOfChannels);
-
-      if (numberOfChannels > 0)
+      if (numberOfChannels > 0) {
         Serial.print("o");
+      }
+        
+      for (int channelIndex = 0; channelIndex < numberOfChannels; channelIndex++) { 
 
-      for (int channelIndex = 0; channelIndex < numberOfChannels; channelIndex++) { // 2 because each channel name (in the message) is going to be 2 characters long.
+        char channelIdentifier = inputMessage[3 + 3*channelIndex];  // Need to add 3 because the first three characters are going to be the keyword (1) + total number of channels (2).
+        int channelNumber = inputMessage[3 + 3*channelIndex + 1] - '0'; // "- '0'" to convert from char to int.
+        int precision =  inputMessage[3 + 3*channelIndex + 2] - '0';  // "- '0'" to convert from char to int.
 
-        char channelIdentifier = inputMessage[1 + 3*channelIndex];  // Need to add 1 because the first character is going to be the keyword.  
-        char channelNumber = inputMessage[1 + 3*channelIndex + 1];
+        float valueToOutput;
         
         if (channelIdentifier == 'f') {
           // Flow meter.
-          if (channelNumber <= (sizeof(flowSensorPins) / sizeof(int))) {
-            Serial.print(flowSensorFreqsWrite[channelNumber]);
+          if ((channelNumber >= 0) && (channelNumber < (sizeof(flowSensorPins) / sizeof(int)))) {
+            valueToOutput = flowSensorFreqsWrite[channelNumber];
           } 
         }
         else if (channelIdentifier == 't') {
           // Temperature sensor.
         }
 
+        char buf[1 + 1 + precision + 1 + 1 + 2];
+        int n = sprintf(buf, "%.2e", valueToOutput);
+        Serial.println(n);
+
+        Serial.println(buf);
+        
         // Add a comma unless this is the last channel.
-        if (channelIndex < (numberOfChannels - 1))
+        if (channelIndex < (numberOfChannels - 1)) {
           Serial.print(",");
+        }
+          
         
       }
     }
