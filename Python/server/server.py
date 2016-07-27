@@ -2,6 +2,7 @@ from __future__ import division
 
 import time
 import socket
+import struct
 
 from threading import Thread 
 from SocketServer import ThreadingMixIn 
@@ -74,14 +75,40 @@ class ClientThread(Thread):
 		
 		print "[+] New server socket thread started for " + self._ip + ":" + str(self._port) 
 
- 
+
+ 	def send_message(self, msg):
+		# Prefix each message with a 4-byte length (network byte order)
+		msg = struct.pack('>I', len(msg)) + msg
+		self._connection.sendall(msg)
+
+	def receive_message(self):
+		# Read message length and unpack it into an integer
+		raw_msglen = self.receive_all(4)
+		if not raw_msglen:
+			return None
+		msglen = struct.unpack('>I', raw_msglen)[0]
+		# Read the message data
+		return self.receive_all(msglen)
+
+	def receive_all(self, n):
+		# Helper function to recv n bytes or return None if EOF is hit
+		data = ''
+		while len(data) < n:
+			packet = self._connection.recv(n - len(data))
+			if not packet:
+				return None
+			data += packet
+		return data
+
+
 	def run(self): 
 		
 		output_message = ""
 
 		while True : 
 			
-			input_message = self._connection.recv(2048) 
+			
+			input_message = self.receive_message()
 			
 			print "Server received data:", input_message
 
@@ -100,24 +127,29 @@ class ClientThread(Thread):
 			elif "q:" in input_message:
 				pass
 
-			self._connection.send(output_message)
 
-			MESSAGE = raw_input("Multithreaded Python server : Enter Response from Server/Enter exit:")
+			print "sending message", output_message
+			self.send_message(output_message)
+			
+
+			MESSAGE = raw_input("Enter Response from Server/Enter exit:")
 			
 			if MESSAGE == 'exit':
 				print "exit enterred"
 				break
+			else:
+				"Continuing"
+				continue
 			
 			
-
+		print "Loop exited"
 		self._connection.close()
- 
-
+ 		print "Connection closed."
 
 
 def start_server():
 
-	some_server = Server(tcp_port=7817)
+	some_server = Server(tcp_port=1192)
 	some_server.connect()
 
 	
@@ -127,9 +159,7 @@ def start_server():
 	while True: 
 		
 		some_server.listen()
-
-		print "Multithreaded Python server : Waiting for connections from TCP clients..." 
-		
+				
 		(conn, (ip, port)) = some_server.get_connection_ip_port() 
 		
 		new_client_thread = ClientThread(some_server, conn, ip, port) 
@@ -137,6 +167,10 @@ def start_server():
 		new_client_thread.start() 
 		
 		threads.append(new_client_thread) 
+
+		message = raw_input("Enter something")
+		if message == "exit":
+			break
 	 
 	for t in threads: 
 		t.join() 

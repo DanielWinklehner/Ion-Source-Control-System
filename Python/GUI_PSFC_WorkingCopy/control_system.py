@@ -1516,7 +1516,7 @@ if __name__ == "__main__":
 
     # Add channels to the sensor box
     # 5 Flow Meters:
-    for i in range(5):
+    for i in range(1):
         ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
                      message_header="flow_meter#" + str(i + 1),
                      upper_limit=1,
@@ -1529,7 +1529,7 @@ if __name__ == "__main__":
         sensor_box.add_channel(ch)
 
     # 8 Temperature Sensors: 7 for now (#8 is not connected)
-    for i in range(2):
+    for i in range(7):
         ch = Channel(name="temp_sensor#{}".format(i + 1), label="Temperature Sensor {}".format(i + 1),
                      message_header="temp_sensor#" + str(i + 1),
                      upper_limit=1,

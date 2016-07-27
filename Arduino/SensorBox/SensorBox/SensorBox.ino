@@ -72,7 +72,7 @@ MAX31856 *temperature7;
 // Communication Variables:
 char deviceId[37];
 bool deviceIdentified = false;
-String inputCommand;
+char inputMessage[128];
 
 float t[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
@@ -86,8 +86,10 @@ void setup()   {
   // Flow Meters.
   for (unsigned i = 0; i < sizeof(flowSensorPins) / sizeof(int); i++) {
     pinMode(flowSensorPins[i], INPUT);
+    // Activate the pullup resistor
+    digitalWrite(flowSensorPins[i], HIGH);
   }
-    
+
   Serial.begin(115200);
 
   // Get this Arduino's device ID from memory.
@@ -167,19 +169,46 @@ void flow_interrupt4() {
   flowSensorFreqs[4]++;
 }
 
-String get_serial_data() {
-  String content = "";
-  char character;
-
+void get_serial_data(char * message) {
+  
+  int i = 0;
   while(Serial.available()) {
-      character = Serial.read();
-      content.concat(character);
+      message[i] = Serial.read();
+      i++;
       delay(2);
   }
-  return content;
+  
 }
 
+int get_number_of_channels_queried(char * inputMessage ) {
+  int index = 1;
+  char entry = inputMessage[index];
+
+  if (inputMessage[2] == '\0') {
+    return 0;
+  }
+  else {
+    int number = 0;
+  
+    while(entry != '\0') {
+      index++;
+      entry = inputMessage[index];
+      if (entry == ',') {
+        number++;
+      }
+    }
+  
+    return number + 1;
+  }
+  
+}
+
+
+
 void loop() {
+
+  memset (inputMessage, '\0', 128);
+  //Serial.print("Did a main loop");
 
   // Get the current time in milliseconds
   currentTime = millis();
@@ -214,7 +243,47 @@ void loop() {
   if (Serial.available()) {
     
     digitalWrite(LED_COM, HIGH);
-    
+
+    get_serial_data(inputMessage);
+
+    char keyword = inputMessage[0];
+
+    if (keyword == 'q') {
+      // Query.
+
+      // Find what the user is querying for.
+      int numberOfChannels = get_number_of_channels_queried(inputMessage);
+
+      Serial.println("Queried!");
+      Serial.print("No. of channels queried!");
+      Serial.println(numberOfChannels);
+
+      if (numberOfChannels > 0)
+        Serial.print("o");
+
+      for (int channelIndex = 0; channelIndex < numberOfChannels; channelIndex++) { // 2 because each channel name (in the message) is going to be 2 characters long.
+
+        char channelIdentifier = inputMessage[1 + 3*channelIndex];  // Need to add 1 because the first character is going to be the keyword.  
+        char channelNumber = inputMessage[1 + 3*channelIndex + 1];
+        
+        if (channelIdentifier == 'f') {
+          // Flow meter.
+          if (channelNumber <= (sizeof(flowSensorPins) / sizeof(int))) {
+            Serial.print(flowSensorFreqsWrite[channelNumber]);
+          } 
+        }
+        else if (channelIdentifier == 't') {
+          // Temperature sensor.
+        }
+
+        // Add a comma unless this is the last channel.
+        if (channelIndex < (numberOfChannels - 1))
+          Serial.print(",");
+        
+      }
+    }
+
+    /*
     // Get the message from the serial port
     inputCommand = get_serial_data();
 
@@ -237,6 +306,16 @@ void loop() {
       filteredHeader = header;
     }
 
+    
+    Serial.print("keyword: ");
+    Serial.print(keyword);
+    Serial.print(", header: ");
+    Serial.print(filteredHeader);
+    Serial.print(", number: ");
+    Serial.print(serialNumber);
+    Serial.print(", response: ");
+   
+    
     // Do stuff with the message components according to the GUI commands
     if (keyword == "query") {
       if (filteredHeader == "identification") {
@@ -250,7 +329,7 @@ void loop() {
         } 
       }
       else if (filteredHeader == "temp_sensor") {
-        if (serialNumber.toInt() <= (sizeof(flowSensorPins) / sizeof(int))) {
+        if (serialNumber.toInt() <= (sizeof(t) / sizeof(float))) {
           Serial.print("output:temp_sensor#"  + serialNumber + "=");
           Serial.println(t[serialNumber.toInt() - 1], 2);
         } 
@@ -263,6 +342,9 @@ void loop() {
         }
       }
     }
+
+  */
+  
   }
 }
 

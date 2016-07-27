@@ -1547,7 +1547,7 @@ if __name__ == "__main__":
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
-    control_system.run()
+    # control_system.run()
 
     ######################## Old stuff: #############################################################################
     # Aashish => 2cc580d6-fa29-44a7-9fec-035acd72340e
@@ -1649,34 +1649,34 @@ if __name__ == "__main__":
 
     # Actual Ion Gauge Controller Arduino => cf436e6b-ba3d-479a-b221-bc387c37b858
 
-    # ion_gauge = Device("ion_gauge", arduino_id="cf436e6b-ba3d-479a-b221-bc387c37b858", label="Ion Gauge")
-    # ion_gauge.set_overview_page_presence(True)
-    #
-    # for i in range(2):
-    #     ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-    #                  message_header="gauge_state#" + str(i + 1),
-    #                  upper_limit=1,
-    #                  lower_limit=0,
-    #                  data_type=bool,
-    #                  mode="read",
-    #                  display_order=(4 - i))
-    #
-    #     ion_gauge.add_channel(ch)
-    #
-    # for i in range(2):
-    #     ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-    #                  message_header="gauge_pressure#" + str(i + 1),
-    #                  upper_limit=1000,
-    #                  lower_limit=0,
-    #                  data_type=float,
-    #                  mode="read",
-    #                  unit="Torr",
-    #                  display_order=(4 - i),
-    #                  displayformat=".2e")
-    #
-    #     ion_gauge.add_channel(ch)
-    #
-    # control_system.add_device(ion_gauge)
+    ion_gauge = Device("ion_gauge", arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", label="Ion Gauge")
+    ion_gauge.set_overview_page_presence(True)
+    
+    for i in range(2):
+        ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
+                     message_header="gauge_state#" + str(i + 1),
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=bool,
+                     mode="read",
+                     display_order=(4 - i))
+    
+        ion_gauge.add_channel(ch)
+    
+    for i in range(2):
+        ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
+                     message_header="gauge_pressure#" + str(i + 1),
+                     upper_limit=1000,
+                     lower_limit=0,
+                     data_type=float,
+                     mode="read",
+                     unit="Torr",
+                     display_order=(4 - i),
+                     displayformat=".2e")
+    
+        ion_gauge.add_channel(ch)
+    
+    control_system.add_device(ion_gauge)
 
     '''
     # # This is for reading / writing from json files.
@@ -1687,3 +1687,6 @@ if __name__ == "__main__":
 
     # control_system.add_device(ion_gauge)
     '''
+
+
+    control_system.run()
