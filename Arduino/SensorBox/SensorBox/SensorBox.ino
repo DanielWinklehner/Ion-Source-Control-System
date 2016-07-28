@@ -71,7 +71,6 @@ MAX31856 *temperature7;
 
 // Communication Variables:
 char deviceId[37];
-bool deviceIdentified = false;
 char inputMessage[128];
 
 float t[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -204,6 +203,179 @@ int get_number_of_channels_queried(char * inputMessage ) {
 }
 
 
+//
+// Code From: http://forum.arduino.cc/index.php?topic=46931.0
+// davekw7x
+// December, 2010
+//
+// Build a C-style "string" for a floating point variable in a static array.
+// The optional "digits" parameter tells how many decimal digits to store
+// after the decimal point.  If no "digits" argument is given in the calling
+// function a value of 2 is used.
+//
+// Utility functions to raise 10 to an unsigned int power and to print
+// the hex bytes of a floating point variable are also included here.
+//
+char *float2s(float f, unsigned int digits=2)
+{
+   static char buf[16]; // Buffer to build string representation
+   int index = 0;       // Position in buf to copy stuff to
+
+   // For debugging: Uncomment the following line to see what the
+   // function is working on.
+   //Serial.print("In float2s: bytes of f are: ");printBytes(f);
+
+   // Handle the sign here:
+   if (f < 0.0) {
+       buf[index++] = '-'; 
+       f = -f;
+   }
+   // From here on, it's magnitude
+
+   // Handle infinities 
+   if (isinf(f)) {
+       strcpy(buf+index, "INF");
+       return buf;
+   }
+   
+   // Handle NaNs
+   if (isnan(f)) {
+       strcpy(buf+index, "NAN");
+       return buf;
+   }
+   
+   //
+   // Handle numbers.
+   //
+   
+   // Six or seven significant decimal digits will have no more than
+   // six digits after the decimal point.
+   //
+   if (digits > 6) {
+       digits = 6;
+   }
+   
+   // "Normalize" into integer part and fractional part
+   int exponent = 0;
+   if (f >= 10) {
+       while (f >= 10) {
+           f /= 10;
+           ++exponent;
+       }
+   }
+   else if ((f > 0) && (f < 1)) {
+       while (f < 1) {
+           f *= 10;
+           --exponent;
+       }
+   }
+
+   //
+   // Now add 0.5 in to the least significant digit that will
+   // be printed.
+
+   //float rounder = 0.5/pow(10, digits);
+   // Use special power-of-integer function instead of the
+   // floating point library function.
+   float rounder = 0.5 / ipow10(digits);
+   f += rounder;
+
+   //
+   // Get the whole number part and the fractional part into integer
+   // data variables.
+   //
+   unsigned intpart = (unsigned)f;
+   unsigned long fracpart  = (unsigned long)((f - intpart) * 1.0e7);
+
+   //
+   // Divide by a power of 10 that zeros out the lower digits
+   // so that the "%0.lu" format will give exactly the required number
+   // of digits.
+   //
+   fracpart /= ipow10(6-digits+1);
+
+   //
+   // Create the format string and use it with sprintf to form
+   // the print string.
+   //
+   char format[16];
+   // If digits > 0, print
+   //    int part decimal point fraction part and exponent.
+
+   if (digits) {
+     
+       sprintf(format, "%%u.%%0%dlu E%%+d", digits);
+       //
+       // To make sure the format is what it is supposed to be, uncomment
+       // the following line.
+       //Serial.print("format: ");Serial.println(format);
+       sprintf(buf+index, format, intpart, fracpart, exponent);
+   }
+   else { // digits == 0; just print the intpart and the exponent
+       sprintf(format, "%%u E%%+d");
+       sprintf(buf+index, format, intpart, exponent);
+   }
+
+   return buf;
+} 
+
+
+//
+// Raise 10 to an unsigned integer power,
+// It's used in this program for powers
+// up to 6, so it must have a long return
+// type, since in avr-gcc, an int can't hold
+// 10 to the power 6.
+//
+// Since it's an integer function, negative
+// powers wouldn't make much sense.
+//
+// If you want a more general function for raising
+// an integer to an integer power, you could make 
+// "base" a parameter.
+unsigned long ipow10(unsigned power)
+{
+   const unsigned base = 10;
+   unsigned long retval = 1;
+
+   for (int i = 0; i < power; i++) {
+       retval *= base;
+   }
+   return retval;
+}
+
+void convert_scientific_notation_to_mist1(char * source, char * target, unsigned precision) {
+  
+  // First figure out the sign.
+  int index = 0;
+  
+  if (source[0] == '-') {
+    target[0] = '-';
+    index++;          // For negative numbers, there's a '-' character in the front so we need to offset by 1.
+  }
+  else {
+    target[0] = '+';
+  }
+  
+  // Next, we want the first digit.
+  target[1] = source[index];
+
+  // The next character is a decimal point. We don't want that.
+  
+  // Next, we want the digits after the decimal.
+  for (unsigned i = 0; i < precision; i++) {
+    target[2 + i] = source[index + 2 + i];
+  }
+  
+  // Next, we want the exponent. Assumes that the exponent is always going to be single-digit.
+  // There's a space, an 'E' and then the sign of the exponent before the actual exponent.
+  target[2 + precision] = source[index + 2 + precision + 3];
+
+  // Finally, the sign of the exponent.
+  target[2 + precision + 1] = source[index + 2 + precision + 2];
+}
+
+
 
 void loop() {
 
@@ -251,7 +423,11 @@ void loop() {
 
     char keyword = inputMessage[0];
 
-    if (keyword == 'q') {
+    if (keyword == 'i') {
+      Serial.print("device_id=");
+      Serial.println(deviceId);
+    }
+    else if (keyword == 'q') {
       // Query.
 
       // Find what the user is querying for.
@@ -260,12 +436,21 @@ void loop() {
       if (numberOfChannels > 0) {
         Serial.print("o");
       }
+      
+      // Apparently, faster than using sprintf.
+      if (numberOfChannels > 9) {
+        Serial.print(numberOfChannels);
+      }
+      else {
+        Serial.print("0");
+        Serial.print(numberOfChannels);
+      }
         
       for (int channelIndex = 0; channelIndex < numberOfChannels; channelIndex++) { 
 
         char channelIdentifier = inputMessage[3 + 3*channelIndex];  // Need to add 3 because the first three characters are going to be the keyword (1) + total number of channels (2).
         int channelNumber = inputMessage[3 + 3*channelIndex + 1] - '0'; // "- '0'" to convert from char to int.
-        int precision =  inputMessage[3 + 3*channelIndex + 2] - '0';  // "- '0'" to convert from char to int.
+        unsigned precision =  inputMessage[3 + 3*channelIndex + 2] - '0';  // "- '0'" to convert from char to int.
 
         float valueToOutput;
         
@@ -277,17 +462,25 @@ void loop() {
         }
         else if (channelIdentifier == 't') {
           // Temperature sensor.
+          if ((channelNumber >= 0) && (channelNumber < (sizeof(t) / sizeof(float)))) {
+            valueToOutput = t[channelNumber];
+          } 
         }
 
-        char buf[1 + 1 + precision + 1 + 1 + 2];
-        int n = sprintf(buf, "%.2e", valueToOutput);
-        Serial.println(n);
-
-        Serial.println(buf);
+        char * buff = float2s(valueToOutput, precision);
+        char valueToPrint[1 + 1 + precision + 1 + 1 + 1]; // sign(1) + digit(1) + precision + exponent(1) + sign(1) + termination character(1).
+        memset(valueToPrint, '\0', (1 + 1 + precision + 1 + 1 + 1));
+        convert_scientific_notation_to_mist1(buff, valueToPrint, precision);
+        
+        Serial.print(valueToPrint);
         
         // Add a comma unless this is the last channel.
         if (channelIndex < (numberOfChannels - 1)) {
           Serial.print(",");
+        }
+        else {
+          // Last channel. Add a carriage return.
+          Serial.print("\r\n");
         }
           
         
