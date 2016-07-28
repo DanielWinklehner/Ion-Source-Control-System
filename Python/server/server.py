@@ -8,7 +8,7 @@ from threading import Thread
 from SocketServer import ThreadingMixIn 
 
 from serial_communication import SerialCOM
- 
+import messages
 
 
 class Server:
@@ -22,8 +22,7 @@ class Server:
 
 		self._all_serial_ports = SerialCOM.get_all_serial_ports()
 
-		self._serial_coms = {}	# Key = integer. Value = SerialCOM.
-		self._arduino_ids = []
+		self._serial_coms = {}	# Key = Arduino device_id. Value = SerialCOM.
 
 
 	def connect(self):
@@ -40,25 +39,17 @@ class Server:
 	def listen(self):
 		self._tcp_server.listen(4)
 
-
-	def find_key_for_arduino_connection(self):
-		if len(self._serial_coms.keys()) == 0:
-			return 0
-		else:
-			return max(self._serial_coms.keys()) + 1
-
 	def add_arduino_connection(self, arduino_id):
-
-		key = self.find_key_for_arduino_connection()
-
-		self._serial_coms[key] = SerialCOM(arduino_id)
-
-		self._arduino_ids.append(arduino_id)
-
-		return key
+		self._serial_coms[arduino_id] = SerialCOM(arduino_id)
 		
 	def get_arduino_ids(self):
-		return self._arduino_ids
+		return self._serial_coms.keys()
+
+	def send_message_to_arduino(self, arduino_id, msg):
+		self._serial_coms[arduino_id].send_message(msg)
+
+	def receive_message_from_arduino(self, arduino_id):
+		return self._serial_coms[arduino_id].read_message()
 
 
 
@@ -120,12 +111,19 @@ class ClientThread(Thread):
 				
 				for arduino_id in arduino_ids:
 					if arduino_id not in self._server.get_arduino_ids():
-						key = self._server.add_arduino_connection(arduino_id)
-						output_message = "connected:{}={}".format(arduino_id, key)
+						self._server.add_arduino_connection(arduino_id)
+						output_message = "connected:{}".format(arduino_id)
 						
 				
-			elif "q:" in input_message:
-				pass
+			else:
+				arduino_id = input_message.split("@")[0]
+				query_message = input_message.split("@")[1]
+
+				if arduino_id in self._server.get_arduino_ids():
+					self._server.send_message_to_arduino(arduino_id, query_message)
+					arduino_response = self._server.receive_message_from_arduino(arduino_id)
+
+					output_message = arduino_response
 
 
 			print "sending message", output_message

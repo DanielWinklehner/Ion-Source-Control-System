@@ -2,7 +2,7 @@ from __future__ import division
 import time
 import socket
 import struct
-
+import messages
 
 class Client:
 	def __init__(self):
@@ -62,10 +62,19 @@ some_client.connect()
 some_client.send_message("connect_arduino:2cc580d6-fa29-44a7-9fec-035acd72340e")
 
 response = some_client.receive_message()
-arduino_key = response.split("=")[1]
 
-some_client.send_message("q@{}:f0,f1,f2".format(arduino_key))
+arduino_key = response.split(":")[1]
 
+# Create a list of channels to query.
+channel_names = ['f0', 'f1', 'f2', 'f3']
+precisions = [3, 4, 1, 3]
+
+query_message = messages.build_query_message(arduino_key, channel_names, precisions)
+
+some_client.send_message(query_message)
+response = some_client.receive_message()
+
+print "Got the following message back: {}".format(messages.parse_arduino_output_message(response))
 
 some_client.close_connection()
 

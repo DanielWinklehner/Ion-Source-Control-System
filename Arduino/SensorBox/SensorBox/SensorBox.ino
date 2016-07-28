@@ -433,58 +433,76 @@ void loop() {
       // Find what the user is querying for.
       int numberOfChannels = get_number_of_channels_queried(inputMessage);
 
-      if (numberOfChannels > 0) {
-        Serial.print("o");
-      }
+      // Read input message.
+      unsigned precisions[numberOfChannels];
+      char channelIdentifiers[numberOfChannels];
+      unsigned channelNumbers[numberOfChannels];
+
+      // Check if the number of channels queried for are small enough to fit in a single message of length 128.
+      // For each channel, we need (1 + 1) + (1 + 1 + precision + 1 + 1) [ { channel_name(1) + channel_number(1) } + { sign(1) + number(1) + precision + exponent(1) + exponent sign(1) } ].
+      // Need to add 3 to that. [ 'o'(1) + number_of_channels(2) ].
+      unsigned totalMessageLength = 3;
       
-      // Apparently, faster than using sprintf.
-      if (numberOfChannels > 9) {
-        Serial.print(numberOfChannels);
+      for (unsigned channelIndex = 0; channelIndex < numberOfChannels; channelIndex++) {
+        channelIdentifiers[channelIndex] = inputMessage[3 + 3*channelIndex];  // Need to add 3 because the first three characters are going to be the keyword (1) + total number of channels (2).
+        channelNumbers[channelIndex] = inputMessage[3 + 3*channelIndex + 1] - '0'; // "- '0'" to convert from char to int.
+        precisions[channelIndex] =  inputMessage[3 + 3*channelIndex + 2] - '0';  // "- '0'" to convert from char to int.
+
+        totalMessageLength += (1 + 1) + (1 + 1 + precisions[channelIndex] + 1 + 1);
+      }
+
+      if (totalMessageLength > 128) {
+        Serial.println("error");
       }
       else {
-        Serial.print("0");
-        Serial.print(numberOfChannels);
-      }
-        
-      for (int channelIndex = 0; channelIndex < numberOfChannels; channelIndex++) { 
-
-        char channelIdentifier = inputMessage[3 + 3*channelIndex];  // Need to add 3 because the first three characters are going to be the keyword (1) + total number of channels (2).
-        int channelNumber = inputMessage[3 + 3*channelIndex + 1] - '0'; // "- '0'" to convert from char to int.
-        unsigned precision =  inputMessage[3 + 3*channelIndex + 2] - '0';  // "- '0'" to convert from char to int.
-
-        float valueToOutput;
-        
-        if (channelIdentifier == 'f') {
-          // Flow meter.
-          if ((channelNumber >= 0) && (channelNumber < (sizeof(flowSensorPins) / sizeof(int)))) {
-            valueToOutput = flowSensorFreqsWrite[channelNumber];
-          } 
+        if (numberOfChannels > 0) {
+          Serial.print("o");
         }
-        else if (channelIdentifier == 't') {
-          // Temperature sensor.
-          if ((channelNumber >= 0) && (channelNumber < (sizeof(t) / sizeof(float)))) {
-            valueToOutput = t[channelNumber];
-          } 
-        }
-
-        char * buff = float2s(valueToOutput, precision);
-        char valueToPrint[1 + 1 + precision + 1 + 1 + 1]; // sign(1) + digit(1) + precision + exponent(1) + sign(1) + termination character(1).
-        memset(valueToPrint, '\0', (1 + 1 + precision + 1 + 1 + 1));
-        convert_scientific_notation_to_mist1(buff, valueToPrint, precision);
         
-        Serial.print(valueToPrint);
-        
-        // Add a comma unless this is the last channel.
-        if (channelIndex < (numberOfChannels - 1)) {
-          Serial.print(",");
+        // Apparently, faster than using sprintf.
+        if (numberOfChannels > 9) {
+          Serial.print(numberOfChannels);
         }
         else {
-          // Last channel. Add a carriage return.
-          Serial.print("\r\n");
+          Serial.print("0");
+          Serial.print(numberOfChannels);
         }
           
-        
+        for (int channelIndex = 0; channelIndex < numberOfChannels; channelIndex++) { 
+  
+          float valueToOutput;        
+          if (channelIdentifiers[channelIndex] == 'f') {
+            // Flow meter.
+            if ((channelNumbers[channelIndex] >= 0) && (channelNumbers[channelIndex] < (sizeof(flowSensorPins) / sizeof(int)))) {
+              valueToOutput = flowSensorFreqsWrite[channelNumbers[channelIndex]];
+            } 
+          }
+          else if (channelIdentifiers[channelIndex] == 't') {
+            // Temperature sensor.
+            if ((channelNumbers[channelIndex] >= 0) && (channelNumbers[channelIndex] < (sizeof(t) / sizeof(float)))) {
+              valueToOutput = t[channelNumbers[channelIndex]];
+            } 
+          }
+  
+          char * buff = float2s(valueToOutput, precisions[channelIndex]);
+          char valueToPrint[1 + 1 + precisions[channelIndex] + 1 + 1 + 1]; // sign(1) + digit(1) + precision + exponent(1) + sign(1) + termination character(1).
+          memset(valueToPrint, '\0', (1 + 1 + precisions[channelIndex] + 1 + 1 + 1));
+          convert_scientific_notation_to_mist1(buff, valueToPrint, precisions[channelIndex]);
+
+          Serial.print(channelIdentifiers[channelIndex]);
+          Serial.print(channelNumbers[channelIndex]);
+          Serial.print(valueToPrint);
+          
+          // Last channel. Add a carriage return.
+          if (channelIndex == (numberOfChannels - 1)) {
+            Serial.print("\r\n");
+          }
+            
+          
+        }
       }
+
+      
     }
 
     /*
