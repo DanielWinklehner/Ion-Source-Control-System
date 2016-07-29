@@ -1,6 +1,7 @@
 from __future__ import division
 
 import time
+import serial
 import sys
 import glob
 import json
@@ -26,6 +27,7 @@ class Device:
 
 		self._initialized = False
 		self._overview_frame = None
+		self._serial_com = None
 
 		self._locked = False
 
@@ -35,6 +37,8 @@ class Device:
 	def get_overview_frame(self):
 		return self._overview_frame
 
+	def get_serial_com(self):
+		return self._serial_com
 
 	def set_parent(self, parent):
 		self._parent = parent
@@ -132,8 +136,10 @@ class Device:
 		"""
 		self._initialized = False
 
+		all_serial_comms = self._parent.get_serial_comms()
 		
 		try:
+			self._serial_com = SerialCOM(self._arduino_id)
 
 			# Also reinitialize all channels associated with this device.
 			for channel_name, channel in self._channels.items():
@@ -160,16 +166,26 @@ class Device:
 
 		# First, we check if there already is a SerialCOM object associated with the unique
 		# Arduino ID, if not we create one.
+		all_serial_comms = self._parent.get_serial_comms()
 
+		if self._arduino_id not in all_serial_comms.keys():
 
-		# Add infobar to the arduino_vbox on the side of the GUI
-		vbox = self._parent.get_arduino_vbox()
-		# infobar = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name="{} at Port: {}. Polling rate =".format(self._label, self._serial_com.arduino_port()), displayformat=".1f", unit="Hz")
-		infobar = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name="{}. Polling rate =".format(self._label), displayformat=".1f", unit="Hz")
+			print "No SerialCOM for Arduino with UUID %s yet...Creating..." % self._arduino_id
+			self._serial_com = SerialCOM(self._arduino_id)
+			self._parent.add_serial_com(self._serial_com)
 
-		vbox.pack_start(infobar, False, False, 4)
-		self._parent.add_arduino_status_bar(self._arduino_id, infobar)
+			# Add infobar to the arduino_vbox on the side of the GUI
+			vbox = self._parent.get_arduino_vbox()
+			infobar = MIST1_Control_System_GUI_Widgets.FrontPageDisplayValue(name="{} at Port: {}. Polling rate =".format(self._label, self._serial_com.arduino_port()),
+													displayformat=".1f", unit="Hz")
 
+			vbox.pack_start(infobar, False, False, 4)
+			self._parent.add_arduino_status_bar(self._arduino_id, infobar)
+
+		else:
+
+			print "Found SerialCOM for Arduino with UUID %s ...using existing..." % self._arduino_id
+			self._serial_com = all_serial_comms[self._arduino_id]
 
 		# Have to add device first so that there is a frame to add to
 		self.add_device_to_gui()
@@ -289,13 +305,14 @@ class Device:
 		return device
 
 class Channel:
-	def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
+	def __init__(self, name, label, message_header, upper_limit, lower_limit, data_type, unit="",
 				 scaling=1., mode="both", display_order=0, displayformat=".2f"):
 		"""Summary
 		
 		Args:
 		    name (TYPE): Description
 		    label (TYPE): Description
+		    message_header (TYPE): Description
 		    upper_limit (TYPE): Description
 		    lower_limit (TYPE): Description
 		    data_type (TYPE): Description
@@ -304,12 +321,11 @@ class Channel:
 		    mode (str, optional): Description
 		    display_order (int, optional): Description
 		    displayformat (str, optional): Description
-		
-		Deleted Parameters:
-		    message_header (TYPE): Description
 		"""
 		self._name = name
 		self._label = label
+		self._serial_com = None
+		self._message_header = message_header
 		self._upper_limit = upper_limit
 		self._lower_limit = lower_limit
 		self._data_type = data_type
@@ -447,6 +463,8 @@ class Channel:
 
 		self.add_channel_to_gui()
 
+		# Set the SerialCOM object according to parent
+		self._serial_com = self._parent_device.get_serial_com()
 
 		self._initialized = True
 
@@ -458,7 +476,7 @@ class Channel:
 		Returns:
 		    TYPE: Description
 		"""
-		pass
+		self._serial_com = self._parent_device.get_serial_com()
 
 
 
@@ -508,7 +526,21 @@ class Channel:
 		"""
 		return self._name
 
+	def serial_com(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		return self._serial_com
 
+	def message_header(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		return self._message_header
 
 	def upper_limit(self):
 		"""Summary
@@ -565,6 +597,7 @@ class Channel:
 		properties['label'] = self._label
 
 		
+		properties['message_header'] = self._message_header
 		properties['upper_limit'] = self._upper_limit
 		properties['lower_limit'] = self._lower_limit
 		properties['data_type'] = str(self._data_type)
@@ -590,7 +623,26 @@ class Channel:
 		return Channel(**properties)
 
 
-	
+	def read_arduino_message(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		response = self._serial_com.read_message()
+
+		try:
+			response_parts = response.split(':')
+			result_parts = response_parts[1].split('=')
+
+			keyword = response_parts[0]
+			header = result_parts[0]
+			value = result_parts[1]
+
+			return keyword, header, value
+		except:
+			return "", "", ""
+
 	def read_value(self):
 		"""Summary
 		
@@ -665,7 +717,7 @@ class Channel:
 
 		self._value = value_to_set
 
-
+		
 		# if self._mode == "read":
 		# 	raise ValueError("ERROR: You are trying to write values to a read-only channel!")
 
@@ -704,4 +756,188 @@ class Channel:
 		# THOUGHT: Do we even need to "store" the value here as a class attribute?
 		self._value = value
 		'''
+
+
+class SerialCOM:
+
+	def __init__(self, arduino_id):
+		"""Summary
+		
+		Args:
+		    arduino_id (TYPE): Description
+		"""
+		self._arduino_id = arduino_id
+		self._arduino_port = self.find_port(arduino_id)
+
+		if self._arduino_port is None:
+
+			# TODO: Handle these cases such that all other devices are still connecting!
+			print "arduino port was None"
+			raise SystemExit
+
+		self._baudrate = 115200
+		self._timeout = 5.
+		self._ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
+
+		self._alive_timeout = 10.	# In seconds. Make sure this is float.
+
+	def arduino_id(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		return self._arduino_id
+
+	def arduino_port(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		return self._arduino_port
+
+	@staticmethod
+	def get_all_serial_ports():
+		""" Lists serial port names
+
+			:raises EnvironmentError:
+				On unsupported or unknown platforms
+			:returns:
+				A list of the serial ports available on the system
+
+			Code From: http://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
+		"""
+
+		if sys.platform.startswith('win'):
+			ports = ['COM%s' % (i + 1) for i in range(256)]
+		elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+			# this excludes your current terminal "/dev/tty"
+			ports = glob.glob('/dev/tty[A-Za-z]*')
+		elif sys.platform.startswith('darwin'):
+			ports = glob.glob('/dev/tty.*')
+		else:
+			raise EnvironmentError('Unsupported platform.')
+
+		result = []
+
+		for port in ports:
+			try:
+				s = serial.Serial(port)
+				s.close()
+				result.append(port)
+			except (OSError, serial.SerialException):
+				pass
+
+		return result
+
+	def find_port(self, arduino_id):
+		"""
+		:return:
+		"""
+
+		all_serial_ports = self.get_all_serial_ports()
+
+
+		for serial_port_name in all_serial_ports:
+
+			print "Connecting to", serial_port_name
+
+			ser = serial.Serial(serial_port_name, baudrate=115200, timeout=1.)
+
+			input_message = "i"
+
+			timeout = 3.  # in seconds.
+
+			first_attempt_time = time.time()
+
+			# while (time.time() - first_attempt_time) < timeout:
+			for i in range(int(timeout)):
+				
+
+				try:
+
+					ser.write(input_message)
+					
+					response = ser.readline().strip()
+
+					
+					if "device_id" in response and "=" in response:
+
+						# This is probably an Arduino designed for this Control System.
+						# Get the device id.
+						print response
+						if arduino_id == response.split("=")[1]:
+
+							print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
+
+							return serial_port_name
+				except:
+					print "got an exception"
+					continue
+
+				time.sleep(0.5)
+
+				
+
+		# If we cannot find the corresponding port, return None
+		print "Could not find Arduino corresponding to UUID %s" % arduino_id
+
+		return None
+
+	def is_alive(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		try: 
+			self.send_message("i")
+			response = self.read_message()
+			first_message_time = time.time()
+
+			while (response.strip() != "device_id=" + self._arduino_id) and ((time.time() - first_message_time) < float(self._alive_timeout)):
+				self.send_message("i")
+				response = self.read_message()
+
+			return (response.strip() == "device_id=" + self._arduino_id)
+
+		except:
+			print "There seems to be some problem with the port. It's not responding."
+			return False
+			
+
+	def send_message(self, message):
+		"""Summary
+		
+		Args:
+		    message (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
+		try:
+			self._ser.flushInput()
+			self._ser.flushOutput()
+
+			self._ser.write(message)
+		except:
+			raise Exception("Something's wrong! I cannot send any messages!")
+
+	def read_message(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		try:
+			self._ser.flushInput()
+			self._ser.flushOutput()
+
+			message = self._ser.readline()
+			return message
+		# except serial.SerialException as e:
+		# except IOError as e:
+		except:
+			raise Exception("Something's not right! I cannot read my messages!")
 

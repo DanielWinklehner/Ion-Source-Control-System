@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, redirect
 from flask import request
 
 
@@ -50,6 +50,30 @@ def all_arduinos():
 	all_arduino_ids = some_server.get_arduino_ids()
 
 	return json.dumps(all_arduino_ids)
+
+@app.route("/arduino/alive", methods=['POST', 'GET'])
+def arduino_alive():
+	if request.method == 'POST':
+		pass
+	elif request.method == 'GET':
+		
+		arduino_id = request.args.get('arduino_id')
+
+		if arduino_id in some_server.get_arduino_ids():
+			some_server.send_message_to_arduino(arduino_id, "i")
+			arduino_response = some_server.receive_message_from_arduino(arduino_id)
+
+			print arduino_response.strip() == "device_id={}".format(arduino_id)
+			return str(int(arduino_response.strip() == "device_id={}".format(arduino_id)))
+
+		else:
+			response = some_server.add_arduino_connection(arduino_id)
+
+			if response != None:
+				pass
+				# return requests.get("{}{}/?arduino_id=".format(request.url_root, str(request.url_rule)[1:]), arduino_id)
+
+	return "0"
 
 
 @app.route("/arduino/connect", methods=['POST'])

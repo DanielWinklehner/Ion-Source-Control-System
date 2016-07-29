@@ -13,15 +13,12 @@ import datetime
 import uuid
 import requests
 
-import serial
-
 from collections import deque
 
 from gi.repository import Gtk, GLib, GObject, Gdk
 
 from client import Client
 from procedure import Procedure
-from serial import SerialException
 from device import Device, Channel
 from MIST1_Control_System_GUI_Widgets import *
 
@@ -98,8 +95,6 @@ class MIST1ControlSystem:
         # --- The main device dict --- #
         self._devices = {}
 
-        # --- The serialCOM dict --- #
-        self._serial_comms = {}
 
         self._initialized = False
 
@@ -341,29 +336,25 @@ class MIST1ControlSystem:
             data['channel_names'] = json.dumps(args[1])
             data['precisions'] = json.dumps(args[2])
 
-        print url
-
         r = requests.post(url, data=data)
         response_code = r.status_code
         response = r.reason
-
-        print response_code, response
 
         return r.text
 
 
     def register_device_with_server(self, device):
-        self.send_message_to_server("register_device", [device.get_arduino_id()])
+        return self.send_message_to_server("register_device", [device.get_arduino_id()])
 
 
     def get_channel_values(self, device):
+
         arduino_id = device.get_arduino_id()
-        channel_names = device.channels().keys()
+        channel_names = [name for name, ch in device.channels().items() if ch.mode() == 'read']
         precisions = [4] * len(channel_names)
 
         response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
 
-        print response
         for channel_name, value in ast.literal_eval(response).items():
             device.get_channel_by_name(channel_name).set_value(value)
 
@@ -375,7 +366,12 @@ class MIST1ControlSystem:
         """
 
         # Register device with the server.
-        self.register_device_with_server(device)
+        server_response = self.register_device_with_server(device)
+
+        if server_response == "error":
+            print "There's no arduino with device_id={} connected to the server.".format(device.get_arduino_id())
+            self._status_bar.push(2, "There's no arduino with device_id={} connected to the server.".format(device.get_arduino_id()))
+            return
 
         # Set the control system as the device parent
         device.set_parent(self)
@@ -411,8 +407,6 @@ class MIST1ControlSystem:
 
         return 0
 
-    def add_serial_com(self, serial_com):
-        self._serial_comms[serial_com.arduino_id()] = serial_com
 
     def set_value_callback(self, button, widget):
 
@@ -432,8 +426,9 @@ class MIST1ControlSystem:
     def check_for_alive_devices(self, devices):
         # Check which Arduinos are still alive.
 
+        '''
         for device in devices:
-            if device.get_serial_com().is_alive():
+            if device.is_alive():
 
                 self._alive_device_names.add(device.name())
 
@@ -448,6 +443,7 @@ class MIST1ControlSystem:
         self._last_checked_for_devices_alive = time.time()
 
         print "The set of all alive devices = ", self._alive_device_names
+        '''
 
     def update_stored_values(self, device_name, channel_name):
         self._x_values[(device_name, channel_name)].append(time.time())
@@ -461,6 +457,7 @@ class MIST1ControlSystem:
         """
 
         while self._keep_communicating:
+
 
             # if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
             # 	self.check_for_alive_devices(devices)
@@ -647,7 +644,10 @@ class MIST1ControlSystem:
         For each device, we create a thread to communicate with the corresponding Arduino.
         :return:
         """
-        for arduino_id, serial_com in self._serial_comms.items():
+        # for arduino_id, serial_com in self._serial_comms.items():
+        for device_name, device in self._devices.items():
+
+            arduino_id = device.get_arduino_id()
 
             if arduino_id not in self._communication_threads.keys():
                 my_devices = [dev for devname, dev in self._devices.items() if arduino_id == dev.get_arduino_id()]
@@ -787,8 +787,7 @@ class MIST1ControlSystem:
     def get_overview_grid(self):
         return self._overview_grid
 
-    def get_serial_comms(self):
-        return self._serial_comms
+
 
     def initialize(self):
         """
@@ -853,7 +852,6 @@ class MIST1ControlSystem:
         # Create a new channel.
         ch = Channel(name=params['name'].get_text(),
                      label=params['label'].get_text(),
-                     message_header=params['message_header'].get_text(),
                      upper_limit=float(params['upper_limit'].get_text()),
                      lower_limit=float(params['lower_limit'].get_text()),
                      data_type=data_type,
@@ -967,9 +965,9 @@ class MIST1ControlSystem:
                 grid = Gtk.Grid(column_spacing=20, row_spacing=15)
                 edit_device_vbox.add(grid)
 
-                labels = ["Name", "Label", "Message Header", "Lower Limit", "Upper Limit", "Unit"]
-                entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
-                values = [channel.name(), channel.label(), channel.message_header(), channel.lower_limit(),
+                labels = ["Name", "Label", "Lower Limit", "Upper Limit", "Unit"]
+                entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
+                values = [channel.name(), channel.label(), channel.lower_limit(),
                           channel.upper_limit(), channel.unit()]
 
                 for label_text, entry, value in zip(labels, entries, values):
@@ -1039,7 +1037,7 @@ class MIST1ControlSystem:
                 grid = Gtk.Grid(column_spacing=20, row_spacing=15)
                 edit_device_vbox.add(grid)
 
-                labels = ["Name", "Label", "Message Header", "Lower Limit", "Upper Limit", "Unit"]
+                labels = ["Name", "Label", "Lower Limit", "Upper Limit", "Unit"]
                 entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
 
                 for label_text, entry in zip(labels, entries):
@@ -1096,8 +1094,8 @@ class MIST1ControlSystem:
 
                 add_device_button = Gtk.Button(label="Add Channel")
                 add_device_button.connect("clicked", self.settings_add_channel_callback, device_name,
-                                          dict(name=entries[0], label=entries[1], message_header=entries[2],
-                                               lower_limit=entries[3], upper_limit=entries[4], unit=entries[5],
+                                          dict(name=entries[0], label=entries[1], 
+                                               lower_limit=entries[2], upper_limit=entries[3], unit=entries[4],
                                                data_type=data_type_combo, mode=mode_combo))
                 grid.attach_next_to(add_device_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
@@ -1555,7 +1553,6 @@ if __name__ == "__main__":
     # 2 Microswitches
     for i in range(2):
         ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-                     message_header="micro_switch#{}".format(i + 1),
                      upper_limit=1,
                      lower_limit=0,
                      data_type=bool,
@@ -1567,7 +1564,6 @@ if __name__ == "__main__":
     # 2 Solenoid valves
     for i in range(2):
         ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-                     message_header="solenoid_valve#{}".format(i + 1),
                      upper_limit=1,
                      lower_limit=0,
                      data_type=bool,
@@ -1580,7 +1576,6 @@ if __name__ == "__main__":
     # 5 Flow Meters:
     for i in range(5):
         ch = Channel(name="f{}".format(i), label="Flow Meter {}".format(i),
-                     message_header="flow_meter#" + str(i + 1),
                      upper_limit=1,
                      lower_limit=0,
                      data_type=float,
@@ -1593,7 +1588,6 @@ if __name__ == "__main__":
     # 8 Temperature Sensors: 7 for now (#8 is not connected)
     for i in range(7):
         ch = Channel(name="t{}".format(i), label="Temperature Sensor {}".format(i),
-                     message_header="temp_sensor#" + str(i),
                      upper_limit=1,
                      lower_limit=0,
                      data_type=float,
@@ -1626,7 +1620,6 @@ if __name__ == "__main__":
     # # for i in range(5):
     # for i in range(1):
     # 	ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-    # 				 message_header="flow_meter#" + str(i + 1),
     # 				 upper_limit=1,
     # 				 lower_limit=0,
     # 				 data_type=int,
@@ -1639,7 +1632,6 @@ if __name__ == "__main__":
     # # Microswitches. x2.
     # for i in range(2):
     # 	ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-    # 				message_header="micro_switch#{}".format(i + 1),
     # 				upper_limit=1,
     # 				lower_limit=0,
     # 				data_type=bool,
@@ -1651,7 +1643,6 @@ if __name__ == "__main__":
     # # Solenoid valves. x2.
     # for i in range(2):
     # 	ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-    # 				message_header="solenoid_valve#{}".format(i + 1),
     # 				upper_limit=1,
     # 				lower_limit=0,
     # 				data_type=bool,
@@ -1663,7 +1654,6 @@ if __name__ == "__main__":
     # # Vacuum Valves. x2.
     # for i in range(2):
     # 	ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-    # 				message_header="vacuum_valve#{}".format(i + 1),
     # 				upper_limit=1,
     # 				lower_limit=0,
     # 				data_type=bool,
@@ -1716,7 +1706,6 @@ if __name__ == "__main__":
     
     # for i in range(2):
     #     ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-    #                  message_header="gauge_state#" + str(i + 1),
     #                  upper_limit=1,
     #                  lower_limit=0,
     #                  data_type=bool,
@@ -1727,7 +1716,6 @@ if __name__ == "__main__":
     
     # for i in range(2):
     #     ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-    #                  message_header="gauge_pressure#" + str(i + 1),
     #                  upper_limit=1000,
     #                  lower_limit=0,
     #                  data_type=float,
