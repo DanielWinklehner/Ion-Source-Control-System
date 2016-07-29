@@ -834,7 +834,7 @@ class SerialCOM:
 
 			ser = serial.Serial(serial_port_name, baudrate=115200, timeout=1.)
 
-			input_message = "query:identification=?"
+			input_message = "i"
 
 			timeout = 3.  # in seconds.
 
@@ -851,7 +851,7 @@ class SerialCOM:
 					response = ser.readline().strip()
 
 					
-					if "output" in response and "device_id" in response and "=" in response:
+					if "device_id" in response and "=" in response:
 
 						# This is probably an Arduino designed for this Control System.
 						# Get the device id.
@@ -881,15 +881,15 @@ class SerialCOM:
 		    TYPE: Description
 		"""
 		try: 
-			self.send_message("query:identification=?")
+			self.send_message("i")
 			response = self.read_message()
 			first_message_time = time.time()
 
-			while (response.strip() != "output:device_id=" + self._arduino_id) and ((time.time() - first_message_time) < float(self._alive_timeout)):
-				self.send_message("query:identification=?")
+			while (response.strip() != "device_id=" + self._arduino_id) and ((time.time() - first_message_time) < float(self._alive_timeout)):
+				self.send_message("i")
 				response = self.read_message()
 
-			return (response.strip() == "output:device_id=" + self._arduino_id)
+			return (response.strip() == "device_id=" + self._arduino_id)
 
 		except:
 			print "There seems to be some problem with the port. It's not responding."

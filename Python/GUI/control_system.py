@@ -11,7 +11,7 @@ import threading
 import datetime
 import uuid
 
-import control_system_serial
+
 import serial
 
 from collections import deque
@@ -1472,20 +1472,24 @@ if __name__ == "__main__":
     # *** Generate Devices *** #
     # Each device is connected to a single arduino, several devices can be connected to the
     # same Arduino, but never several arduinos to a single device!
+    # 
     # --- Actual Arduinos ---- #
     # SensorBox: 49ffb802-50c5-4194-879d-20a87bcfc6ef
     # InterlockBox: bd0f5a84-a2eb-4ff3-9ff2-597bf3b2c20a
     # IonGaugeController: cf436e6b-ba3d-479a-b221-bc387c37b858
+    # 
+    # ----- Test Arduinos ------ #
     # Daniel's dummy Arduino: 52d0536f-575e-4861-96c4-b53fc9710170
+    # Aashish's Sensor Arduino: 2cc580d6-fa29-44a7-9fec-035acd72340e
     # ************************ #
 
     interlock_box = Device("interlock_box",
-                           arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e",
+                           arduino_id="bd0f5a84-a2eb-4ff3-9ff2-597bf3b2c20a",
                            label="Interlock Box",
                            on_overview_page=True)
 
     sensor_box = Device("sensor_box",
-                        arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef",
+                        arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e",
                         label="Sensor Box",
                         on_overview_page=True)
 
@@ -1542,12 +1546,12 @@ if __name__ == "__main__":
         sensor_box.add_channel(ch)
 
     # Add all our devices to the control system.
-    control_system.add_device(interlock_box)
-    # control_system.add_device(sensor_box)
+    # control_system.add_device(interlock_box)
+    control_system.add_device(sensor_box)
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
-    # control_system.run()
+    control_system.run()
 
     ######################## Old stuff: #############################################################################
     # Aashish => 2cc580d6-fa29-44a7-9fec-035acd72340e
@@ -1649,34 +1653,34 @@ if __name__ == "__main__":
 
     # Actual Ion Gauge Controller Arduino => cf436e6b-ba3d-479a-b221-bc387c37b858
 
-    ion_gauge = Device("ion_gauge", arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", label="Ion Gauge")
-    ion_gauge.set_overview_page_presence(True)
+    # ion_gauge = Device("ion_gauge", arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", label="Ion Gauge")
+    # ion_gauge.set_overview_page_presence(True)
     
-    for i in range(2):
-        ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-                     message_header="gauge_state#" + str(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="read",
-                     display_order=(4 - i))
+    # for i in range(2):
+    #     ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
+    #                  message_header="gauge_state#" + str(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=bool,
+    #                  mode="read",
+    #                  display_order=(4 - i))
     
-        ion_gauge.add_channel(ch)
+    #     ion_gauge.add_channel(ch)
     
-    for i in range(2):
-        ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-                     message_header="gauge_pressure#" + str(i + 1),
-                     upper_limit=1000,
-                     lower_limit=0,
-                     data_type=float,
-                     mode="read",
-                     unit="Torr",
-                     display_order=(4 - i),
-                     displayformat=".2e")
+    # for i in range(2):
+    #     ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
+    #                  message_header="gauge_pressure#" + str(i + 1),
+    #                  upper_limit=1000,
+    #                  lower_limit=0,
+    #                  data_type=float,
+    #                  mode="read",
+    #                  unit="Torr",
+    #                  display_order=(4 - i),
+    #                  displayformat=".2e")
     
-        ion_gauge.add_channel(ch)
+    #     ion_gauge.add_channel(ch)
     
-    control_system.add_device(ion_gauge)
+    # control_system.add_device(ion_gauge)
 
     '''
     # # This is for reading / writing from json files.
@@ -1689,4 +1693,4 @@ if __name__ == "__main__":
     '''
 
 
-    control_system.run()
+    # control_system.run()

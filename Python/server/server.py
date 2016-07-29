@@ -8,7 +8,6 @@ from threading import Thread
 from SocketServer import ThreadingMixIn 
 
 from serial_communication import SerialCOM
-import messages
 
 
 class Server:
@@ -40,7 +39,11 @@ class Server:
 		self._tcp_server.listen(4)
 
 	def add_arduino_connection(self, arduino_id):
-		self._serial_coms[arduino_id] = SerialCOM(arduino_id)
+		try:
+			self._serial_coms[arduino_id] = SerialCOM(arduino_id)
+			return arduino_id
+		except Exception as e:
+			return None
 		
 	def get_arduino_ids(self):
 		return self._serial_coms.keys()
@@ -94,6 +97,9 @@ class ClientThread(Thread):
 
 	def run(self): 
 		
+
+		print "\n\nA new client just connected to me!\n\n"
+
 		output_message = ""
 
 		while True : 
@@ -101,20 +107,26 @@ class ClientThread(Thread):
 			
 			input_message = self.receive_message()
 			
-			print "Server received data:", input_message
+			if input_message != None:
+				print "Server received data:", input_message
 
-			if "connect_arduino" in input_message:
+			if input_message == None:
+				continue
+			elif "connect_arduino" in input_message:
 
-				arduino_ids = input_message.split(":")[1].split(",")
+				arduino_id = input_message.split(":")[1]
 
-				print arduino_ids
-				
-				for arduino_id in arduino_ids:
-					if arduino_id not in self._server.get_arduino_ids():
-						self._server.add_arduino_connection(arduino_id)
-						output_message = "connected:{}".format(arduino_id)
-						
-				
+				if arduino_id not in self._server.get_arduino_ids():
+					response = self._server.add_arduino_connection(arduino_id)
+					if response == arduino_id:
+						output_message = arduino_id
+					else:
+						output_message = "error_connecting"
+				else:
+					# Already connected. 
+					output_message = arduino_id
+					
+			
 			else:
 				arduino_id = input_message.split("@")[0]
 				query_message = input_message.split("@")[1]
@@ -130,14 +142,14 @@ class ClientThread(Thread):
 			self.send_message(output_message)
 			
 
-			MESSAGE = raw_input("Enter Response from Server/Enter exit:")
+			# MESSAGE = raw_input("Enter Response from Server/Enter exit:")
 			
-			if MESSAGE == 'exit':
-				print "exit enterred"
-				break
-			else:
-				"Continuing"
-				continue
+			# if MESSAGE == 'exit':
+			# 	print "exit enterred"
+			# 	break
+			# else:
+			# 	"Continuing"
+			# 	continue
 			
 			
 		print "Loop exited"
@@ -147,7 +159,7 @@ class ClientThread(Thread):
 
 def start_server():
 
-	some_server = Server(tcp_port=1192)
+	some_server = Server(tcp_port=2492)
 	some_server.connect()
 
 	

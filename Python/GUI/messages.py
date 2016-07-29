@@ -11,6 +11,7 @@ def parse_arduino_output_message(output_message):
 
 	matches = re.findall(pattern, output_message[3:], flags=0)
 	
+	result = {}	
 	for match in matches:
 		channel_name = match[0]
 
@@ -24,7 +25,9 @@ def parse_arduino_output_message(output_message):
 		if match[1] == "-":
 			value = 0 - value
 
-		print value
+		result[channel_name] = value
+		
+	return result
 
 def build_query_message(arduino_id, channel_names, precisions):
 	
@@ -36,4 +39,4 @@ def build_query_message(arduino_id, channel_names, precisions):
 
 	return msg
 
-print parse_arduino_output_message("o04f0+60231+f1+000000+f2+000+f3+00000+")
+# print parse_arduino_output_message("o04f0+60231+f1+000000+f2+000+f3+00000+")

@@ -87,9 +87,6 @@ class SerialCOM:
 		:return:
 		"""
 
-
-		print "CALLED"
-
 		all_serial_ports = self.get_all_serial_ports()
 
 
@@ -137,7 +134,8 @@ class SerialCOM:
 		# If we cannot find the corresponding port, return None
 		print "Could not find Arduino corresponding to UUID %s" % arduino_id
 
-		return None
+		# return None
+		raise Exception("Couldn't find an Arduino with the given device id.")
 
 	def is_alive(self):
 		"""Summary

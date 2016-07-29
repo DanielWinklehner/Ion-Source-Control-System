@@ -1,60 +1,35 @@
 from __future__ import division
 import time
-import socket
-import struct
-import messages
+from client import *
 
-class Client:
-	def __init__(self):
-		self._host = socket.gethostname()
-		self._port = 1192
-		self._buffer_size = 2048
+# Create a client object and connect to the server.
+some_client = Client()
+some_client.connect()
 
-		self._tcp_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Ask to connect to a given Arduino.
+arduino_id = "2cc580d6-fa29-44a7-9fec-035acd72340e"
+response = some_client.ask_server_to_connect_arduino(arduino_id)
 
-	def connect(self):
-		self._tcp_client.connect((self._host, self._port))
+print "Got a response back from the server", response
 
-	def close_connection(self):
-		self._tcp_client.close()
+if response == arduino_id:
+	# Server succesfully connected to the given arduino.
 
-	'''
-	def send_message(self, message):
-		msg_length = len(message)
-		self._tcp_client.send(message)
+	print some_client.query_channels(arduino_id=arduino_id, channel_names=['f0', 'f1', 'f2', 'f3'], precisions=[3, 4, 1, 3])
 
-	def receive_message(self):
-		return self._tcp_client.recv(self._buffer_size)
-	'''
+	some_client.close_connection()
 
-	def send_message(self, msg):
-		# Prefix each message with a 4-byte length (network byte order)
-		msg = struct.pack('>I', len(msg)) + msg
-		self._tcp_client.sendall(msg)
-
-		print "I'm done sending message!"
-
-	def receive_message(self):
-		# Read message length and unpack it into an integer
-		raw_msglen = self.receive_all(4)
-		if not raw_msglen:
-			return None
-		msglen = struct.unpack('>I', raw_msglen)[0]
-		# Read the message data
-		return self.receive_all(msglen)
-
-	def receive_all(self, n):
-		# Helper function to recv n bytes or return None if EOF is hit
-		data = ''
-		while len(data) < n:
-			packet = self._tcp_client.recv(n - len(data))
-			if not packet:
-				return None
-			data += packet
-		return data
+else:
+	print "Connection to the given arduino failed."
 
 
 
+
+
+
+
+# Old Test.
+'''
 some_client = Client()
 
 some_client.connect()
@@ -77,6 +52,8 @@ response = some_client.receive_message()
 print "Got the following message back: {}".format(messages.parse_arduino_output_message(response))
 
 some_client.close_connection()
+'''
+
 
 
 ### Communication messages protocol design.
