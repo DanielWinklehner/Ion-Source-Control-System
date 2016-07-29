@@ -657,6 +657,9 @@ class Channel:
 		if self._mode == "write":
 			raise ValueError("ERROR: You are trying to read in values from a write-only channel!")
 
+		return self._value
+
+		'''
 		# Build a query message.
 		message = "query:{}={}".format(self._message_header, '?')
 
@@ -698,6 +701,7 @@ class Channel:
 			
 		finally:
 			return self._value
+		'''
 
 	def set_value(self, value_to_set):
 		"""Summary
@@ -711,12 +715,18 @@ class Channel:
 		if self._locked:
 			return None
 
-		if self._mode == "read":
-			raise ValueError("ERROR: You are trying to write values to a read-only channel!")
+		self._value = value_to_set
 
-		if type(value_to_set) == bool:
-			value_to_set = int(value_to_set)
+		
+		# if self._mode == "read":
+		# 	raise ValueError("ERROR: You are trying to write values to a read-only channel!")
 
+		# if type(value_to_set) == bool:
+		# 	value_to_set = int(value_to_set)
+
+
+
+		'''
 		# Build a set message to send to the Arduino.
 		message = "set:{}={}".format(self._message_header, value_to_set)
 
@@ -745,6 +755,7 @@ class Channel:
 
 		# THOUGHT: Do we even need to "store" the value here as a class attribute?
 		self._value = value
+		'''
 
 
 class SerialCOM:

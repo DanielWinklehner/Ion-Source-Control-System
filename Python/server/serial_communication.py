@@ -24,7 +24,7 @@ class SerialCOM:
 
 			# TODO: Handle these cases such that all other devices are still connecting!
 			print "arduino port was None"
-			raise SystemExit
+			raise Exception("Could not connect to given arduino.")
 
 		self._baudrate = 115200
 		self._timeout = 5.
@@ -134,8 +134,8 @@ class SerialCOM:
 		# If we cannot find the corresponding port, return None
 		print "Could not find Arduino corresponding to UUID %s" % arduino_id
 
-		# return None
-		raise Exception("Couldn't find an Arduino with the given device id.")
+		return None
+		# raise Exception("Couldn't find an Arduino with the given device id.")
 
 	def is_alive(self):
 		"""Summary

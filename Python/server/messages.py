@@ -29,9 +29,9 @@ def parse_arduino_output_message(output_message):
 		
 	return result
 
-def build_query_message(arduino_id, channel_names, precisions):
+def build_query_message(channel_names, precisions):
 	
-	msg = "{}@q".format(arduino_id)
+	msg = "q"
 	msg += "{0:0>2}".format(len(channel_names))
 	
 	for channel_name, precision in zip(channel_names, precisions):

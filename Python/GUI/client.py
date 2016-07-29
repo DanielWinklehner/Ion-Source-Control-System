@@ -5,9 +5,11 @@ import struct
 import messages
 
 class Client:
-	def __init__(self):
+	def __init__(self, port):
+		
+		self._port = port
+
 		self._host = socket.gethostname()
-		self._port = 2492
 		self._buffer_size = 2048
 
 		self._tcp_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

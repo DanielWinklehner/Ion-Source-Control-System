@@ -4,13 +4,14 @@ import gi
 
 gi.require_version('Gtk', '3.0')
 
+import json, ast
 import copy
 import time
 import random
 import threading
 import datetime
 import uuid
-
+import requests
 
 import serial
 
@@ -18,6 +19,7 @@ from collections import deque
 
 from gi.repository import Gtk, GLib, GObject, Gdk
 
+from client import Client
 from procedure import Procedure
 from serial import SerialException
 from device import Device, Channel
@@ -48,10 +50,16 @@ class MIST1ControlSystem:
     Main class that runs the GUI for the MIST-1 control system
     """
 
-    def __init__(self):
+    def __init__(self, server_ip="127.0.0.1", server_port=80):
         """
         Initialize the control system GUI
         """
+
+        self._server_ip = server_ip
+        self._server_port = server_port
+        self._server_url = "http://{}:{}/".format(server_ip, server_port)
+
+
         # --- Load the GUI from XML file and initialize connections --- #
         self._builder = Gtk.Builder()
         self._builder.add_from_file("mist_control_system_main_gui.glade")
@@ -320,11 +328,55 @@ class MIST1ControlSystem:
         else:
             self._procedures[procedure.get_name()] = procedure
 
+    def send_message_to_server(self, purpose=None, args=[]):
+        url = self._server_url
+        data = {}
+
+        if purpose == "register_device":
+            url += "arduino/connect"
+            data['arduino_id'] = args[0]
+        elif purpose == "query_values":
+            url += "arduino/query"
+            data['arduino_id'] = args[0]
+            data['channel_names'] = json.dumps(args[1])
+            data['precisions'] = json.dumps(args[2])
+
+        print url
+
+        r = requests.post(url, data=data)
+        response_code = r.status_code
+        response = r.reason
+
+        print response_code, response
+
+        return r.text
+
+
+    def register_device_with_server(self, device):
+        self.send_message_to_server("register_device", [device.get_arduino_id()])
+
+
+    def get_channel_values(self, device):
+        arduino_id = device.get_arduino_id()
+        channel_names = device.channels().keys()
+        precisions = [4] * len(channel_names)
+
+        response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
+
+        print response
+        for channel_name, value in ast.literal_eval(response).items():
+            device.get_channel_by_name(channel_name).set_value(value)
+
+
     def add_device(self, device):
         """
         Adds a device to the control system
         :return:
         """
+
+        # Register device with the server.
+        self.register_device_with_server(device)
+
         # Set the control system as the device parent
         device.set_parent(self)
 
@@ -433,6 +485,8 @@ class MIST1ControlSystem:
                     # print "Trying to communicate with device {} @ arduino {}".format(device.name(), arduino_id)
 
                     if self._communication_threads_mode[arduino_id] == "read":
+
+                        self.get_channel_values(device)
 
                         # Find all the channels, see if they are in 'read' or 'both' mode,
                         # then update the widgets with those values.
@@ -1443,7 +1497,7 @@ class MIST1ControlSystem:
         arduino_id = channel.get_arduino_id()
         count = self._communication_threads_poll_count[arduino_id]
 
-        if count >= 10:
+        if count >= 20:
             elapsed = time.time() - self._communication_threads_start_time[arduino_id]
             frequency = self._communication_threads_poll_count[arduino_id] / elapsed
 
@@ -1460,10 +1514,14 @@ class MIST1ControlSystem:
 
         return 0
 
+    
+
 
 if __name__ == "__main__":
 
-    control_system = MIST1ControlSystem()
+    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
+
+
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
@@ -1521,7 +1579,7 @@ if __name__ == "__main__":
     # Add channels to the sensor box
     # 5 Flow Meters:
     for i in range(5):
-        ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+        ch = Channel(name="f{}".format(i), label="Flow Meter {}".format(i),
                      message_header="flow_meter#" + str(i + 1),
                      upper_limit=1,
                      lower_limit=0,
@@ -1533,9 +1591,9 @@ if __name__ == "__main__":
         sensor_box.add_channel(ch)
 
     # 8 Temperature Sensors: 7 for now (#8 is not connected)
-    for i in range(2):
-        ch = Channel(name="temp_sensor#{}".format(i + 1), label="Temperature Sensor {}".format(i + 1),
-                     message_header="temp_sensor#" + str(i + 1),
+    for i in range(7):
+        ch = Channel(name="t{}".format(i), label="Temperature Sensor {}".format(i),
+                     message_header="temp_sensor#" + str(i),
                      upper_limit=1,
                      lower_limit=0,
                      data_type=float,

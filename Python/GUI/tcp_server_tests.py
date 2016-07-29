@@ -1,43 +1,26 @@
 from __future__ import division
 import time
-import requests
-import json
+from client import *
 
 # Create a client object and connect to the server.
-# some_client = Client()
-# some_client.connect()
+some_client = Client()
+some_client.connect()
 
-
-base_url = "http://127.0.0.1:5000/"
+# Ask to connect to a given Arduino.
 arduino_id = "2cc580d6-fa29-44a7-9fec-035acd72340e"
+response = some_client.ask_server_to_connect_arduino(arduino_id)
 
-# Register device first.
-r = requests.post(base_url + "arduino/connect", data={'arduino_id': arduino_id})
-print r.status_code, r.reason
+print "Got a response back from the server", response
 
+if response == arduino_id:
+	# Server succesfully connected to the given arduino.
 
-# Query.
-r = requests.post(base_url + "arduino/query", data={'arduino_id': arduino_id, 'channel_names': json.dumps(['f0', 'f1', 'f2', 'f3']), 'precisions': json.dumps([3, 4, 1, 3])})
-print r.status_code, r.reason
-print r.text
+	print some_client.query_channels(arduino_id=arduino_id, channel_names=['f0', 'f1', 'f2', 'f3'], precisions=[3, 4, 1, 3])
 
+	some_client.close_connection()
 
-
-# # Ask to connect to a given Arduino.
-# arduino_id = "2cc580d6-fa29-44a7-9fec-035acd72340e"
-# response = some_client.ask_server_to_connect_arduino(arduino_id)
-
-# print "Got a response back from the server", response
-
-# if response == arduino_id:
-# 	# Server succesfully connected to the given arduino.
-
-# 	print some_client.query_channels(arduino_id=arduino_id, channel_names=['f0', 'f1', 'f2', 'f3'], precisions=[3, 4, 1, 3])
-
-# 	some_client.close_connection()
-
-# else:
-# 	print "Connection to the given arduino failed."
+else:
+	print "Connection to the given arduino failed."
 
 
 
