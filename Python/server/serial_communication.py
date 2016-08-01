@@ -74,11 +74,15 @@ class SerialCOM:
 
 		for port in ports:
 			try:
+				print port
 				s = serial.Serial(port)
 				s.close()
 				result.append(port)
-			except (OSError, serial.SerialException):
+			except (OSError, serial.SerialException) as e:
+				print e				
 				pass
+			except IOError as e2:
+				print e2
 
 		return result
 
@@ -88,7 +92,8 @@ class SerialCOM:
 		"""
 
 		all_serial_ports = self.get_all_serial_ports()
-
+		
+		print all_serial_ports
 
 		for serial_port_name in all_serial_ports:
 
@@ -193,3 +198,7 @@ class SerialCOM:
 		except:
 			raise Exception("Something's not right! I cannot read my messages!")
 
+
+if __name__ == "__main__":
+	s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e")
+	s.get_all_serial_ports()
