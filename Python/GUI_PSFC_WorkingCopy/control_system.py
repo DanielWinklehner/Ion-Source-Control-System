@@ -1516,7 +1516,7 @@ if __name__ == "__main__":
 
     # Add channels to the sensor box
     # 5 Flow Meters:
-    for i in range(1):
+    for i in range(5):
         ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
                      message_header="flow_meter#" + str(i + 1),
                      upper_limit=1,

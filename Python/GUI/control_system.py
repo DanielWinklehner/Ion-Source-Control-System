@@ -1535,7 +1535,7 @@ if __name__ == "__main__":
     # IonGaugeController: cf436e6b-ba3d-479a-b221-bc387c37b858
     # 
     # ----- Test Arduinos ------ #
-    # Daniel's dummy Arduino: 52d0536f-575e-4861-96c4-b53fc9710170
+    # Daniel's dummy Arduino: 43d581f6-2ad5-4b51-b8f6-a945a26ab5f5
     # Aashish's Sensor Arduino: 2cc580d6-fa29-44a7-9fec-035acd72340e
     # ************************ #
 
@@ -1545,7 +1545,7 @@ if __name__ == "__main__":
                            on_overview_page=True)
 
     sensor_box = Device("sensor_box",
-                        arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e",
+                        arduino_id="43d581f6-2ad5-4b51-b8f6-a945a26ab5f5",
                         label="Sensor Box",
                         on_overview_page=True)
 

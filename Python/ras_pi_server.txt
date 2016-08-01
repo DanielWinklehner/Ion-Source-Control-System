@@ -1,0 +1,11 @@
+The MAC address of the Raspberry Pi: b8:27:eb:39:98:6a
+All Raspberry Pi's MAC address starts with: b8:27:eb
+
+To go through all devices in your network and look for a Raspberry Pi, run: arp -na | grep -i b8:27:eb
+
+On Windows, install and run Wireshark(https://www.wireshark.org/) and use the filter: eth.addr[0:3] == B8:27:EB
+
+Login Credentials:
+
+Username: mist-1
+Password: h2+IonSource

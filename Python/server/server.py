@@ -7,7 +7,7 @@ from serial_communication import SerialCOM
 import messages
 import json
 import urllib2
-import requests
+# import requests
 
 app = Flask(__name__)
 
