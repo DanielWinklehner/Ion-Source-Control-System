@@ -43,7 +43,7 @@ some_server = Server()
 
 @app.route("/")
 def hello():
-    return "Hey buddy!"
+    return "Hey there!"
 
 @app.route("/arduino/all")
 def all_arduinos():
@@ -118,4 +118,4 @@ def query_arduino():
 			
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=8080)
