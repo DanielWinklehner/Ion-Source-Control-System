@@ -79,10 +79,11 @@ class SerialCOM:
 				s.close()
 				result.append(port)
 			except (OSError, serial.SerialException) as e:
-				print e				
+				# print e				
 				pass
 			except IOError as e2:
-				print e2
+				# print e2
+				pass
 
 		return result
 
@@ -122,7 +123,8 @@ class SerialCOM:
 
 						# This is probably an Arduino designed for this Control System.
 						# Get the device id.
-						print response
+						
+						# print response
 						if arduino_id == response.split("=")[1]:
 
 							print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
@@ -200,5 +202,6 @@ class SerialCOM:
 
 
 if __name__ == "__main__":
-	s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e")
-	s.get_all_serial_ports()
+	# s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e")
+	# s.get_all_serial_ports()
+	pass

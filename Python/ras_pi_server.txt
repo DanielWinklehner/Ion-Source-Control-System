@@ -9,3 +9,15 @@ Login Credentials:
 
 Username: mist-1
 Password: h2+IonSource
+
+====================================================
+
+If that does not work, run the following instead:
+
+sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
+
+where 192.168.1.* is your local network mask.
+
+To find your local network mask, run:
+
+ifconfig (probably ipconfig in Windows)

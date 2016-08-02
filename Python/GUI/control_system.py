@@ -336,12 +336,26 @@ class MIST1ControlSystem:
             data['channel_names'] = json.dumps(args[1])
             data['precisions'] = json.dumps(args[2])
 
-        r = requests.post(url, data=data)
-        response_code = r.status_code
-        response = r.reason
+        try:
+            # r = requests.post(url, data=data, timeout=1)
+            
+            start = time.time()
 
-        return r.text
+            r = requests.post(url, data=data)
+            response_code = r.status_code
+            response = r.reason
 
+            end = time.time()
+
+            print "The request part took {} seconds.".format(end - start)
+
+            return r.text
+
+        except Exception as e:
+            print e
+
+        return ""
+        
 
     def register_device_with_server(self, device):
         return self.send_message_to_server("register_device", [device.get_arduino_id()])
@@ -1517,7 +1531,8 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
-    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
+    control_system = MIST1ControlSystem(server_ip="10.77.0.128", server_port=8080)
+    # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
 
 
 
@@ -1544,10 +1559,48 @@ if __name__ == "__main__":
                            label="Interlock Box",
                            on_overview_page=True)
 
-    sensor_box = Device("sensor_box",
-                        arduino_id="43d581f6-2ad5-4b51-b8f6-a945a26ab5f5",
-                        label="Sensor Box",
-                        on_overview_page=True)
+
+    sensor_box_ids = ["2cc580d6-fa29-44a7-9fec-035acd72340e", "41b70a36-a206-41c5-b743-1e5b8429b9a1", "52d0536f-575e-4861-96c4-b53fc9710170"]
+    # sensor_box_ids = ["52d0536f-575e-4861-96c4-b53fc9710170"]
+
+    for i, sensor_id in enumerate(sensor_box_ids):
+        sensor_box = Device("sensor_box_{}".format(i),
+                            arduino_id=sensor_id,
+                            label="Sensor Box",
+                            on_overview_page=True)
+
+
+        # Add channels to the sensor box
+        # 5 Flow Meters:
+        for i in range(5):
+            ch = Channel(name="f{}".format(i), label="Flow Meter {}".format(i),
+                         upper_limit=1,
+                         lower_limit=0,
+                         data_type=float,
+                         mode="read",
+                         unit="lpm",
+                         display_order=(100 - i))
+
+            sensor_box.add_channel(ch)
+
+        # 8 Temperature Sensors: 7 for now (#8 is not connected)
+        for i in range(7):
+            ch = Channel(name="t{}".format(i), label="Temperature Sensor {}".format(i),
+                         upper_limit=1,
+                         lower_limit=0,
+                         data_type=float,
+                         mode="read",
+                         unit="C",
+                         display_order=(50 - i))
+
+            sensor_box.add_channel(ch)
+
+        # Add all our devices to the control system.
+        # control_system.add_device(interlock_box)
+        control_system.add_device(sensor_box)
+
+
+
 
     # Add channels to the interlock box
     # 2 Microswitches
@@ -1572,34 +1625,7 @@ if __name__ == "__main__":
 
         interlock_box.add_channel(ch)
 
-    # Add channels to the sensor box
-    # 5 Flow Meters:
-    for i in range(5):
-        ch = Channel(name="f{}".format(i), label="Flow Meter {}".format(i),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=float,
-                     mode="read",
-                     unit="lpm",
-                     display_order=(100 - i))
-
-        sensor_box.add_channel(ch)
-
-    # 8 Temperature Sensors: 7 for now (#8 is not connected)
-    for i in range(7):
-        ch = Channel(name="t{}".format(i), label="Temperature Sensor {}".format(i),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=float,
-                     mode="read",
-                     unit="C",
-                     display_order=(50 - i))
-
-        sensor_box.add_channel(ch)
-
-    # Add all our devices to the control system.
-    # control_system.add_device(interlock_box)
-    control_system.add_device(sensor_box)
+    
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
