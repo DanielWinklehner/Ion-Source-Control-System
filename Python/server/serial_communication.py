@@ -27,10 +27,10 @@ class SerialCOM:
 			raise Exception("Could not connect to given arduino.")
 
 		self._baudrate = 115200
-		self._timeout = 5.
+		self._timeout = 2.
 		self._ser = serial.Serial(self._arduino_port, baudrate=self._baudrate, timeout=self._timeout)
 
-		self._alive_timeout = 10.	# In seconds. Make sure this is float.
+		self._alive_timeout = 2.	# In seconds. Make sure this is float.
 
 	def arduino_id(self):
 		"""Summary
@@ -74,10 +74,10 @@ class SerialCOM:
 
 		for port in ports:
 			try:
-				print port
-				s = serial.Serial(port)
-				s.close()
-				result.append(port)
+				if "ttyAMA0" not in port:	# This is some kind of internal thing for Raspbery Pi.
+					s = serial.Serial(port)
+					s.close()
+					result.append(port)
 			except (OSError, serial.SerialException) as e:
 				# print e				
 				pass
@@ -104,7 +104,7 @@ class SerialCOM:
 
 			input_message = "i"
 
-			timeout = 3.  # in seconds.
+			timeout = 2.  # in seconds.
 
 			first_attempt_time = time.time()
 
