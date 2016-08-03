@@ -39,4 +39,14 @@ def build_query_message(channel_names, precisions):
 
 	return msg
 
+def build_set_message(channel_names, values_to_set):
+
+	# Supports 1 message at at time only at the moment.
+
+	msg = "s"
+	msg += channel_names[0]
+	msg += values_to_set[0]
+
+	return msg
+
 # print parse_arduino_output_message("o04f0+60231+f1+000000+f2+000+f3+00000+")

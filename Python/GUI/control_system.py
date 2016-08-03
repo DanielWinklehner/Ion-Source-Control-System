@@ -27,7 +27,7 @@ import data_logging
 import dialogs as MIST1Dialogs
 from MPLCanvasWrapper3 import MPLCanvasWrapper3
 from MIST1Plot import MIST1Plot
-
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.cm as cm
@@ -55,7 +55,6 @@ class MIST1ControlSystem:
         self._server_ip = server_ip
         self._server_port = server_port
         self._server_url = "http://{}:{}/".format(server_ip, server_port)
-
 
         # --- Load the GUI from XML file and initialize connections --- #
         self._builder = Gtk.Builder()
@@ -94,7 +93,6 @@ class MIST1ControlSystem:
 
         # --- The main device dict --- #
         self._devices = {}
-
 
         self._initialized = False
 
@@ -140,12 +138,17 @@ class MIST1ControlSystem:
         self._plotting_page_grid = None
         self._plotting_frames = {}  # Dictionary of all plotting frames. Key = Tuple(device_name, channel_name).
         self._mist1_plots = {}  # Dictionary of all plotting frames. Key = Tuple(device_name, channel_name).
+        self._we_are_on_plot_page = False
 
-        self._retain_last_n_values = 1000
 
-        # x below will be just timestamp.
-        self._x_values = {}  # Dictionary of last self._retain_last_n_values. Key = Tuple(device_name, channel_name), Value = collection.deque(maxlen=self._retain_last_n_values)
-        self._y_values = {}  # Dictionary of last self._retain_last_n_values. Key = Tuple(device_name, channel_name), Value = collection.deque(maxlen=self._retain_last_n_values)
+        # TODO: Make this adjustable by user during runtime (MIST1Plot should be set up for this already) -DW
+        self._retain_last_n_values = 500
+
+        # Dictionaries of last self._retain_last_n_values.
+        # Key = Tuple(device_name, channel_name)
+        # Value = collection.deque(maxlen=self._retain_last_n_values)
+        self._x_values = {}
+        self._y_values = {}
 
     def register_data_logging_file(self, filename):
         self._data_logger = data_logging.DataLogging(log_filename=filename)
@@ -335,19 +338,24 @@ class MIST1ControlSystem:
             data['arduino_id'] = args[0]
             data['channel_names'] = json.dumps(args[1])
             data['precisions'] = json.dumps(args[2])
+        elif purpose == "set_values":
+            url += "arduino/set"
+            data['arduino_id'] = args[0]
+            data['channel_names'] = args[1]
+            data['values_to_set'] = args[2]
 
         try:
             # r = requests.post(url, data=data, timeout=1)
             
-            start = time.time()
+            # start = time.time()
 
             r = requests.post(url, data=data)
             response_code = r.status_code
             response = r.reason
 
-            end = time.time()
+            # end = time.time()
 
-            print "The request part took {} seconds.".format(end - start)
+            # print "The request part took {} seconds.".format(end - start)
 
             return r.text
 
@@ -365,13 +373,29 @@ class MIST1ControlSystem:
 
         arduino_id = device.get_arduino_id()
         channel_names = [name for name, ch in device.channels().items() if ch.mode() == 'read']
-        precisions = [4] * len(channel_names)
+        precisions = [4] * len(channel_names)                   # For sensor box, precision = 5 needs messages longer than 128 bytes.
 
         response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
 
-        for channel_name, value in ast.literal_eval(response).items():
-            device.get_channel_by_name(channel_name).set_value(value)
 
+
+        if response.strip() != r"{}":
+            for channel_name, value in ast.literal_eval(response).items():
+                device.get_channel_by_name(channel_name).set_value(value)
+        else:
+            self._status_bar.push(2, "Received error from Arduino.")
+
+
+    def update_channel_values_to_arduino(self, device):
+
+        arduino_id = device.get_arduino_id()
+        
+        channel_names = [channel_name for channel_name, ch in device.channels().items() if ch.mode() == "write" or ch.mode() == "both"]
+        values_to_set = [ch.read_value() for channel_name, ch in device.channels().items()]
+
+        response = self.send_message_to_server(purpose='set_values', args=[arduino_id, channel_names, values_to_set])
+
+        print response
 
     def add_device(self, device):
         """
@@ -410,8 +434,12 @@ class MIST1ControlSystem:
                                                                   channel.name(), device.name()])
 
             # Add to "values".
-            self._x_values[(device.name(), channel_name)] = deque(maxlen=self._retain_last_n_values)
-            self._y_values[(device.name(), channel_name)] = deque(maxlen=self._retain_last_n_values)
+            # Initialize with current time and 0.0 this will eventually flush out of the deque
+            self._x_values[(device.name(), channel_name)] = deque(np.linspace(time.time()-5, time.time(),
+                                                                              self._retain_last_n_values),
+                                                                  maxlen=self._retain_last_n_values)
+            self._y_values[(device.name(), channel_name)] = deque(np.zeros(self._retain_last_n_values),
+                                                                  maxlen=self._retain_last_n_values)
 
         channel_iter = self._settings_page_tree_store.append(device_iter,
                                                              ["<b>[ Add a New Channel ]</b>", "", "add_new_channel",
@@ -459,10 +487,15 @@ class MIST1ControlSystem:
         print "The set of all alive devices = ", self._alive_device_names
         '''
 
+        pass
+
     def update_stored_values(self, device_name, channel_name):
+
         self._x_values[(device_name, channel_name)].append(time.time())
         self._y_values[(device_name, channel_name)].append(
             self._devices[device_name].channels()[channel_name].get_value())
+
+        return False
 
     def communicate(self, devices):
         """
@@ -521,7 +554,6 @@ class MIST1ControlSystem:
 
                                     try:
                                         GLib.idle_add(self.update_stored_values, device.name(), channel_name)
-                                        GLib.idle_add(self.update_plots, device.name(), channel_name)
 
                                     except Exception as e:
                                         print "Exception caught while updating stored values."
@@ -562,6 +594,10 @@ class MIST1ControlSystem:
                                 # Setting value failed. There was some exception.
                                 # Write the error message to the status bar.
                                 self._status_bar.push(2, str(e))
+
+
+                        self.update_channel_values_to_arduino(device)
+
 
                         self._communication_threads_mode[arduino_id] = "read"
                         self._set_value_for_widget = None
@@ -794,6 +830,7 @@ class MIST1ControlSystem:
                "settings_expand_all_clicked_cb": self.settings_expand_all_callback,
                "settings_collapse_all_clicked_cb": self.settings_collapse_all_callback,
                "plotting_setup_channels_clicked_cb": self.plotting_setup_channels_callback,
+               "notebook_page_changed": self.notebook_page_changed_callback,
                }
 
         return con
@@ -1217,7 +1254,6 @@ class MIST1ControlSystem:
         channel = device.channels()[channel_name]
 
         # Create a new frame.
-
         plot_frame = Gtk.Frame(label="{} : {}".format(device.label(), channel.label()))
         plot_frame.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
         self._plotting_frames[(device_name, channel_name)] = plot_frame
@@ -1230,8 +1266,11 @@ class MIST1ControlSystem:
         if (device_name, channel_name) not in self._mist1_plots.keys():
             mist1_plot = MIST1Plot(variable_name="{}:{}".format(self._devices[device_name].label(),
                                                                 self._devices[device_name].channels()[
-                                                                    channel_name].label()))
-            mist1_plot.get_canvas().set_yscale('log')
+                                                                    channel_name].label()),
+                                   x_s=self._x_values[(device_name, channel_name)],
+                                   y_s=self._y_values[(device_name, channel_name)])
+
+            # mist1_plot.get_canvas().set_yscale('log')
             self._mist1_plots[(device_name, channel_name)] = mist1_plot
         else:
 
@@ -1376,48 +1415,8 @@ class MIST1ControlSystem:
 
         self._main_window.show_all()
 
-    def get_plotting_canvas(self, title=""):
-        fig = Figure(figsize=(1, 1), dpi=60)
-        ax = fig.add_subplot(111)
-
-        n = 1000
-        xsin = np.linspace(-np.pi, np.pi, n, endpoint=True)
-        xcos = np.linspace(-np.pi, np.pi, n, endpoint=True)
-        ysin = np.sin(xsin)
-        ycos = np.cos(xcos)
-
-        sinwave = ax.plot(xsin, ysin, color='black', label='sin(x)')
-        coswave = ax.plot(xcos, ycos, color='black', label='cos(x)', linestyle='--')
-
-        ax.set_xlim(-np.pi, np.pi)
-        ax.set_ylim(-1.2, 1.2)
-
-        ax.fill_between(xsin, 0, ysin, (ysin - 1) > -1, color='blue', alpha=.3)
-        ax.fill_between(xsin, 0, ysin, (ysin - 1) < -1, color='red', alpha=.3)
-        ax.fill_between(xcos, 0, ycos, (ycos - 1) > -1, color='blue', alpha=.3)
-        ax.fill_between(xcos, 0, ycos, (ycos - 1) < -1, color='red', alpha=.3)
-
-        ax.legend(loc='upper left')
-
-        ax = fig.gca()
-        ax.spines['right'].set_color('none')
-        ax.spines['top'].set_color('none')
-        ax.xaxis.set_ticks_position('bottom')
-        ax.spines['bottom'].set_position(('data', 0))
-        ax.yaxis.set_ticks_position('left')
-        ax.spines['left'].set_position(('data', 0))
-
-        fig.tight_layout(pad=0.5, h_pad=0.5, w_pad=0.1)
-
-        canvas = FigureCanvas(fig)
-
-        ax.set_title(title)
-
-        canvas.resize(5, 5)
-
-        return canvas
-
     def reinitialize(self):
+
         for device_name, device in self._devices.items():
             if not device.initialized():
                 device.initialize()
@@ -1435,8 +1434,8 @@ class MIST1ControlSystem:
         """
 
         self._main_window.destroy()
-        self.shut_down_communication_threads()
 
+        self.shut_down_communication_threads()
         self.shut_down_procedure_threads()
 
         Gtk.main_quit()
@@ -1465,6 +1464,9 @@ class MIST1ControlSystem:
         self._main_window.maximize()
         self._main_window.show_all()
 
+        # GLib.timeout_add(1000, self.update_plots)
+        GLib.idle_add(self.update_plots)
+
         Gtk.main()
 
         return 0
@@ -1484,21 +1486,36 @@ class MIST1ControlSystem:
     def dummy_update(self):
         pass
 
-    def update_plots(self, device_name, channel_name):
+    def update_plots(self):
 
-        if (device_name, channel_name) in self._mist1_plots.keys() and (
-        device_name, channel_name) in self._x_values and (device_name, channel_name) in self._y_values:
-            # print "updating plot", (device_name, channel_name)
+        for device_name, channel_name in self._mist1_plots.keys():
 
             mist1_plot = self._mist1_plots[(device_name, channel_name)]
 
             x_s = np.array(self._x_values[(device_name, channel_name)])
             y_s = np.array(self._y_values[(device_name, channel_name)])
 
-            mist1_plot.update_values(x_s, y_s)
-            mist1_plot.plot()
+            mist1_plot.plot(x_s, y_s)
 
-            # mist1_plot.get_canvas().show()
+        return self._we_are_on_plot_page
+
+    def notebook_page_changed_callback(self, notebook, page, page_num):
+        """
+        Callback for when user switches to a different notebook page in the main notebook.
+        :param notebook: a pointer to the gtk notebook object
+        :param page: a pointer to the top level child of the page
+        :param page_num: page number starting at 0
+        :return:
+        """
+
+        if page_num == 1:
+            self.update_plots()
+            self._we_are_on_plot_page = True
+            GLib.idle_add(self.update_plots)
+        else:
+            self._we_are_on_plot_page = False
+
+        return 0
 
     def update_gui(self, channel):
         """
@@ -1524,17 +1541,12 @@ class MIST1ControlSystem:
             # 	print "Updating", channel.name(), channel.get_value()
             channel.get_overview_page_display().set_value(channel.get_value())
 
-        return 0
-
-    
+        return False
 
 
 if __name__ == "__main__":
 
-    control_system = MIST1ControlSystem(server_ip="10.77.0.128", server_port=8080)
-    # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
-
-
+    control_system = MIST1ControlSystem(server_ip="10.77.0.188", server_port=80)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
@@ -1559,8 +1571,10 @@ if __name__ == "__main__":
                            label="Interlock Box",
                            on_overview_page=True)
 
-
-    sensor_box_ids = ["2cc580d6-fa29-44a7-9fec-035acd72340e", "41b70a36-a206-41c5-b743-1e5b8429b9a1", "52d0536f-575e-4861-96c4-b53fc9710170"]
+    # Test three Arduinos running the sensor box software for now
+    sensor_box_ids = ["2cc580d6-fa29-44a7-9fec-035acd72340e",
+                      "41b70a36-a206-41c5-b743-1e5b8429b9a1",
+                      "52d0536f-575e-4861-96c4-b53fc9710170"]
     # sensor_box_ids = ["52d0536f-575e-4861-96c4-b53fc9710170"]
 
     for i, sensor_id in enumerate(sensor_box_ids):
@@ -1568,7 +1582,6 @@ if __name__ == "__main__":
                             arduino_id=sensor_id,
                             label="Sensor Box",
                             on_overview_page=True)
-
 
         # Add channels to the sensor box
         # 5 Flow Meters:
@@ -1599,9 +1612,6 @@ if __name__ == "__main__":
         # control_system.add_device(interlock_box)
         control_system.add_device(sensor_box)
 
-
-
-
     # Add channels to the interlock box
     # 2 Microswitches
     for i in range(2):
@@ -1625,144 +1635,6 @@ if __name__ == "__main__":
 
         interlock_box.add_channel(ch)
 
-    
-
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
     control_system.run()
-
-    ######################## Old stuff: #############################################################################
-    # Aashish => 2cc580d6-fa29-44a7-9fec-035acd72340e
-    # Actual Interlock Box => 49ffb802-50c5-4194-879d-20a87bcfc6ef
-
-    # interlock_box_device = Device("interlock_box",
-    #                               arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")
-    # interlock_box_device.set_overview_page_presence(True)
-    #
-    #
-    # # Add channels to the interlock box device.
-    #
-    # # Flow meters. x5.
-    # # for i in range(5):
-    # for i in range(1):
-    # 	ch = Channel(name="flow_meter#{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-    # 				 upper_limit=1,
-    # 				 lower_limit=0,
-    # 				 data_type=int,
-    # 				 mode="read",
-    # 				 unit="Hz",
-    # 				 display_order=(11 - i))
-    #
-    # 	interlock_box_device.add_channel(ch)
-    #
-    # # Microswitches. x2.
-    # for i in range(2):
-    # 	ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
-    # 				upper_limit=1,
-    # 				lower_limit=0,
-    # 				data_type=bool,
-    # 				mode="read",
-    # 				display_order=(11 - 5 - i))
-    #
-    # 	interlock_box_device.add_channel(ch)
-    #
-    # # Solenoid valves. x2.
-    # for i in range(2):
-    # 	ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
-    # 				upper_limit=1,
-    # 				lower_limit=0,
-    # 				data_type=bool,
-    # 				mode="write",
-    # 				display_order=(11 - 5 - 2 - i))
-    #
-    # 	interlock_box_device.add_channel(ch)
-    #
-    # # Vacuum Valves. x2.
-    # for i in range(2):
-    # 	ch = Channel(name="vacuum_valve#{}".format(i + 1), label="Vacuum Valve {}".format(i + 1),
-    # 				upper_limit=1,
-    # 				lower_limit=0,
-    # 				data_type=bool,
-    # 				mode="read",
-    # 				display_order=(11 - 5 - 2 - 2 - i))
-    #
-    # 	interlock_box_device.add_channel(ch)
-    #
-    # # Add all our devices to the control system.
-    #
-    # control_system.add_device(interlock_box_device)
-
-
-
-    '''
-    # # This is for adding procedures.
-    # # TODO: Needs more work. Work on this later.
-    interlock_shutdown_conditions = [ (lambda x: x > 100, interlock_box_device.channels()['flow_meter#1'] ) ]
-
-    def action_function(some_string, some_int, some_channel):
-        print "Some string", some_string
-        print "Some int", some_int
-        print "Some channel", some_channel.get_value()
-
-
-    interlock_shutdown_action = [ (action_function, dict(some_string="hey there", some_int=42, some_channel=interlock_box_device.channels()['flow_meter#1'])) ]
-
-    interlock_procedure = Procedure(name="interlock_proc", conditions=interlock_shutdown_conditions, actions=interlock_shutdown_action)
-
-    control_system.add_procedure(interlock_procedure)
-    '''
-
-    '''
-    # # This is for reading / writing from json files.
-    # interlock_box_device.write_json("devices/interlock.json")
-
-    # interlock_box = Device.load_from_json("devices/interlock.json")
-
-    # control_system.add_device(interlock_box)
-    '''
-
-    # AASHISH Interlock Box => 2cc580d6-fa29-44a7-9fec-035acd72340e
-    # AASHISH Ion Gauge => 41b70a36-a206-41c5-b743-1e5b8429b9a1
-    # Daniel Ion Gauge test => 52d0536f-575e-4861-96c4-b53fc9710170
-
-    # Actual Ion Gauge Controller Arduino => cf436e6b-ba3d-479a-b221-bc387c37b858
-
-    # ion_gauge = Device("ion_gauge", arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", label="Ion Gauge")
-    # ion_gauge.set_overview_page_presence(True)
-    
-    # for i in range(2):
-    #     ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-    #                  upper_limit=1,
-    #                  lower_limit=0,
-    #                  data_type=bool,
-    #                  mode="read",
-    #                  display_order=(4 - i))
-    
-    #     ion_gauge.add_channel(ch)
-    
-    # for i in range(2):
-    #     ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-    #                  upper_limit=1000,
-    #                  lower_limit=0,
-    #                  data_type=float,
-    #                  mode="read",
-    #                  unit="Torr",
-    #                  display_order=(4 - i),
-    #                  displayformat=".2e")
-    
-    #     ion_gauge.add_channel(ch)
-    
-    # control_system.add_device(ion_gauge)
-
-    '''
-    # # This is for reading / writing from json files.
-
-    # ion_gauge.write_json("devices/ion_gauge.json")
-
-    # ion_gauge = Device.load_from_json("devices/ion_gauge.json")
-
-    # control_system.add_device(ion_gauge)
-    '''
-
-
-    # control_system.run()

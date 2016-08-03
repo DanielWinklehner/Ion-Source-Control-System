@@ -602,9 +602,11 @@ class Channel:
 		if self._locked:
 			return None
 
+		'''
 		if self._mode == "write":
 			raise ValueError("ERROR: You are trying to read in values from a write-only channel!")
-
+		'''
+		
 		return self._value
 
 		'''
