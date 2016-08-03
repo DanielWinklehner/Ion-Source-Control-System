@@ -94,7 +94,7 @@ def set_channel_value():
 			return ""
 
 		except Exception as e:
-			return "Server Error: {}".format(e)
+			return "Server Error while setting values: {}".format(e)
 
 			
 @app.route("/arduino/connect", methods=['POST'])
@@ -120,7 +120,7 @@ def query_arduino():
 			channel_names = json.loads(request.form['channel_names'])
 			precisions = json.loads(request.form['precisions'])
 			
-			print "querying arduino with", arduino_id, channel_names, precisions
+			# print "querying arduino with", arduino_id, channel_names, precisions
 
 			query_message = messages.build_query_message(channel_names, precisions)
 
@@ -133,7 +133,9 @@ def query_arduino():
 			return json.dumps(parsed_response)
 
 		except Exception as e:
-			return "Server Error: {}".format(e) 
+			return str(e)
+			# return "Server Error while querying: {}".format(e) 
+
 		
 
 	return "query"

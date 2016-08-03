@@ -1613,6 +1613,7 @@ if __name__ == "__main__":
     ######################## Old stuff: #############################################################################
     # Aashish => 2cc580d6-fa29-44a7-9fec-035acd72340e
     # Actual Interlock Box => 49ffb802-50c5-4194-879d-20a87bcfc6ef
+    # Test Interlock Arduino => 41b70a36-a206-41c5-b743-1e5b8429b9a1
 
     # interlock_box_device = Device("interlock_box",
     #                               arduino_id="2cc580d6-fa29-44a7-9fec-035acd72340e", label="Interlock Box")

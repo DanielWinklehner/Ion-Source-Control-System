@@ -379,11 +379,12 @@ class MIST1ControlSystem:
 
 
 
-        if response.strip() != r"{}":
+        if response.strip() != r"{}" and "error" not in str(response).lower():
+            print response
             for channel_name, value in ast.literal_eval(response).items():
                 device.get_channel_by_name(channel_name).set_value(value)
         else:
-            self._status_bar.push(2, "Received error from Arduino.")
+            self._status_bar.push(2, "Error: " + str(response))
 
 
     def update_channel_values_to_arduino(self, device):
@@ -1547,6 +1548,7 @@ class MIST1ControlSystem:
 if __name__ == "__main__":
 
     control_system = MIST1ControlSystem(server_ip="10.77.0.188", server_port=80)
+    # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
@@ -1564,16 +1566,16 @@ if __name__ == "__main__":
     # ----- Test Arduinos ------ #
     # Daniel's dummy Arduino: 43d581f6-2ad5-4b51-b8f6-a945a26ab5f5
     # Aashish's Sensor Arduino: 2cc580d6-fa29-44a7-9fec-035acd72340e
+    # Test Interlock Arduino => 41b70a36-a206-41c5-b743-1e5b8429b9a1
     # ************************ #
 
     interlock_box = Device("interlock_box",
-                           arduino_id="bd0f5a84-a2eb-4ff3-9ff2-597bf3b2c20a",
+                           arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1",
                            label="Interlock Box",
                            on_overview_page=True)
 
     # Test three Arduinos running the sensor box software for now
     sensor_box_ids = ["2cc580d6-fa29-44a7-9fec-035acd72340e",
-                      "41b70a36-a206-41c5-b743-1e5b8429b9a1",
                       "52d0536f-575e-4861-96c4-b53fc9710170"]
     # sensor_box_ids = ["52d0536f-575e-4861-96c4-b53fc9710170"]
 
@@ -1610,12 +1612,12 @@ if __name__ == "__main__":
 
         # Add all our devices to the control system.
         # control_system.add_device(interlock_box)
-        control_system.add_device(sensor_box)
+        # control_system.add_device(sensor_box)
 
     # Add channels to the interlock box
     # 2 Microswitches
     for i in range(2):
-        ch = Channel(name="micro_switch#{}".format(i + 1), label="Micro Switch {}".format(i + 1),
+        ch = Channel(name="m{}".format(i), label="Micro Switch {}".format(i),
                      upper_limit=1,
                      lower_limit=0,
                      data_type=bool,
@@ -1626,7 +1628,7 @@ if __name__ == "__main__":
 
     # 2 Solenoid valves
     for i in range(2):
-        ch = Channel(name="solenoid_valve#{}".format(i + 1), label="Solenoid Valve {}".format(i + 1),
+        ch = Channel(name="s{}".format(i), label="Solenoid Valve {}".format(i),
                      upper_limit=1,
                      lower_limit=0,
                      data_type=bool,
@@ -1634,6 +1636,19 @@ if __name__ == "__main__":
                      display_order=(11 - 5 - 2 - i))
 
         interlock_box.add_channel(ch)
+
+    # Vacuum Valves. x2.
+    for i in range(2):
+        ch = Channel(name="v{}".format(i), label="Vacuum Valve {}".format(i),
+                    upper_limit=1,
+                    lower_limit=0,
+                    data_type=bool,
+                    mode="read",
+                    display_order=(11 - 5 - 2 - 2 - i))
+
+        interlock_box.add_channel(ch)
+
+    control_system.add_device(interlock_box)
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
