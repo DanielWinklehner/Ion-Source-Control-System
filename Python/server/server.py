@@ -76,6 +76,27 @@ def arduino_alive():
 	return "0"
 
 
+@app.route("/arduino/set", methods=['POST', 'GET'])
+def set_channel_value():
+	if request.method == 'POST':
+		try:
+
+			arduino_id = request.form['arduino_id']
+			channel_names = json.loads(request.form['channel_names'])
+			values_to_set = json.loads(request.form['values_to_set'])
+
+			set_message = messages.build_set_message(channel_names, values_to_set)
+
+			some_server.send_message_to_arduino(arduino_id, set_message)
+
+			arduino_response = some_server.receive_message_from_arduino(arduino_id)
+
+			return ""
+
+		except Exception as e:
+			return "Server Error: {}".format(e)
+
+			
 @app.route("/arduino/connect", methods=['POST'])
 def connect_arduino():
 
@@ -86,7 +107,7 @@ def connect_arduino():
 	
 		
 	if response == None:
-		return "error"
+		return "Server Error: Arduino didn't respond."
 	else:
 		return "success"
 
@@ -110,8 +131,8 @@ def query_arduino():
 			return json.dumps(parsed_response)
 
 		except Exception as e:
-			return "error"
-		print query_message
+			return "Server Error: {}".format(e) 
+		
 
 	return "query"
 		
