@@ -69,6 +69,8 @@ class SerialCOM:
 			ports = glob.glob('/dev/tty.*')
 		else:
 			raise EnvironmentError('Unsupported platform.')
+		
+		print "The ports are", ports
 
 		result = []
 
@@ -79,10 +81,10 @@ class SerialCOM:
 					s.close()
 					result.append(port)
 			except (OSError, serial.SerialException) as e:
-				# print e				
+				print e				
 				pass
 			except IOError as e2:
-				# print e2
+				print e2
 				pass
 
 		return result
