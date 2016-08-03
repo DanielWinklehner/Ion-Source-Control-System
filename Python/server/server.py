@@ -119,6 +119,8 @@ def query_arduino():
 			arduino_id = request.form['arduino_id']
 			channel_names = json.loads(request.form['channel_names'])
 			precisions = json.loads(request.form['precisions'])
+			
+			print "querying arduino with", arduino_id, channel_names, precisions
 
 			query_message = messages.build_query_message(channel_names, precisions)
 
