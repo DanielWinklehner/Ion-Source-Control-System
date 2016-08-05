@@ -327,65 +327,74 @@ class MIST1ControlSystem:
             self._procedures[procedure.get_name()] = procedure
 
     def send_message_to_server(self, purpose=None, args=[]):
+
         url = self._server_url
         data = {}
 
         if purpose == "register_device":
+
             url += "arduino/connect"
             data['arduino_id'] = args[0]
+
         elif purpose == "query_values":
+
             url += "arduino/query"
             data['arduino_id'] = args[0]
             data['channel_names'] = json.dumps(args[1])
             data['precisions'] = json.dumps(args[2])
+
         elif purpose == "set_values":
+
             url += "arduino/set"
             data['arduino_id'] = args[0]
             data['channel_names'] = args[1]
             data['values_to_set'] = args[2]
 
         try:
-            # r = requests.post(url, data=data, timeout=1)
-            
-            # start = time.time()
 
+            # start = time.time()
             r = requests.post(url, data=data)
             response_code = r.status_code
             response = r.reason
-
             # end = time.time()
-
             # print "The request part took {} seconds.".format(end - start)
+
+            print r.text
 
             return r.text
 
         except Exception as e:
+
             print e
 
-        return ""
-        
+        return r"{}"
 
     def register_device_with_server(self, device):
         return self.send_message_to_server("register_device", [device.get_arduino_id()])
-
 
     def get_channel_values(self, device):
 
         arduino_id = device.get_arduino_id()
         channel_names = [name for name, ch in device.channels().items() if ch.mode() == 'read']
-        precisions = [4] * len(channel_names)                   # For sensor box, precision = 5 needs messages longer than 128 bytes.
+        precisions = [4] * len(channel_names)  # For sensor box, precision = 5 needs messages longer than 128 bytes.
 
+        print "Trying to get channel values for ", arduino_id
         response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
 
+        try:
+            if response.strip() != r"{}" and "error" not in str(response).lower():
+                # print response
+                for channel_name, value in ast.literal_eval(response).items():
 
+                    device.get_channel_by_name(channel_name).set_value(value)
 
-        if response.strip() != r"{}" and "error" not in str(response).lower():
-            print response
-            for channel_name, value in ast.literal_eval(response).items():
-                device.get_channel_by_name(channel_name).set_value(value)
-        else:
-            self._status_bar.push(2, "Error: " + str(response))
+            else:
 
+                self._status_bar.push(2, "Error: " + str(response))
+
+        except Exception as e:
+
+            self._status_bar.push(2, str(e))
 
     def update_channel_values_to_arduino(self, device):
 
@@ -568,40 +577,38 @@ class MIST1ControlSystem:
                                 except Exception as e:
                                     "Got an exception", e
 
-                    elif self._communication_threads_mode[arduino_id] == "write" \
-                            and self._set_value_for_widget is not None:
-
-                        print "Setting value."
-
-                        widget_to_set_value_for = self._set_value_for_widget
-                        channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
-
-                        print "Communicating updated value for widget {}".format(widget_to_set_value_for.get_name())
-
-                        # Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
-
-                        if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
-
-                            try:
-                                value_to_update = widget_to_set_value_for.get_value()
-                            except ValueError:
-                                value_to_update = -1
-
-                            print "Setting value = {}".format(value_to_update)
-
-                            try:
-                                channel_to_set_value_for.set_value(value_to_update)
-                            except Exception, e:
-                                # Setting value failed. There was some exception.
-                                # Write the error message to the status bar.
-                                self._status_bar.push(2, str(e))
-
-
-                        self.update_channel_values_to_arduino(device)
-
-
-                        self._communication_threads_mode[arduino_id] = "read"
-                        self._set_value_for_widget = None
+                    # elif self._communication_threads_mode[arduino_id] == "write" \
+                    #         and self._set_value_for_widget is not None:
+                    #
+                    #     print "Setting value."
+                    #
+                    #     widget_to_set_value_for = self._set_value_for_widget
+                    #     channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
+                    #
+                    #     print "Communicating updated value for widget {}".format(widget_to_set_value_for.get_name())
+                    #
+                    #     # Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
+                    #
+                    #     if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
+                    #
+                    #         try:
+                    #             value_to_update = widget_to_set_value_for.get_value()
+                    #         except ValueError:
+                    #             value_to_update = -1
+                    #
+                    #         print "Setting value = {}".format(value_to_update)
+                    #
+                    #         try:
+                    #             channel_to_set_value_for.set_value(value_to_update)
+                    #         except Exception, e:
+                    #             # Setting value failed. There was some exception.
+                    #             # Write the error message to the status bar.
+                    #             self._status_bar.push(2, str(e))
+                    #
+                    #     self.update_channel_values_to_arduino(device)
+                    #
+                    #     self._communication_threads_mode[arduino_id] = "read"
+                    #     self._set_value_for_widget = None
 
         print "Closing communication thread."
 
@@ -1577,10 +1584,10 @@ if __name__ == "__main__":
     # Test three Arduinos running the sensor box software for now
     sensor_box_ids = ["2cc580d6-fa29-44a7-9fec-035acd72340e",
                       "52d0536f-575e-4861-96c4-b53fc9710170"]
-    # sensor_box_ids = ["52d0536f-575e-4861-96c4-b53fc9710170"]
+    # sensor_box_ids = ["2cc580d6-fa29-44a7-9fec-035acd72340e"]
 
-    for i, sensor_id in enumerate(sensor_box_ids):
-        sensor_box = Device("sensor_box_{}".format(i),
+    for j, sensor_id in enumerate(sensor_box_ids):
+        sensor_box = Device("sensor_box_{}".format(j),
                             arduino_id=sensor_id,
                             label="Sensor Box",
                             on_overview_page=True)
@@ -1610,9 +1617,8 @@ if __name__ == "__main__":
 
             sensor_box.add_channel(ch)
 
-        # Add all our devices to the control system.
-        # control_system.add_device(interlock_box)
-        # control_system.add_device(sensor_box)
+        # Add our device to the control system.
+        control_system.add_device(sensor_box)
 
     # Add channels to the interlock box
     # 2 Microswitches
@@ -1640,11 +1646,11 @@ if __name__ == "__main__":
     # Vacuum Valves. x2.
     for i in range(2):
         ch = Channel(name="v{}".format(i), label="Vacuum Valve {}".format(i),
-                    upper_limit=1,
-                    lower_limit=0,
-                    data_type=bool,
-                    mode="read",
-                    display_order=(11 - 5 - 2 - 2 - i))
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=bool,
+                     mode="read",
+                     display_order=(11 - 5 - 2 - 2 - i))
 
         interlock_box.add_channel(ch)
 

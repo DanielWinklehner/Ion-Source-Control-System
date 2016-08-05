@@ -1,8 +1,8 @@
 from flask import Flask, redirect
 from flask import request
+from flask_sqlalchemy import SQLAlchemy
 
-
-from serial_communication import SerialCOM
+from serial_communication import *
 
 import messages
 import json
@@ -11,8 +11,34 @@ import time
 # import requests
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./arduinos.db'
+db = SQLAlchemy(app)
+
+
 
 app.debug = True
+
+
+class Arduino(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    _arduino_id = db.Column(db.String(37), unique=True)
+    _port = db.Column(db.String(25), unique=True)
+
+    def __init__(self, arduino_id, port):
+        self._arduino_id = arduino_id
+        self._port = port
+
+    def __repr__(self):
+        return self._arduino_id, self._port
+
+    def str(self):
+    	return self._arduino_id, self._port
+
+    def get_arduino_id(self):
+    	return self._arduino_id
+
+    def get_port(self):
+    	return self._port
 
 
 
@@ -22,29 +48,116 @@ class Server:
 
 	def add_arduino_connection(self, arduino_id):
 		
-		print "Trying to connect to the arduino", arduino_id
+		print "Adding a new arduino connection."
 
-		try:
-			self._serial_coms[arduino_id] = SerialCOM(arduino_id)
+		# First check if it's already in caches.
+
+		if arduino_id in self._serial_coms.keys():
 			return arduino_id
-		except Exception as e:
-			print "Error"
-			return None
+
+		# Next, check if the arduino id is in the database. 
+		db_result = Arduino.query.filter_by(_arduino_id=arduino_id).first()
+
 		
+
+		if db_result != None:
+			
+			print "Adding connection from DB to cache.", db_result.str()
+			
+			# Add the connection to cache.
+			
+			try:
+				self._serial_coms[db_result.get_arduino_id()] = SerialCOM(db_result.get_arduino_id(), db_result.get_port())
+				return arduino_id
+			except Exception as e:
+				print "Error", e
+				return None
+
+		else:
+			# Create a new connection.
+
+			print "Creating a new connection."
+
+			# First, find the correct port.
+			
+			port = find_port(arduino_id)
+
+			# Add the connection to cache.
+
+			try:
+				self._serial_coms[arduino_id] = SerialCOM(arduino_id, port)
+			except Exception as e:
+				print "Error", e
+				return None
+			
+			# Finally, add an entry to the db.
+			new_arduino = Arduino(arduino_id, port)
+			db.session.add(new_arduino)
+			db.session.commit()			
+
+			return arduino_id
+
+		return None
+	
 	def get_arduino_ids(self):
 		return self._serial_coms.keys()
 
+	def empty_dict(self):
+		self._serial_coms = {}
+
 	def send_message_to_arduino(self, arduino_id, msg):
-		print "111sending a message to arduino", arduino_id, msg
 
-		print self._serial_coms, arduino_id
+		
+	
 
-		self._serial_coms[arduino_id].send_message(msg)
+		print "Sending a message to arduino", arduino_id, msg
+
+		# First, check if the arduino id is present in cache. If yes, just use that SerialCOM.
+
+		if arduino_id in self._serial_coms.keys():
+			self._serial_coms[arduino_id].send_message(msg)
+		else:
+			# Not in cache. 
+
+			print "serial com not in cache."
+
+			# Add a new connection.
+			response = self.add_arduino_connection(arduino_id)
+
+			if response != None:
+				self.send_message_to_arduino(arduino_id, msg)
+
+
 		print "i'm done sending all messages"
 
+		return "error"
+
 	def receive_message_from_arduino(self, arduino_id):
-		print "getting a message from arduino"
-		return self._serial_coms[arduino_id].read_message()
+		print "Getting a message from arduino"
+
+		# First, check if the arduino id is present in cache. If yes, just use that SerialCOM.
+
+		if arduino_id in self._serial_coms.keys():
+			
+			print "arduino in cache", self._serial_coms[arduino_id]
+
+			return self._serial_coms[arduino_id].read_message()
+		else:
+			# Not in cache.
+
+			print "serial com not in cache"
+
+			# Add a new connection.
+
+			response = self.add_arduino_connection(arduino_id)
+
+			if response != None:
+				return self.receive_message_from_arduino(arduino_id)
+
+		return ""
+
+
+db.create_all()
 
 some_server = Server()
 
@@ -125,6 +238,8 @@ def connect_arduino():
 @app.route("/arduino/query", methods=['GET', 'POST'])
 def query_arduino():
 	
+	some_server.empty_dict()
+
 	if request.method == 'POST':
 		arduino_id = request.form['arduino_id']
 		channel_names = json.loads(request.form['channel_names'])
@@ -134,7 +249,8 @@ def query_arduino():
 		arduino_id = request.args.get('arduino_id')
 		channel_names = json.loads(request.args.get('channel_names'))
 		precisions = json.loads(request.args.get('precisions'))
-		
+	
+
 	
 	try:
 		print "querying arduino with", arduino_id, channel_names
