@@ -177,10 +177,14 @@ class SerialCOM:
 		Returns:
 		    TYPE: Description
 		"""
+		print "here"
 		try:
+			print "before being ready to send a message", message
+
 			self._ser.flushInput()
 			self._ser.flushOutput()
-
+			
+			print "about to send a message", message
 			self._ser.write(message)
 		except:
 			raise Exception("Something's wrong! I cannot send any messages!")
