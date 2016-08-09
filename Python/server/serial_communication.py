@@ -11,18 +11,18 @@ import glob
 
 class SerialCOM:
 
-	def __init__(self, arduino_id, port):
+	def __init__(self, arduino_id, port_name):
 		"""Summary
 		
 		Args:
 		    arduino_id (TYPE): Description
 		"""
 		self._arduino_id = arduino_id
-		self._port = port
+		self._port_name = port_name
 
 		self._baudrate = 115200
 		self._timeout = 2.
-		self._ser = serial.Serial(self._port, baudrate=self._baudrate, timeout=self._timeout)
+		self._ser = serial.Serial(port_name, baudrate=self._baudrate, timeout=self._timeout)
 
 		
 
@@ -58,11 +58,18 @@ class SerialCOM:
 		"""
 		
 		try:
-
+			
 			self._ser.flushInput()
 			self._ser.flushOutput()
 			
 			self._ser.write(message)
+
+			response = self._ser.readline()
+
+			print "I sent a message", message, " and received", response
+
+			return response
+
 		except serial.SerialException as e:
 			raise Exception("Something's wrong! I cannot send any messages!" + str(e))
 		except IOError as e2:
@@ -70,22 +77,26 @@ class SerialCOM:
 		except Exception as e3:
 			raise Exception("Something's wrong! I cannot send any messages!" + str(e3))
 
+		return ""
+
 	def read_message(self):
 		"""Summary
 		
 		Returns:
 		    TYPE: Description
 		"""
-
+		raise Exception("You're not supposed to use this SerialCOM method.")
 		
 
-		try:
-			# self._ser.flushInput()
-			# self._ser.flushOutput()
+		try:	
+			#print "SerialCOM reading a message."
+
+			self._ser.flushInput()
+			self._ser.flushOutput()
 
 			message = self._ser.readline()
 			
-			print message
+			#print "SerialCOM read a message", message
 
 			return message
 
@@ -196,9 +207,10 @@ def find_port(arduino_id):
 
 
 if __name__ == "__main__":
-	s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e", "/dev/ttyACM0")
-	s.send_message("i")
+	s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e", "/dev/ttyACM2")
+	print s.send_message("i")
+	print s.send_message("q01t14")
 
-	print s.read_message()
+
 
 	pass
