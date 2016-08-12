@@ -24,9 +24,12 @@
 import math
 import time
 import sys
+import requests
+import json
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
+
 
 from PIL import Image
 from PIL import ImageFont
@@ -40,12 +43,6 @@ DC = 23
 SPI_PORT = 0
 SPI_DEVICE = 0
 
-# Beaglebone Black pin configuration:
-# RST = 'P9_12'
-# Note the following are only used with SPI:
-# DC = 'P9_15'
-# SPI_PORT = 1
-# SPI_DEVICE = 0
 
 
 # 128x64 display with hardware I2C:
@@ -80,27 +77,76 @@ draw = ImageDraw.Draw(image)
 
 
 
+url = "http://127.0.0.1/"
+def get_server_status():
+	try:
+		r = requests.get(url)
+		return r.status_code == 200
+	except requests.exceptions.ConnectionError:
+		return False
+	except Exception:
+		return False
+
+def get_number_of_arduinos():
+	r = requests.get(url + "arduino/all")
+	response = r.text
+
+	print response
+
+	if r.status_code == 200:
+		return len(json.loads(response))
+	
+	return 0
+
+
+
+
 # Define text and get total width.
-texts = ["Server Status:", "=> Running", "Arduinos Found:", "=> 3"]
+
 y_s = [0, 16, 32, 48]
 
-# Clear image buffer by drawing a black filled box.
-draw.rectangle((0, 0, width - 1, height - 1), outline=0, fill=0)
 
 
-for text, y in zip(texts, y_s):
-	maxwidth, unused = draw.textsize(text, font=font)
+'''
+Server IP
+"=> 127.0.0.1" OR "=> OFF"
 
+"Initializing..." while server is starting.
+'''
 
+while True:
 
+	texts = ["Server Status:", "", "Arduinos Found:", ""]
+	
+	if get_server_status():
+		texts[1] = "=> Running"
+	else:
+		texts[1] = "=> Not Running"
+	
+	if get_server_status():
+		texts[3] = "=> {}".format(get_number_of_arduinos())
+	else:
+		del texts[-1]
+		del texts[-1]
+	
+	
 
-	x = 0
+	for text, y in zip(texts, y_s):
+		maxwidth, unused = draw.textsize(text, font=font)
 
-	# Draw text.
-	draw.text((x, y), text, font=font, fill=255)
+		x = 0
 
+		# Draw text.
+		draw.text((x, y), text, font=font, fill=255)
 
-	# Draw the image buffer.
-	disp.image(image)
-	disp.display()
+		# Draw the image buffer.
+		disp.image(image)
+		disp.display()
+	
+	# Clear image buffer by drawing a black filled box.
+	draw.rectangle((0, 18, width, 36), outline=0, fill=0)
+	draw.rectangle((0, 52, width, 65), outline=0, fill=0)
+	
+	
+	time.sleep(1)
 

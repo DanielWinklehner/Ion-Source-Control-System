@@ -11,7 +11,7 @@ import glob
 
 class SerialCOM:
 
-	def __init__(self, arduino_id, port_name):
+	def __init__(self, arduino_id, port_name, timeout=1.):
 		"""Summary
 		
 		Args:
@@ -21,7 +21,7 @@ class SerialCOM:
 		self._port_name = port_name
 
 		self._baudrate = 115200
-		self._timeout = 2.
+		self._timeout = timeout
 		self._ser = serial.Serial(port_name, baudrate=self._baudrate, timeout=self._timeout)
 
 		
@@ -41,7 +41,7 @@ class SerialCOM:
 		Returns:
 		    TYPE: Description
 		"""
-		return self._port
+		return self._port_name
 
 	
 	
@@ -157,13 +157,13 @@ def find_port(arduino_id):
 
 	for serial_port_name in all_serial_ports:
 
-		print "Connecting to", serial_port_name
+		#print "Connecting to", serial_port_name
 
 		ser = serial.Serial(serial_port_name, baudrate=115200, timeout=1.)
 
 		input_message = "i"
 
-		timeout = 2.  # in seconds.
+		timeout = 1.  # in seconds.
 
 		first_attempt_time = time.time()
 
@@ -172,7 +172,7 @@ def find_port(arduino_id):
 			
 
 			try:
-				print "trying to connect"
+				#print "trying to connect"
 				ser.write(input_message)
 				
 				response = ser.readline().strip()
@@ -204,7 +204,55 @@ def find_port(arduino_id):
 	# raise Exception("Couldn't find an Arduino with the given device id.")
 
 
+def find_arudinos_connected():
+	all_serial_ports = get_all_serial_ports()
+	
+	all_arduinos = []
+	for serial_port_name in all_serial_ports:
 
+		#print "Connecting to", serial_port_name
+
+		ser = serial.Serial(serial_port_name, baudrate=115200, timeout=1.)
+
+		input_message = "i"
+
+		timeout = 2.  # in seconds.
+
+		first_attempt_time = time.time()
+		
+		#print float(time.time() - first_attempt_time), timeout, float(time.time() - first_attempt_time) < timeout
+		while float(time.time() - first_attempt_time) < timeout:
+
+			try:
+				print "trying to connect"
+				ser.write(input_message)
+				
+				response = ser.readline().strip()
+
+				
+				if "device_id" in response and "=" in response:
+
+					# This is probably an Arduino designed for this Control System.
+					# Get the device id.
+					
+					# print response
+					arduino_id = response.split("=")[1]
+
+					print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
+
+					all_arduinos.append( (arduino_id, serial_port_name) )
+					
+					break
+
+			except Exception as e:
+				print "Got the following exception: ", e
+				continue
+				#break
+
+			
+
+	return all_arduinos
+	
 
 if __name__ == "__main__":
 	s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e", "/dev/ttyACM2")
