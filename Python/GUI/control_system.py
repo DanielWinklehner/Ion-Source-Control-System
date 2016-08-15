@@ -93,18 +93,19 @@ class MIST1ControlSystem:
 
         # --- The main device dict --- #
         self._devices = {}
+        self._device_name_arduino_id_map = {}
 
         self._initialized = False
 
         self._keep_communicating = False
-        self._communication_threads = {}
+        self._communication_thread = None
 
         # key = device_name, value = 'read' / 'write' i.e. which direction the communication is
         # supposed to happen. It's from POV of the GUI i.e. the direction is GUI -> Arduino.
-        self._communication_threads_mode = {}
-        self._communication_threads_poll_count = {}
-        self._communication_threads_start_time = {}
-        self._arduino_status_bars = {}
+        self._communication_thread_mode = None
+        self._communication_thread_poll_count = None
+        self._communication_thread_start_time = time.time()
+        self._arduino_status_bar = None
 
         self._set_value_for_widget = None
 
@@ -275,7 +276,7 @@ class MIST1ControlSystem:
                         pass
 
     def add_arduino_status_bar(self, arduino_id, status_bar):
-        self._arduino_status_bars[arduino_id] = status_bar
+        self._arduino_status_bar = status_bar
 
     def add_channel(self, channel, device):
 
@@ -339,7 +340,7 @@ class MIST1ControlSystem:
         elif purpose == "query_values":
 
             url += "arduino/query"
-            data['arduino_id'] = args[0]
+            data['arduino_id'] = json.dumps(args[0])
             data['channel_names'] = json.dumps(args[1])
             data['precisions'] = json.dumps(args[2])
 
@@ -373,7 +374,57 @@ class MIST1ControlSystem:
 
     def register_device_with_server(self, device):
         return self.send_message_to_server("register_device", [device.get_arduino_id()])
+    
+    
 
+    def get_all_channel_values(self, devices):
+
+        arduino_ids = [device.get_arduino_id() for device_name, device in devices.items()]
+        channel_names = [[name for name, ch in device.channels().items() if ch.mode() == 'read'] for device_name, device in devices.items()]
+        precisions = [[4] * len(device.channels()) for device_name, device in devices.items()]
+
+
+        # print "Trying to get channel values for ", arduino_id
+        response = self.send_message_to_server(purpose='query_values', args=[arduino_ids, channel_names, precisions])
+
+        # print "the server response is", response
+
+        if response.strip() != r"{}" and "error" not in str(response).lower():
+            parsed_response = json.loads(response)
+
+            for arduino_id in parsed_response:
+                device_name = self._device_name_arduino_id_map[arduino_id]
+                device = self._devices[device_name]
+
+                for channel_name, value in parsed_response[arduino_id].items():
+                    # print channel_name, value
+                    device.get_channel_by_name(channel_name).set_value(value)
+
+
+        '''
+        try:
+            if response.strip() != r"{}" and "error" not in str(response).lower():
+                # print response
+                for channel_name, value in ast.literal_eval(response).items():
+
+                    device.get_channel_by_name(channel_name).set_value(value)
+
+                return True
+
+            else:
+                # print "got an error"
+                pass
+                # self._status_bar.push(2, "Error: " + str(response))
+                return False
+
+        except Exception as e:
+
+            self._status_bar.push(2, str(e))
+            return False
+        '''
+        return True
+    
+    '''
     def get_channel_values(self, device):
 
         arduino_id = device.get_arduino_id()
@@ -406,8 +457,8 @@ class MIST1ControlSystem:
             return False
 
         return False
+    '''
 
-        
     def update_channel_values_to_arduino(self, device):
 
         arduino_id = device.get_arduino_id()
@@ -426,18 +477,21 @@ class MIST1ControlSystem:
         """
 
         # Register device with the server.
-        server_response = self.register_device_with_server(device)
+        # server_response = self.register_device_with_server(device)
 
-        if server_response == "error":
-            print "There's no arduino with device_id={} connected to the server.".format(device.get_arduino_id())
-            self._status_bar.push(2, "There's no arduino with device_id={} connected to the server.".format(device.get_arduino_id()))
-            return
+        # if server_response == "error":
+        #     print "There's no arduino with device_id={} connected to the server.".format(device.get_arduino_id())
+        #     self._status_bar.push(2, "There's no arduino with device_id={} connected to the server.".format(device.get_arduino_id()))
+        #     return
+
 
         # Set the control system as the device parent
         device.set_parent(self)
 
         # Add device to the list of devices in the control system
         self._devices[device.name()] = device
+
+        self._device_name_arduino_id_map[device.get_arduino_id()] = device.name()
 
         # Add corresponding channels to the hdf5 log.
         for channel_name, channel in device.channels().items():
@@ -479,7 +533,7 @@ class MIST1ControlSystem:
         parent_channel = widget.get_parent_channel()
 
         self._set_value_for_widget = widget
-        self._communication_threads_mode[parent_channel.get_arduino_id()] = "write"
+        self._communication_thread_mode = "write"
 
     def listen_for_reconnected_devices(self, devices):
         for device in devices:
@@ -519,7 +573,7 @@ class MIST1ControlSystem:
 
         return False
 
-    def communicate(self, devices):
+    def communicate(self):
         """
         :param devices:
         :return:
@@ -527,6 +581,7 @@ class MIST1ControlSystem:
 
         while self._keep_communicating:
 
+            devices = self._devices
 
             # if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
             # 	self.check_for_alive_devices(devices)
@@ -534,27 +589,31 @@ class MIST1ControlSystem:
 
             # GLib.idle_add(self.dummy_update)
 
-            for device in devices:
+            if self.get_all_channel_values(devices): # Returns true only if successfully got a value.
 
-                # For each device that belongs to the same arduino (i.e same thread) we do this
-                # Find out whether we're supposed to read in values or write values at this time.
+                for device_name, device in devices.items():
 
-                # THOUGHT: Maybe implement a device.locked thing and don't
-                # operate on a given device unless that lock is released?
-                # Ideally, even all the methods in the Device class would
-                # respect that lock.
+                    # For each device that belongs to the same arduino (i.e same thread) we do this
+                    # Find out whether we're supposed to read in values or write values at this time.
 
-                if not device.locked():
+                    # THOUGHT: Maybe implement a device.locked thing and don't
+                    # operate on a given device unless that lock is released?
+                    # Ideally, even all the methods in the Device class would
+                    # respect that lock.
 
-                    arduino_id = device.get_arduino_id()
+                    if not device.locked():
 
-                    # print "Trying to communicate with device {} @ arduino {}".format(device.name(), arduino_id)
+                        arduino_id = device.get_arduino_id()
 
-                    if self._communication_threads_mode[arduino_id] == "read":
+                        # print "Trying to communicate with device {} @ arduino {}".format(device.name(), arduino_id)
 
-                        if self.get_channel_values(device): # Returns true only if successfully got a value.
+                        if self._communication_thread_mode == "read":
+
+                        
                             
-                            self._communication_threads_poll_count[arduino_id] += 1
+                            self._communication_thread_poll_count += 1
+
+                            # print self._communication_thread_poll_count
 
                             # Find all the channels, see if they are in 'read' or 'both' mode,
                             # then update the widgets with those values.
@@ -565,7 +624,7 @@ class MIST1ControlSystem:
                                 if channel.mode() == "read" or channel.mode() == "both":
 
                                     try:
-                                        channel.read_value()
+
 
                                         try:
                                             # Log data.
@@ -585,7 +644,6 @@ class MIST1ControlSystem:
                                             pass
 
                                         
-
                                         GLib.idle_add(self.update_gui, channel)
 
                                     except Exception as e:
@@ -717,24 +775,18 @@ class MIST1ControlSystem:
         :return:
         """
         # for arduino_id, serial_com in self._serial_comms.items():
-        for device_name, device in self._devices.items():
 
-            arduino_id = device.get_arduino_id()
 
-            if arduino_id not in self._communication_threads.keys():
-                my_devices = [dev for devname, dev in self._devices.items() if arduino_id == dev.get_arduino_id()]
+        communication_thread = threading.Thread(target=self.communicate)
 
-                communication_thread = threading.Thread(target=self.communicate,
-                                                        kwargs=dict(devices=my_devices))
+        self._communication_thread = communication_thread
+        self._communication_thread_mode = 'read'
+        self._communication_thread_poll_count = 0
+        self._communication_thread_start_time = time.time()
 
-                self._communication_threads[arduino_id] = communication_thread
-                self._communication_threads_mode[arduino_id] = 'read'
-                self._communication_threads_poll_count[arduino_id] = 0
-                self._communication_threads_start_time[arduino_id] = time.time()
+        self._keep_communicating = True
 
-                self._keep_communicating = True
-
-                self._communication_threads[arduino_id].start()
+        self._communication_thread.start()
 
         return 0
 
@@ -1546,16 +1598,16 @@ class MIST1ControlSystem:
         """
         # Update the polling rate (frequency) for this arduino:
         arduino_id = channel.get_arduino_id()
-        count = self._communication_threads_poll_count[arduino_id]
+        count = self._communication_thread_poll_count
 
-        if count >= 50:
-            elapsed = time.time() - self._communication_threads_start_time[arduino_id]
-            frequency = self._communication_threads_poll_count[arduino_id] / elapsed
+        if count >= 2:
+            elapsed = time.time() - self._communication_thread_start_time
+            frequency = self._communication_thread_poll_count / elapsed
 
-            self._communication_threads_start_time[arduino_id] = time.time()
-            self._communication_threads_poll_count[arduino_id] = 0
+            self._communication_thread_start_time = time.time()
+            self._communication_thread_poll_count = 0
 
-            self._arduino_status_bars[arduino_id].set_value(frequency)
+            self._arduino_status_bar.set_value(frequency)
 
         # If display on overview page is desired, update:
         if channel.get_parent_device().is_on_overview_page():
@@ -1568,8 +1620,8 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
-    control_system = MIST1ControlSystem(server_ip="10.77.0.188", server_port=80)
-    # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
+    # control_system = MIST1ControlSystem(server_ip="10.77.0.188", server_port=80)
+    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
@@ -1596,8 +1648,8 @@ if __name__ == "__main__":
                            on_overview_page=True)
 
     # Test three Arduinos running the sensor box software for now
-    sensor_box_ids = ["2cc580d6-fa29-44a7-9fec-035acd72340e",
-                      "52d0536f-575e-4861-96c4-b53fc9710170"]
+    sensor_box_ids = ["41b70a36-a206-41c5-b743-1e5b8429b9a1",
+                      "49ffb802-50c5-4194-879d-20a87bcfc6ef"]
     # sensor_box_ids = ["2cc580d6-fa29-44a7-9fec-035acd72340e"]
 
     for j, sensor_id in enumerate(sensor_box_ids):
@@ -1632,7 +1684,7 @@ if __name__ == "__main__":
             sensor_box.add_channel(ch)
 
         # Add our device to the control system.
-        # control_system.add_device(sensor_box)
+        control_system.add_device(sensor_box)
 
     # Add channels to the interlock box
     # 2 Microswitches
@@ -1668,7 +1720,7 @@ if __name__ == "__main__":
 
         interlock_box.add_channel(ch)
 
-    control_system.add_device(interlock_box)
+    # control_system.add_device(interlock_box)
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.

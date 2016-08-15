@@ -1,105 +1,100 @@
 from flask import Flask, redirect
 from flask import request
-from flask.ext.sqlalchemy import SQLAlchemy
 
 from serial_communication import *
 
 import messages
 import json
 import urllib2
+import copy
 import time
+import messages
 # import requests
+
+import multiprocessing
 
 
 app = Flask(__name__)
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./arduinos.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/www/html/Ion-Source-Control-System/Python/server/arduinos.db'
-#app.config['SQLALCHEMY_DATABSE_URL'] = 'mysql+mysqldb://root:h2+IonSource@localhost/arduinos'
-db = SQLAlchemy(app)
 
 
 
 app.debug = True
 
-
-class Arduino(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    _arduino_id = db.Column(db.String(37), unique=True)
-    _port = db.Column(db.String(25), unique=True)
-
-    def __init__(self, arduino_id, port):
-        self._arduino_id = arduino_id
-        self._port = port
-
-    def __repr__(self):
-        return self._arduino_id, self._port
-
-    def str(self):
-    	return self._arduino_id, self._port
-
-    def get_arduino_id(self):
-    	return self._arduino_id
-
-    def get_port(self):
-    	return self._port
-
-
-
-class Server:
-	def __init__(self):
-		self._serial_coms = {}
-
 	
-	def get_arduino_ids(self):
 
-		# Empty the cache first.
-		self._serial_coms = {}
+all_arduinos_info = (
+    ['49ffb802-50c5-4194-879d-20a87bcfc6ef', '/dev/ttyACM0'], ['41b70a36-a206-41c5-b743-1e5b8429b9a1', '/dev/ttyACM1']
+)
 
-		all_arduinos = Arduino.query.all()
+queries = [('49ffb802-50c5-4194-879d-20a87bcfc6ef', 'q03f14f24s13'), ('41b70a36-a206-41c5-b743-1e5b8429b9a1', 'q01s26')]
+
+def mp_worker(inputs):
+
+    arduino_id = inputs[0]
+    port = inputs[1]
+    message = inputs[2]
+
+    s = SerialCOM(arduino_id=arduino_id, port_name=port, timeout=1.)
+
+    return arduino_id, s.send_message(message)
+
+
+
+def build_arduino_port_map(arduino_ids):
+	
+	arduinos_map = []
+
+	found = True
+	for arduino_id in arduino_ids:
+		for arduino in all_arduinos_info:
+			if arduino_id == arduino[0]:
+				arduinos_map.append(  [arduino_id, arduino[1]] )
+				found = True
+				break
+
+		if not found:
+			arduinos_map.append( [arduino_id, None] )
+
+		found = False
+
+	return arduinos_map
+
+
+def pool_query_arduinos(arduino_ids, queries):
+
+	arduino_info = build_arduino_port_map(arduino_ids)
+
+	# Build the data list first.
+	worker_data = copy.copy(arduino_info)
+
+	elems_to_remove = []
+	for i, (arduino_id, port_name) in enumerate(worker_data):		
 		
-		for arduino in all_arduinos:
-			self._serial_coms[arduino.get_arduino_id()] = SerialCOM(arduino.get_arduino_id(), arduino.get_port())
-
-		return self._serial_coms.keys()
-	
-	def get_all_arduinos_in_db(self):
-		all_arduinos = Arduino.query.all()
+		for j, (arduino_to_query, query_string) in enumerate(queries):
+			if arduino_to_query == arduino_id:
+				worker_data[i].append(query_string)
 		
-		all_rows = {}
-		for arduino in all_arduinos:
-			all_rows[arduino.get_arduino_id()] = arduino.get_port()
-
-		return all_rows
-
-	def send_message_to_arduino(self, arduino_id, msg):
-
-
-		# First, check if the arduino id is present in cache. If yes, just use that SerialCOM.
-
-		if arduino_id in self._serial_coms.keys():
-			return self._serial_coms[arduino_id].send_message(msg)
-		else:
-			# Not in cache. 
-
-			#print "serial com not in cache."
-
-			# Add a new connection.
-			response = self.add_arduino_connection(arduino_id)
-
-			if response != None:
-				return self.send_message_to_arduino(arduino_id, msg)
-
-
-		#print "i'm done sending all messages"
-
-		return "error"
+		if port_name == None:
+			elems_to_remove.append(worker_data[i])
 
 	
+	for i in range(len(elems_to_remove)):
+		worker_data.remove(elems_to_remove[i])
+	
+	
+	p = multiprocessing.Pool(len(worker_data))
 
-# db.create_all()
-# db.session.commit()
+	all_responses = p.map(mp_worker, worker_data)
 
-some_server = Server()
+	parsed_response = dict()
+	for arduino_id, raw_output_message in all_responses:
+		parsed_response[arduino_id] = messages.parse_arduino_output_message(raw_output_message)
+		
+	return parsed_response
+
+
+
+
 
 @app.route("/")
 def hello():
@@ -107,103 +102,33 @@ def hello():
 
 @app.route("/arduino/all")
 def all_arduinos():
-	all_arduino_ids = some_server.get_arduino_ids()
-
-	return json.dumps(all_arduino_ids)
-
-@app.route("/arduino/db")
-def all_arduinos_in_db():
-	all_arduinos = some_server.get_all_arduinos_in_db()
 
 	return json.dumps(all_arduinos)
 
 
-'''
-@app.route("/arduino/alive", methods=['POST', 'GET'])
-def arduino_alive():
-	if request.method == 'POST':
-		pass
-	elif request.method == 'GET':
-		
-		arduino_id = request.args.get('arduino_id')
-
-		if arduino_id in some_server.get_arduino_ids():
-			some_server.send_message_to_arduino(arduino_id, "i")
-			arduino_response = some_server.receive_message_from_arduino(arduino_id)
-
-			print arduino_response.strip() == "device_id={}".format(arduino_id)
-			return str(int(arduino_response.strip() == "device_id={}".format(arduino_id)))
-
-		else:
-			response = some_server.add_arduino_connection(arduino_id)
-
-			if response != None:
-				pass
-				# return requests.get("{}{}/?arduino_id=".format(request.url_root, str(request.url_rule)[1:]), arduino_id)
-
-	return "0"
-'''
-
-@app.route("/arduino/set", methods=['POST', 'GET'])
-def set_channel_value():
-	if request.method == 'POST':
-		try:
-
-			arduino_id = request.form['arduino_id']
-			channel_names = json.loads(request.form['channel_names'])
-			values_to_set = json.loads(request.form['values_to_set'])
-
-			set_message = messages.build_set_message(channel_names, values_to_set)
-
-			arduino_response = some_server.send_message_to_arduino(arduino_id, set_message)
-
-			return ""
-
-		except Exception as e:
-			return "Server Error while setting values: {}".format(e)
-
-
 @app.route("/arduino/query", methods=['GET', 'POST'])
-def query_arduino():
+def query_arduinos():
 	
-
 	if request.method == 'POST':
-		arduino_id = request.form['arduino_id']
-		channel_names = json.loads(request.form['channel_names'])
-		precisions = json.loads(request.form['precisions'])
+		all_arduino_ids = json.loads(request.form['arduino_id'])
+		all_channel_names = json.loads(request.form['channel_names'])
+		all_precisions = json.loads(request.form['precisions'])
 		
 	elif request.method == 'GET':
-		arduino_id = request.args.get('arduino_id')
-		channel_names = json.loads(request.args.get('channel_names'))
-		precisions = json.loads(request.args.get('precisions'))
+		all_arduino_ids = json.loads(request.args.get('arduino_id'))
+		all_channel_names = json.loads(request.args.get('channel_names'))
+		all_precisions = json.loads(request.args.get('precisions'))
+		
+
+	all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in zip(all_arduino_ids, all_channel_names, all_precisions)]
 	
+	all_query_messages = [(arduino_id, messages.build_query_message(channel_names, precisions)) for (arduino_id, channel_names, precisions) in all_queries]
+
+	arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
 
 	
-	try:
-		print "querying arduino with", arduino_id, channel_names
+	return json.dumps(arduinos_response)
 
-		query_message = messages.build_query_message(channel_names, precisions)
-
-		print "the query message is", query_message
-
-		arduino_response = some_server.send_message_to_arduino(arduino_id, query_message)		
-		
-		#print "got a response from arduino", arduino_response
-
-		parsed_response = messages.parse_arduino_output_message(arduino_response)
-		
-		#print "the parsed response is", parsed_response
-		
-		return json.dumps(parsed_response)
-
-	except Exception as e:
-		print str(e)
-		return {}
-		# return "Server Error while querying: {}".format(e) 
-
-
-	return "query"
-		
 			
 
 if __name__ == "__main__":

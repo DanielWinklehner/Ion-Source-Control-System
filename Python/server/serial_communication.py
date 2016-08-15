@@ -61,14 +61,16 @@ class SerialCOM:
 			
 			self._ser.flushInput()
 			self._ser.flushOutput()
-			
-			self._ser.write(message)
 
-			response = self._ser.readline()
+			for i in range(2):
+				self._ser.write(message)
 
-			print "I sent a message", message, " and received", response
+				response = self._ser.readline()
 
-			return response
+				# print "I sent a message", message, "and received", response
+
+				if len(response) != 0:
+					return response
 
 		except serial.SerialException as e:
 			raise Exception("Something's wrong! I cannot send any messages!" + str(e))
@@ -255,10 +257,11 @@ def find_arudinos_connected():
 	
 
 if __name__ == "__main__":
-	s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e", "/dev/ttyACM2")
+	s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e", "/dev/ttyACM1")
 	print s.send_message("i")
-	print s.send_message("q01t14")
-
-
-
+	# print s.send_message("q01t14")
 	pass
+
+
+
+
