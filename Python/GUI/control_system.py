@@ -359,9 +359,11 @@ class MIST1ControlSystem:
             # end = time.time()
             # print "The request part took {} seconds.".format(end - start)
 
-            print r.text
-
-            return r.text
+            # print r.text
+            if response_code == 200:
+                return r.text
+            else:
+                return r"{}"
 
         except Exception as e:
 
@@ -378,8 +380,10 @@ class MIST1ControlSystem:
         channel_names = [name for name, ch in device.channels().items() if ch.mode() == 'read']
         precisions = [4] * len(channel_names)  # For sensor box, precision = 5 needs messages longer than 128 bytes.
 
-        print "Trying to get channel values for ", arduino_id
+        # print "Trying to get channel values for ", arduino_id
         response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
+
+        print "the server response is", response
 
         try:
             if response.strip() != r"{}" and "error" not in str(response).lower():
@@ -388,14 +392,22 @@ class MIST1ControlSystem:
 
                     device.get_channel_by_name(channel_name).set_value(value)
 
-            else:
+                return True
 
-                self._status_bar.push(2, "Error: " + str(response))
+            else:
+                # print "got an error"
+                pass
+                # self._status_bar.push(2, "Error: " + str(response))
+                return False
 
         except Exception as e:
 
             self._status_bar.push(2, str(e))
+            return False
 
+        return False
+
+        
     def update_channel_values_to_arduino(self, device):
 
         arduino_id = device.get_arduino_id()
@@ -405,7 +417,7 @@ class MIST1ControlSystem:
 
         response = self.send_message_to_server(purpose='set_values', args=[arduino_id, channel_names, values_to_set])
 
-        print response
+        # print response
 
     def add_device(self, device):
         """
@@ -540,42 +552,44 @@ class MIST1ControlSystem:
 
                     if self._communication_threads_mode[arduino_id] == "read":
 
-                        self.get_channel_values(device)
+                        if self.get_channel_values(device): # Returns true only if successfully got a value.
+                            
+                            self._communication_threads_poll_count[arduino_id] += 1
 
-                        # Find all the channels, see if they are in 'read' or 'both' mode,
-                        # then update the widgets with those values.
+                            # Find all the channels, see if they are in 'read' or 'both' mode,
+                            # then update the widgets with those values.
 
-                        for channel_name, channel in device.channels().items():
+                            for channel_name, channel in device.channels().items():
 
-                            # if channel.initialized() and (channel.mode() == "read" or channel.mode() == "both"):
-                            if channel.mode() == "read" or channel.mode() == "both":
-
-                                try:
-                                    channel.read_value()
-
-                                    try:
-                                        # Log data.
-                                        self.log_data(channel)
-
-                                    except Exception as e:
-                                        print "Exception caught while trying to log data."
-                                        print e
-                                        pass
+                                # if channel.initialized() and (channel.mode() == "read" or channel.mode() == "both"):
+                                if channel.mode() == "read" or channel.mode() == "both":
 
                                     try:
-                                        GLib.idle_add(self.update_stored_values, device.name(), channel_name)
+                                        channel.read_value()
+
+                                        try:
+                                            # Log data.
+                                            self.log_data(channel)
+
+                                        except Exception as e:
+                                            print "Exception caught while trying to log data."
+                                            print e
+                                            pass
+
+                                        try:
+                                            GLib.idle_add(self.update_stored_values, device.name(), channel_name)
+
+                                        except Exception as e:
+                                            print "Exception caught while updating stored values."
+                                            print e
+                                            pass
+
+                                        
+
+                                        GLib.idle_add(self.update_gui, channel)
 
                                     except Exception as e:
-                                        print "Exception caught while updating stored values."
-                                        print e
-                                        pass
-
-                                    self._communication_threads_poll_count[arduino_id] += 1
-
-                                    GLib.idle_add(self.update_gui, channel)
-
-                                except Exception as e:
-                                    "Got an exception", e
+                                        "Got an exception", e
 
                     # elif self._communication_threads_mode[arduino_id] == "write" \
                     #         and self._set_value_for_widget is not None:
@@ -1534,7 +1548,7 @@ class MIST1ControlSystem:
         arduino_id = channel.get_arduino_id()
         count = self._communication_threads_poll_count[arduino_id]
 
-        if count >= 20:
+        if count >= 50:
             elapsed = time.time() - self._communication_threads_start_time[arduino_id]
             frequency = self._communication_threads_poll_count[arduino_id] / elapsed
 
@@ -1618,7 +1632,7 @@ if __name__ == "__main__":
             sensor_box.add_channel(ch)
 
         # Add our device to the control system.
-        control_system.add_device(sensor_box)
+        # control_system.add_device(sensor_box)
 
     # Add channels to the interlock box
     # 2 Microswitches

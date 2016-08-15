@@ -157,7 +157,7 @@ class Server:
 		return ""
 
 
-db.create_all()
+# db.create_all()
 
 some_server = Server()
 

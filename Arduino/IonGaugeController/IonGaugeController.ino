@@ -31,20 +31,17 @@ Adafruit_SSD1306 display(OLED_RESET);
 #define DELTAY 2
 
 // Relays and Gauge on/off switches
-#define RELAY1     50                        
-#define RELAY2     51                       
-#define RELAY3     52                       
-#define RELAY4     53
-#define HIGH1      31
-#define HIGH2      33
-#define HIGH3      35
-#define LOW1       30
-#define LOW2       32
-#define LOW3       34
-#define GAUGE1_ON  2
-#define GAUGE2_ON  3
-#define GAUGE1_IN  0
-#define GAUGE2_IN  1
+#define RELAY1     50  // unused       
+#define RELAY2     51  // Gauge 2 on/off                     
+#define RELAY3     52  // Gauge 1 calibrate    
+#define RELAY4     53  // Gauge 1 on/off
+
+#define GAUGE1_ON    18
+#define GAUGE1_CALIB 3
+#define GAUGE2_ON    2
+
+#define GAUGE1_IN    0
+#define GAUGE2_IN    1
 
 #define LOGO16_GLCD_HEIGHT 16 
 #define LOGO16_GLCD_WIDTH  16 
@@ -70,13 +67,21 @@ static const unsigned char PROGMEM logo16_glcd_bmp[] =
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
+// Define pin for communication LED
+#define LED_COM 13
+
 // Global flags for on/off status of ion gauges
 boolean gauge1_running = false;
 boolean gauge2_running = false;
 boolean gauge1_err = false;
 boolean gauge2_err = false;
 
-int samples = 200;
+long debouncing_time = 150; //Debouncing Time in Milliseconds
+volatile unsigned long last_micros;
+
+volatile bool gauge1_calib_flag = false;
+
+int samples = 50;
 double gauge1_raw = 0;
 double gauge2_raw = 0;
 double gauge1_volt = 0.0;
@@ -95,39 +100,31 @@ char inputMessage[128];
 
 
 void setup()   { 
+  // Initialize the pin for blinking com LED
+  pinMode(LED_COM, OUTPUT);
+  
   // Initialise the Arduino data pins for OUTPUT
   pinMode(RELAY1, OUTPUT);       
   pinMode(RELAY2, OUTPUT);
   pinMode(RELAY3, OUTPUT);
   pinMode(RELAY4, OUTPUT);
+  
+  // Initialize the interrupt pins for the pushbutton input
   pinMode(GAUGE1_ON, INPUT);
+  pinMode(GAUGE1_CALIB, INPUT);
   pinMode(GAUGE2_ON, INPUT);
+  attachInterrupt(digitalPinToInterrupt(GAUGE1_ON), gauge1_on_off_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(GAUGE1_CALIB), gauge1_calib_interrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(GAUGE2_ON), gauge2_on_off_interrupt, RISING);
 
-  pinMode(HIGH1, OUTPUT); 
-  pinMode(HIGH2, OUTPUT);
-  pinMode(HIGH3, OUTPUT);
+  // Set up external 5V reference
+  analogReference(EXTERNAL);
 
-  pinMode(LOW1, OUTPUT); 
-  pinMode(LOW2, OUTPUT);
-  pinMode(LOW3, OUTPUT);
-
-  digitalWrite(HIGH1,HIGH);
-  digitalWrite(HIGH2,HIGH);
-  digitalWrite(HIGH3,HIGH);
-
-  digitalWrite(LOW1,LOW);
-  digitalWrite(LOW2,LOW);
-  digitalWrite(LOW3,LOW);
-
+  // Turn all the relays off initially
   digitalWrite(RELAY1,HIGH);          // Turns Relay Off
   digitalWrite(RELAY2,HIGH);          // Turns Relay Off
   digitalWrite(RELAY3,HIGH);          // Turns Relay Off
   digitalWrite(RELAY4,HIGH);          // Turns Relay Off 
-
-  attachInterrupt(digitalPinToInterrupt(GAUGE1_ON), gauge1_interrupt, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(GAUGE2_ON), gauge2_interrupt, CHANGE);
-                 
-//  Serial.begin(9600);
 
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x64)
@@ -168,7 +165,6 @@ void setup()   {
   
 }
 
-
 void get_serial_data(char * message) {
   
   int i = 0;
@@ -202,7 +198,6 @@ int get_number_of_channels_queried(char * inputMessage ) {
   return 0;
   
 }
-
 
 //
 // Code From: http://forum.arduino.cc/index.php?topic=46931.0
@@ -320,8 +315,6 @@ char *float2s(float f, unsigned int digits=2)
    return buf;
 } 
 
-
-//
 // Raise 10 to an unsigned integer power,
 // It's used in this program for powers
 // up to 6, so it must have a long return
@@ -376,7 +369,79 @@ void convert_scientific_notation_to_mist1(char * source, char * target, unsigned
   target[2 + precision + 1] = source[index + 2 + precision + 2];
 }
 
+void gauge1_on_off_interrupt()
+{
+  if((long)(micros() - last_micros) >= debouncing_time * 1000) 
+  {
+    if (!gauge1_running && !gauge1_err)
+    {    
+      gauge1_running = true;
+      digitalWrite(RELAY4,LOW);   // Turns ON Relay 2
+     
+      // Change Display
+      display.fillRect(54, 0, 74, 16, BLACK);
+      display.setCursor(54, 0);
+      display.setTextColor(WHITE);
+      display.print("ON");
+    }
+    else
+    {
+      gauge1_torr_str = String("0.0e-0");
+      
+      gauge1_running = false;
+      gauge1_err = false;
+      digitalWrite(RELAY4,HIGH);  // Turns OFF Relay 2
+   
+      // Change Display
+      display.fillRect(54, 0, 74, 16, BLACK);
+      display.setCursor(54, 0);
+      display.setTextColor(WHITE);
+      display.print("OFF");
+    }
+    last_micros = micros();
+  }
+}
 
+void gauge1_calib_interrupt()
+{
+  if((long)(micros() - last_micros) >= debouncing_time * 1000) {
+    gauge1_calib_flag = true;    
+    last_micros = micros();
+  }
+}
+
+void gauge2_on_off_interrupt()
+{
+  if((long)(micros() - last_micros) >= debouncing_time * 1000) 
+  {
+    if (!gauge2_running && !gauge2_err)
+    {    
+      gauge2_running = true;
+      digitalWrite(RELAY2,LOW);   // Turns ON Relay 2
+     
+      // Change Display
+      display.fillRect(54, 32, 74, 16, BLACK);
+      display.setCursor(54,32);
+      display.setTextColor(WHITE);
+      display.print("ON");
+    }
+    else
+    {
+      gauge2_torr_str = String("0.0e-0");
+      
+      gauge2_running = false;
+      gauge2_err = false;
+      digitalWrite(RELAY2,HIGH);  // Turns OFF Relay 2
+   
+      // Change Display
+      display.fillRect(54, 32, 74, 16, BLACK);
+      display.setCursor(54,32);
+      display.setTextColor(WHITE);
+      display.print("OFF");
+    }
+    last_micros = micros();
+  }
+}
 
 void loop() {
 
@@ -385,12 +450,11 @@ void loop() {
   
   memset (inputMessage, '\0', 128);
 
-  
-  //delay(50);
+  digitalWrite(RELAY3,HIGH);  // Turns OFF RELAY 3 (gauge 1 calibration)
 
   // CAVE: Gauge1 is a PIRANI gauge for use in atm down to 10-3 mbar
   if (gauge1_running)
-  {
+  {    
     analogRead(GAUGE1_IN);
     // Wait for input capacitor to charge
     delay(1);
@@ -435,12 +499,20 @@ void loop() {
       // Normal operation
       gauge1_state = String("ON");
     }
+    // If the calibration routine has been called through an interrupt, do the 
+    // calibration now. Note: Maybe add a short delay here to make sure we are ON > 50 ms?
+    if (gauge1_calib_flag){
+          digitalWrite(RELAY3,LOW);   // Turns ON  RELAY 3 (gauge 1 calibration)
+          gauge1_calib_flag = false;
+          delay(50);
+    }
   } 
   else 
   {
     if (gauge1_err) gauge1_state = String("ERR");
     else gauge1_state = String("OFF");
     gauge1_torr_str = String("0.0e-0");
+    gauge1_calib_flag = false;
   }
 
   if (gauge2_running)
@@ -521,9 +593,12 @@ void loop() {
   // Show the new display
   display.display();
 
-
-
+  // GUI Communication.
+  digitalWrite(LED_COM, LOW);
+  
   if (Serial.available()) {
+
+    digitalWrite(LED_COM, HIGH);
 
     get_serial_data(inputMessage);
 
@@ -611,12 +686,8 @@ void loop() {
           if (channelIndex == (numberOfChannels - 1)) {
             Serial.print("\r\n");
           }
-            
-          
         }
       }
-
-      
     }
     else if (keyword == 's') {
       // Setting values.
@@ -644,110 +715,32 @@ void loop() {
       if (channelIdentifier == 'g') {
         if (channelNumber == '1') {
           if (valueToSet == '1') {
-            // call gauge_interrupt?
+            if (!gauge1_running){
+              gauge1_on_off_interrupt();
+            }
+          } 
+          else {
+            if (gauge1_running){
+              gauge1_on_off_interrupt();
+            }
           }
         }
-        else if (channelNumber == '2') {
-          if (valueToSet == '1') {
-            // call gauge_interrupt?
+      }
+      else if (channelNumber == '2') {
+        if (valueToSet == '1') {
+          if (!gauge2_running){
+            gauge2_on_off_interrupt();
+          }
+        } 
+        else {
+          if (gauge2_running){
+            gauge2_on_off_interrupt();
           }
         }
       }
-      
     }
-
-      
-  }
-  
-  /*
-  // GUI Communication.
-  if (Serial.available()) {
-    //  inputCommand = Serial.readString();
-    inputCommand = get_serial_data();
-    
-    int first = inputCommand.indexOf(":");
-    int second = inputCommand.indexOf("=");
-  
-    String keyword = inputCommand.substring(0, first);
-    String header = inputCommand.substring(first + 1, second);
-    String value = inputCommand.substring(second + 1, inputCommand.length());
-
-    int serialNumberCharacterIndex = header.indexOf("#");
-    String serialNumber = header.substring(serialNumberCharacterIndex + 1, header.length());
-
-    String filteredHeader;
-    if (serialNumberCharacterIndex > -1) {
-      filteredHeader = header.substring(0, serialNumberCharacterIndex);
-    }
-    else {
-      filteredHeader = header;
-    }
-  
-    if (keyword == "query") {
-  
-      if (header == "identification") {
-        Serial.print("output:device_id=");
-        Serial.println(deviceId);
-      }
-      else if (header == "gauge_state#1") {
-        if (gauge1_state == "OFF") {
-          Serial.println("output:gauge_state#1=0");  
-        }
-        else {
-          Serial.println("output:gauge_state#1=1");  
-        }
-      }
-      else if (header == "gauge_pressure#1") {
-        Serial.println("output:gauge_pressure#1=" + gauge1_torr_str);
-      }
-      else if (header == "gauge_state#2") {
-        if (gauge2_state == "OFF") {
-          Serial.println("output:gauge_state#2=0");  
-        }
-        else {
-          Serial.println("output:gauge_state#2=1");  
-        }
-      }
-      else if (header == "gauge_pressure#2") {
-        Serial.println("output:gauge_pressure#2=" + gauge2_torr_str);
-      }
-      
-    }
-    else if (keyword == "set") {
-      
-      if (header == "identified") {
-        if (value == "1") {
-          deviceIdentified = true;
-        }
-      }
-      else if (header == "gauge_state#1") {
-        if (value == "1") {
-          //gauge1_interrupt();
-          Serial.println("assigned:gauge_state#1=" + value);
-        }
-        else {
-         // Code to stop the gauge? 
-         Serial.println("assigned:gauge_state#1=" + value);
-        }
-      }
-      else if (header == "gauge_state#2") {
-        if (value == "1") {
-          //gauge2_interrupt();
-          Serial.println("assigned:gauge_state#2=" + value);
-        }
-        else {
-          // Code to stop the gauge?
-          Serial.println("assigned:gauge_state#2=" + value);
-        }
-      }
-    }
-  }
-  */
-
-
-  
+  }  
 }
-
 
 String formatted_pressure(double pressure)
 {
@@ -788,9 +781,10 @@ String formatted_pressure(double pressure)
 
 double raw_to_volt(double raw)
 {
-  // Arduino samples 5 V into 1024 bins. Breakout board has a voltage divider with
-  // R2 = 4.96 kOhm and R1 + R2 = 14.89 kOhm
-  return raw / 1024.0 * 5.0 / 4.96 * 14.89;
+  // Arduino samples 5 V into 1024 bins.
+  // Because the ion gauges give back 0-10 V, there is a 
+  // voltage divider after the differential amplifier.
+  return raw / 1023.0 * 5.0 / 3.9 * 8.6 ;
 }
 
 double volt_to_torr_pirani(double volt)
@@ -856,68 +850,5 @@ double volt_to_torr(double volt)
 
   // Do a linear extrapolation to the calibration data
   return pressures_torr[index_lower] + (pressures_torr[index_lower + 1]- pressures_torr[index_lower]) * (volt - voltages[index_lower]) / (voltages[index_lower + 1] - voltages[index_lower]);
-}
-
-void gauge1_interrupt()
-{
-//  Serial.println("Interrupt1\n");
-  if (digitalRead(GAUGE1_ON) == HIGH && !gauge1_running && !gauge1_err)
-  {
-    //Serial.println("Switching Gauge1 on\n");
-    gauge1_running = true;
-    
-    //digitalWrite(RELAY1,LOW);   // Turns ON Relay 1
-
-    gauge1_state = String("ON");
-
-  }
-  if (digitalRead(GAUGE1_ON) == LOW)
-  {
-    //Serial.println("Switching Gauge1 off\n");
-    
-    gauge1_running = false;
-    gauge1_err = false;
-
-    digitalWrite(RELAY1,HIGH);   // Turns OFF Relay 1
-    
-    gauge1_state = String("OFF");
-    gauge1_torr_str = String("0.0e-0");
-    
-  }
-}
-
-void gauge2_interrupt()
-{
-//  Serial.println("Interrupt2\n");
-  if (digitalRead(GAUGE2_ON) == HIGH && !gauge2_running && !gauge1_err)
-  {
-//    Serial.println("Switching Gauge2 on\n");
-    
-    gauge2_running = true;
-    
-    digitalWrite(RELAY2,LOW);   // Turns ON Relay 2
-   
-    // Change Display
-    display.fillRect(54, 32, 74, 16, BLACK);
-    display.setCursor(54,32);
-    display.setTextColor(WHITE);
-    display.print("ON");
-  }
-  if (digitalRead(GAUGE2_ON) == LOW)
-  {
-//    Serial.println("Switching Gauge2 off\n");
-
-    gauge2_torr_str = String("0.0e-0");
-    gauge2_running = false;
-    gauge2_err = false;
-    
-    digitalWrite(RELAY2,HIGH);  // Turns OFF Relay 2
- 
-    // Change Display
-    display.fillRect(54, 32, 74, 16, BLACK);
-    display.setCursor(54,32);
-    display.setTextColor(WHITE);
-    display.print("OFF");
-  }
 }
 

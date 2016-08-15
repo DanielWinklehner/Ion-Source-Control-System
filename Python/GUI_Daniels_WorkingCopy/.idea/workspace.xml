@@ -23,8 +23,8 @@
       <file leaf-file-name="control_system.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="492">
-              <caret line="1568" column="53" selection-start-line="1568" selection-start-column="53" selection-end-line="1568" selection-end-column="53" />
+            <state relative-caret-position="543">
+              <caret line="1574" column="68" selection-start-line="1574" selection-start-column="68" selection-end-line="1574" selection-end-column="68" />
               <folding />
             </state>
           </provider>
@@ -366,6 +366,22 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/control_system.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -613,8 +629,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../GUI/control_system.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="492">
-          <caret line="1568" column="53" selection-start-line="1568" selection-start-column="53" selection-end-line="1568" selection-end-column="53" />
+        <state relative-caret-position="543">
+          <caret line="1574" column="68" selection-start-line="1574" selection-start-column="68" selection-end-line="1574" selection-end-column="68" />
           <folding />
         </state>
       </provider>
