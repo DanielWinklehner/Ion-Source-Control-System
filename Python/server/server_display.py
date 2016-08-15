@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # Copyright (c) 2014 Adafruit Industries
@@ -26,6 +26,8 @@ import time
 import sys
 import requests
 import json
+import re
+import subprocess
 
 import Adafruit_GPIO.SPI as SPI
 import Adafruit_SSD1306
@@ -91,14 +93,19 @@ def get_number_of_arduinos():
 	r = requests.get(url + "arduino/all")
 	response = r.text
 
-	print response
-
 	if r.status_code == 200:
 		return len(json.loads(response))
 	
 	return 0
 
-
+def get_pi_ip():
+	proc = subprocess.Popen('ifconfig | grep inet', stdout=subprocess.PIPE, shell=True)
+	output = proc.stdout.read().strip()
+	match_object = re.match("inet addr:([0-9]+.[0-9]+.[0-9]+.[0-9]+)", output)
+	if match_object:
+		return match_object.group(1) 
+	
+	return  "Off"
 
 
 # Define text and get total width.
@@ -119,7 +126,7 @@ while True:
 	texts = ["Server Status:", "", "Arduinos Found:", ""]
 	
 	if get_server_status():
-		texts[1] = "=> Running"
+		texts[1] = "=> {}".format(get_pi_ip())
 	else:
 		texts[1] = "=> Not Running"
 	
