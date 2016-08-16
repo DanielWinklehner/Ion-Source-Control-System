@@ -390,7 +390,7 @@ class MIST1ControlSystem:
         end = time.time()
 
 
-        print "It took", (end - start), "seconds to get a response."
+        # print "It took", (end - start), "seconds to get a response."
 
         if response.strip() != r"{}" and "error" not in str(response).lower():
             parsed_response = json.loads(response)

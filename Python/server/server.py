@@ -36,11 +36,21 @@ app.debug = True
 
 
 managers = [Manager(), Manager()]
-all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1") ]
+# all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1") ]
+all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM1"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM2") ]
 
 
 def mp_worker(serial_com, message):
-	return serial_com.get_arduino_id(), serial_com.send_message(message)
+
+	start = time.time()
+
+	arduino_response = serial_com.send_message(message)
+	
+	end = time.time()
+
+	print "it took", (end - start), "to get a message from the arduino"
+
+	return serial_com.get_arduino_id(), arduino_response
 
 
 def build_arduino_port_map(arduino_ids):
@@ -79,15 +89,28 @@ def pool_query_arduinos(arduino_ids, queries):
 				queries_to_use.append( query )
 
 
+	start = time.time()
+
 	p = multiprocessing.Pool(len(serial_coms_to_use))
 	
 	all_responses = []
 
 	for serial_com, query in zip(serial_coms_to_use, queries_to_use):
+		start2 = time.time()
+
 		all_responses.append( p.apply(func=mp_worker, args=(serial_com, query)) )
 
-	p.close()
-	p.join()
+		end2 = time.time()
+
+		print "it took", (end2 - start2), "seconds for each arduino response."
+
+	# p.close()
+	# p.join()
+
+	end = time.time()
+
+	print "It took", (end - start), "seconds to collect all the responses."
+
 
 	parsed_response = dict()
 	for arduino_id, raw_output_message in all_responses:
