@@ -6,30 +6,57 @@ import time
 import messages
 
 import multiprocessing
+from multiprocessing.managers import BaseManager
+
+
+class MyManager(BaseManager): pass
+
+def Manager():
+	m = MyManager()
+	m.start()
+	return m 
+
+MyManager.register('SerialCOM', SerialCOM)
 
 
 
-data = (
-    ['49ffb802-50c5-4194-879d-20a87bcfc6ef', '/dev/ttyACM0'], ['41b70a36-a206-41c5-b743-1e5b8429b9a1', '/dev/ttyACM1']
-)
 
-queries = [('49ffb802-50c5-4194-879d-20a87bcfc6ef', 'q03f14f24s13'), ('41b70a36-a206-41c5-b743-1e5b8429b9a1', 'q01s26')]
+data = [
+	['49ffb802-50c5-4194-879d-20a87bcfc6ef', '/dev/ttyACM0', 'q03f14f24s13'], ['41b70a36-a206-41c5-b743-1e5b8429b9a1', '/dev/ttyACM1', 'q01s26']
+]
 
-def mp_worker(inputs):
+# queries = [('49ffb802-50c5-4194-879d-20a87bcfc6ef', 'q03f14f24s13'), ('41b70a36-a206-41c5-b743-1e5b8429b9a1', 'q01s26')]
+queries = ['q03f14f24s13', 'q01s26']
 
-    arduino_id = inputs[0]
-    port = inputs[1]
-    message = inputs[2]
+s1 = SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0")
+s2 = SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1")
 
-    s = SerialCOM(arduino_id=arduino_id, port_name=port, timeout=1.)
 
-    return arduino_id, s.send_message(message)
 
+m_1 = Manager()
+s_1 = m_1.SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0")
+
+m_2 = Manager()
+s_2 = m_2.SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1")
+
+
+def mp_worker(serial_com, message):
+	return serial_com.send_message(message)
+	
 
 def mp_handler():
-    p = multiprocessing.Pool(2)
-    p.map(mp_worker, data)
+	
 
+	p = multiprocessing.Pool(2)
+
+	
+	a = p.apply(func=mp_worker, args=(s_1, queries[0]))
+	b = p.apply(func=mp_worker, args=(s_2, queries[1]))
+
+	p.close()
+	p.join()
+
+	return a, b
 
 def query_arduinos(arduino_info, queries):
 
@@ -53,5 +80,14 @@ def query_arduinos(arduino_info, queries):
 
 
 if __name__ == '__main__':
-    # mp_handler()
-    print query_arduinos(data, queries)
+	# mp_handler()
+
+	start = time.time()
+
+	# print query_arduinos(data, queries)
+	print mp_handler()
+
+	end = time.time()
+
+	print
+	print "All this took", (end - start), "seconds."

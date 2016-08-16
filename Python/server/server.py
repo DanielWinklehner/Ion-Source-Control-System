@@ -12,6 +12,18 @@ import messages
 # import requests
 
 import multiprocessing
+from multiprocessing.managers import BaseManager
+
+class MyManager(BaseManager): pass
+
+def Manager():
+	m = MyManager()
+	m.start()
+	return m 
+
+MyManager.register('SerialCOM', SerialCOM)
+
+
 
 
 app = Flask(__name__)
@@ -22,22 +34,13 @@ app.debug = True
 
 	
 
-all_arduinos_info = (
-    ['49ffb802-50c5-4194-879d-20a87bcfc6ef', '/dev/ttyACM0'], ['41b70a36-a206-41c5-b743-1e5b8429b9a1', '/dev/ttyACM1']
-)
 
-queries = [('49ffb802-50c5-4194-879d-20a87bcfc6ef', 'q03f14f24s13'), ('41b70a36-a206-41c5-b743-1e5b8429b9a1', 'q01s26')]
+managers = [Manager(), Manager()]
+all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1") ]
 
-def mp_worker(inputs):
 
-    arduino_id = inputs[0]
-    port = inputs[1]
-    message = inputs[2]
-
-    s = SerialCOM(arduino_id=arduino_id, port_name=port, timeout=1.)
-
-    return arduino_id, s.send_message(message)
-
+def mp_worker(serial_com, message):
+	return serial_com.get_arduino_id(), serial_com.send_message(message)
 
 
 def build_arduino_port_map(arduino_ids):
@@ -62,35 +65,37 @@ def build_arduino_port_map(arduino_ids):
 
 def pool_query_arduinos(arduino_ids, queries):
 
-	arduino_info = build_arduino_port_map(arduino_ids)
+	# First, find correct SerialCOM objects to use.
 
-	# Build the data list first.
-	worker_data = copy.copy(arduino_info)
+	serial_coms_to_use = []
+	queries_to_use = []
 
-	elems_to_remove = []
-	for i, (arduino_id, port_name) in enumerate(worker_data):		
-		
-		for j, (arduino_to_query, query_string) in enumerate(queries):
-			if arduino_to_query == arduino_id:
-				worker_data[i].append(query_string)
-		
-		if port_name == None:
-			elems_to_remove.append(worker_data[i])
+	for arduino_id, query in zip(arduino_ids, queries):
 
+		for i in range(len(all_serial_coms)):
+			
+			if all_serial_coms[i].get_arduino_id() == arduino_id:
+				serial_coms_to_use.append( all_serial_coms[i] )
+				queries_to_use.append( query )
+
+
+	p = multiprocessing.Pool(len(serial_coms_to_use))
 	
-	for i in range(len(elems_to_remove)):
-		worker_data.remove(elems_to_remove[i])
-	
-	
-	p = multiprocessing.Pool(len(worker_data))
+	all_responses = []
 
-	all_responses = p.map(mp_worker, worker_data)
+	for serial_com, query in zip(serial_coms_to_use, queries_to_use):
+		all_responses.append( p.apply(func=mp_worker, args=(serial_com, query)) )
+
+	p.close()
+	p.join()
 
 	parsed_response = dict()
 	for arduino_id, raw_output_message in all_responses:
 		parsed_response[arduino_id] = messages.parse_arduino_output_message(raw_output_message)
 		
 	return parsed_response
+
+	
 
 
 
@@ -109,6 +114,8 @@ def all_arduinos():
 @app.route("/arduino/query", methods=['GET', 'POST'])
 def query_arduinos():
 	
+	start = time.time()
+
 	if request.method == 'POST':
 		all_arduino_ids = json.loads(request.form['arduino_id'])
 		all_channel_names = json.loads(request.form['channel_names'])
@@ -122,11 +129,14 @@ def query_arduinos():
 
 	all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in zip(all_arduino_ids, all_channel_names, all_precisions)]
 	
-	all_query_messages = [(arduino_id, messages.build_query_message(channel_names, precisions)) for (arduino_id, channel_names, precisions) in all_queries]
+	all_query_messages = [messages.build_query_message(channel_names, precisions) for (arduino_id, channel_names, precisions) in all_queries]
 
 	arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
 
-	
+	end = time.time()
+
+	print "The response took", (end - start), "seconds."
+
 	return json.dumps(arduinos_response)
 
 			

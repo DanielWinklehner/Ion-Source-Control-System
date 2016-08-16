@@ -421,6 +421,8 @@ void loop() {
 
     get_serial_data(inputMessage);
 
+    //Serial.println(inputMessage);
+
     char keyword = inputMessage[0];
 
     if (keyword == 'i') {

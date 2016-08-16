@@ -9,7 +9,7 @@ import glob
 
 
 
-class SerialCOM:
+class SerialCOM(object):
 
 	def __init__(self, arduino_id, port_name, timeout=1.):
 		"""Summary
@@ -23,6 +23,7 @@ class SerialCOM:
 		self._baudrate = 115200
 		self._timeout = timeout
 		self._ser = serial.Serial(port_name, baudrate=self._baudrate, timeout=self._timeout)
+		# self._ser = serial.Serial(port_name, baudrate=self._baudrate)
 
 		
 

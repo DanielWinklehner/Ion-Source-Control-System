@@ -105,7 +105,7 @@ class MIST1ControlSystem:
         self._communication_thread_mode = None
         self._communication_thread_poll_count = None
         self._communication_thread_start_time = time.time()
-        self._arduino_status_bar = None
+        self._arduino_status_bars = {}
 
         self._set_value_for_widget = None
 
@@ -276,7 +276,7 @@ class MIST1ControlSystem:
                         pass
 
     def add_arduino_status_bar(self, arduino_id, status_bar):
-        self._arduino_status_bar = status_bar
+        self._arduino_status_bars[arduino_id] = status_bar
 
     def add_channel(self, channel, device):
 
@@ -373,8 +373,8 @@ class MIST1ControlSystem:
         return r"{}"
 
     def register_device_with_server(self, device):
-        return self.send_message_to_server("register_device", [device.get_arduino_id()])
-    
+        # return self.send_message_to_server("register_device", [device.get_arduino_id()])
+        pass
     
 
     def get_all_channel_values(self, devices):
@@ -385,9 +385,12 @@ class MIST1ControlSystem:
 
 
         # print "Trying to get channel values for ", arduino_id
+        start = time.time()
         response = self.send_message_to_server(purpose='query_values', args=[arduino_ids, channel_names, precisions])
+        end = time.time()
 
-        # print "the server response is", response
+
+        print "It took", (end - start), "seconds to get a response."
 
         if response.strip() != r"{}" and "error" not in str(response).lower():
             parsed_response = json.loads(response)
@@ -1600,14 +1603,16 @@ class MIST1ControlSystem:
         arduino_id = channel.get_arduino_id()
         count = self._communication_thread_poll_count
 
-        if count >= 2:
+        # print arduino_id
+
+        if count >= 10:
             elapsed = time.time() - self._communication_thread_start_time
             frequency = self._communication_thread_poll_count / elapsed
 
             self._communication_thread_start_time = time.time()
             self._communication_thread_poll_count = 0
 
-            self._arduino_status_bar.set_value(frequency)
+            self._arduino_status_bars[arduino_id].set_value(frequency)
 
         # If display on overview page is desired, update:
         if channel.get_parent_device().is_on_overview_page():
