@@ -1625,8 +1625,8 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
-    # control_system = MIST1ControlSystem(server_ip="10.77.0.188", server_port=80)
-    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
+    control_system = MIST1ControlSystem(server_ip="10.77.0.188", server_port=80)
+    # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())

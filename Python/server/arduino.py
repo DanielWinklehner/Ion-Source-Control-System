@@ -28,8 +28,8 @@ data = [
 # queries = [('49ffb802-50c5-4194-879d-20a87bcfc6ef', 'q03f14f24s13'), ('41b70a36-a206-41c5-b743-1e5b8429b9a1', 'q01s26')]
 queries = ['q03f14f24s13', 'q01s26']
 
-s1 = SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0")
-s2 = SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1")
+# s1 = SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0")
+# s2 = SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1")
 
 
 
@@ -39,24 +39,37 @@ s_1 = m_1.SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name
 m_2 = Manager()
 s_2 = m_2.SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1")
 
+print s_1.send_message("i")
+print s_2.send_message("i")
 
 def mp_worker(serial_com, message):
 	return serial_com.send_message(message)
 	
 
+
+results = []
+def callback(x):
+	results.append(x)
+
+
 def mp_handler():
 	
 
-	p = multiprocessing.Pool(2)
+	p = multiprocessing.Pool(1)
 
-	
-	a = p.apply(func=mp_worker, args=(s_1, queries[0]))
-	b = p.apply(func=mp_worker, args=(s_2, queries[1]))
+	start = time.time()
 
-	p.close()
-	p.join()
+	a = p.apply_async(func=mp_worker, args=(s_1, queries[0]), callback=callback)
+	b = p.apply_async(func=mp_worker, args=(s_2, queries[1]), callback=callback)
 
-	return a, b
+	# p.close()
+	# p.join()
+
+	end = time.time()
+
+	print "Took", (end - start), "seconds for apply."
+
+	return a.get(), b.get()
 
 def query_arduinos(arduino_info, queries):
 
@@ -87,7 +100,19 @@ if __name__ == '__main__':
 	# print query_arduinos(data, queries)
 	print mp_handler()
 
+
+	# print results
+
+
+	# while len(results) == 0:
+	# 	print results
+
+	# print results
+
+
 	end = time.time()
+
+
 
 	print
 	print "All this took", (end - start), "seconds."

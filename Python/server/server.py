@@ -36,8 +36,11 @@ app.debug = True
 
 
 managers = [Manager(), Manager()]
-# all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1") ]
-all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM1"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM2") ]
+all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1") ]
+# all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM1"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM2") ]
+
+for serial_com in all_serial_coms:
+	print serial_com.send_message("i")
 
 
 def mp_worker(serial_com, message):
