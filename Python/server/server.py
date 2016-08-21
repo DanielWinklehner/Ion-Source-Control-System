@@ -3,13 +3,15 @@ from flask import request
 
 from serial_communication import *
 
+import subprocess
 import messages
 import json
 import urllib2
 import copy
 import time
 import messages
-# import requests
+
+import threading
 
 import multiprocessing
 from multiprocessing.managers import BaseManager
@@ -36,11 +38,73 @@ app.debug = True
 
 
 managers = [Manager(), Manager()]
-all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM0"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM1") ]
-# all_serial_coms = [ managers[0].SerialCOM(arduino_id="49ffb802-50c5-4194-879d-20a87bcfc6ef", port_name="/dev/ttyACM1"), managers[1].SerialCOM(arduino_id="41b70a36-a206-41c5-b743-1e5b8429b9a1", port_name="/dev/ttyACM2") ]
 
-for serial_com in all_serial_coms:
-	print serial_com.send_message("i")
+
+all_arduinos_to_use = []
+all_managers_to_use = []
+
+def update_arduinos_connected():
+	global all_arduinos_to_use
+	global all_managers_to_use
+
+	while True:
+		all_arduinos = find_arudinos_connected()
+
+		#all_arduinos_to_use = all_arduinos
+		#all_managers_to_use = [Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1]) for arduino in all_arduinos_to_use]
+		
+
+		for i, arduino in enumerate(all_arduinos):
+
+			arduinos_to_remove = []
+			
+			for j, arduino_already_added in enumerate(all_arduinos_to_use):
+
+				#print arduino, arduino_already_added
+
+				if arduino_already_added[0] == arduino[0] and arduino_already_added[1] == arduino[1]:
+					# Both arduino id and port name matches. Do nothing.
+					#print "Case I"
+					pass
+				elif arduino_already_added[0] == arduino[0] and arduino_already_added[1] != arduino[1]:
+					# Arduino id matches but port name does not. Replace them with new entries.
+					#print "Case 2"
+					all_arduinos_to_use[j] = arduino
+					all_managers_to_use[j] = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
+					all_managers_to_use[j].send_message("i")
+				else:
+					pass
+
+				if arduino_already_added not in all_arduinos:
+					arduinos_to_remove.append(arduino_already_added)
+
+			for arduino_to_remove in arduinos_to_remove:
+				print arduino_to_remove, "no longer there so removing it."
+				all_arduinos_to_use.remove(arduino_to_remove)
+
+			# Next, "brand new" arduinos that we've never added before.
+			if arduino in all_arduinos_to_use:
+				#print "arduino already added"
+				pass
+			else:
+				#print "nope! Not there!"
+				all_arduinos_to_use.append(arduino)
+				all_managers_to_use.append( Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1]) )
+
+
+		#print all_arduinos_to_use
+		#print all_managers_to_use
+
+
+# update_arduinos_connected()
+
+
+connected_arduinos_thread = threading.Thread(target=update_arduinos_connected)
+connected_arduinos_thread.start()
+
+
+
+
 
 
 def mp_worker(serial_com, message):
@@ -85,10 +149,10 @@ def pool_query_arduinos(arduino_ids, queries):
 
 	for arduino_id, query in zip(arduino_ids, queries):
 
-		for i in range(len(all_serial_coms)):
+		for i in range(len(all_managers_to_use)):
 			
-			if all_serial_coms[i].get_arduino_id() == arduino_id:
-				serial_coms_to_use.append( all_serial_coms[i] )
+			if all_managers_to_use[i].get_arduino_id() == arduino_id:
+				serial_coms_to_use.append( all_managers_to_use[i] )
 				queries_to_use.append( query )
 
 
@@ -105,7 +169,7 @@ def pool_query_arduinos(arduino_ids, queries):
 
 		end2 = time.time()
 
-		print "it took", (end2 - start2), "seconds for each arduino response."
+		#print "it took", (end2 - start2), "seconds for each arduino response."
 
 	# p.close()
 	# p.join()
@@ -131,10 +195,19 @@ def pool_query_arduinos(arduino_ids, queries):
 def hello():
     return "Hey there!"
 
+
+@app.route("/display")
+def display():
+
+    process = subprocess.call("sudo python /var/www/html/Ion-Source-Control-System/Python/server/display_plain.py &", shell=True)
+
+    return "Started display code."
+
+
+
 @app.route("/arduino/all")
 def all_arduinos():
-
-	return json.dumps(all_arduinos)
+	return json.dumps(find_arudinos_connected())
 
 
 @app.route("/arduino/query", methods=['GET', 'POST'])
@@ -165,8 +238,11 @@ def query_arduinos():
 
 	return json.dumps(arduinos_response)
 
-			
+		
 
 if __name__ == "__main__":
     # app.run(host='0.0.0.0', port=80)
     app.run(host='0.0.0.0', port=5000)
+    pass
+
+

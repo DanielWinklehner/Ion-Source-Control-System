@@ -4,8 +4,8 @@ import time
 import serial
 import sys
 import glob
-
-
+import subprocess
+import os
 
 
 
@@ -111,6 +111,14 @@ class SerialCOM(object):
 			raise Exception("Something's wrong! I cannot read my messages!" + str(e3))
 
 
+def get_all_arduino_ports():
+	proc = subprocess.Popen('/var/www/html/Ion-Source-Control-System/Python/server/usb.sh', stdout=subprocess.PIPE, shell=True)
+	output = proc.stdout.read().strip()
+	all_usb_devices = output.split("\n")
+	all_arduino_ports =  [x.split(" - ")[0] for x in all_usb_devices if "Arduino" in x]
+	return all_arduino_ports
+
+
 def get_all_serial_ports():
 	""" Lists serial port names
 
@@ -155,7 +163,7 @@ def find_port(arduino_id):
 	:return:
 	"""
 
-	all_serial_ports = get_all_serial_ports()
+	all_serial_ports = get_all_arduino_ports()
 	
 
 	for serial_port_name in all_serial_ports:
@@ -189,7 +197,7 @@ def find_port(arduino_id):
 					# print response
 					if arduino_id == response.split("=")[1]:
 
-						print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
+						#print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
 
 						return serial_port_name
 			except:
@@ -208,60 +216,86 @@ def find_port(arduino_id):
 
 
 def find_arudinos_connected():
-	all_serial_ports = get_all_serial_ports()
+	all_arduino_ports = get_all_arduino_ports()
+	
+	all_arduinos = []
+	for arduino_port in all_arduino_ports:
+		name = arduino_port.split("/")[2]
+		sys_path = os.path.realpath("/sys/class/tty/{}/".format(name))
+		os.chdir(sys_path)
+		os.chdir("../../../")
+		all_files = os.listdir(os.path.abspath(os.curdir))
+		if "serial" in all_files:
+			with open(os.path.abspath(os.curdir) + "/serial") as serial_number_file:
+				serial_number = serial_number_file.readline().strip(" \r\n")
+				all_arduinos.append( (serial_number, arduino_port))
+	return all_arduinos
+
+'''
+def find_arudinos_connected():
+	all_serial_ports = get_all_arduino_ports()
 	
 	all_arduinos = []
 	for serial_port_name in all_serial_ports:
 
 		#print "Connecting to", serial_port_name
 
-		ser = serial.Serial(serial_port_name, baudrate=115200, timeout=1.)
+		try:
+			ser = serial.Serial(serial_port_name, baudrate=115200, timeout=1.)
 
-		input_message = "i"
+			input_message = "i"
 
-		timeout = 2.  # in seconds.
+			timeout = 3.  # in seconds.
 
-		first_attempt_time = time.time()
+			first_attempt_time = time.time()
 		
-		#print float(time.time() - first_attempt_time), timeout, float(time.time() - first_attempt_time) < timeout
-		while float(time.time() - first_attempt_time) < timeout:
+			#print float(time.time() - first_attempt_time), timeout, float(time.time() - first_attempt_time) < timeout
+			while float(time.time() - first_attempt_time) < timeout:
 
-			try:
-				print "trying to connect"
-				ser.write(input_message)
+				try:
+					#print "trying to connect"
+					ser.write(input_message)
 				
-				response = ser.readline().strip()
+					response = ser.readline().strip()
 
 				
-				if "device_id" in response and "=" in response:
+					if "device_id" in response and "=" in response:
 
-					# This is probably an Arduino designed for this Control System.
-					# Get the device id.
+						# This is probably an Arduino designed for this Control System.
+						# Get the device id.
 					
-					# print response
-					arduino_id = response.split("=")[1]
+						# print response
+						arduino_id = response.split("=")[1]
 
-					print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
+						#print "Found the Arduino corresponding to UUID %s at port %s" % (arduino_id, serial_port_name)
 
-					all_arduinos.append( (arduino_id, serial_port_name) )
+						all_arduinos.append( (arduino_id, serial_port_name) )
 					
-					break
+						break
 
-			except Exception as e:
-				print "Got the following exception: ", e
-				continue
-				#break
+				except Exception as e:
+					#print "Got the following exception: ", e
+					continue
+					#break
 
-			
+		except Exception as e:
+			continue			
+
+	print all_arduinos
 
 	return all_arduinos
-	
+'''
+
 
 if __name__ == "__main__":
+	'''	
 	s = SerialCOM("2cc580d6-fa29-44a7-9fec-035acd72340e", "/dev/ttyACM1")
 	print s.send_message("i")
 	# print s.send_message("q01t14")
+	'''
+	print find_arudinos_connected()
 	pass
+	
 
 
 
