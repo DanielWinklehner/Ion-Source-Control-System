@@ -245,6 +245,11 @@ class Device:
 	#     return self._front_page_widgets
 
 	def get_json(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
 		properties = {}
 
 		properties['name'] = self._name
@@ -260,6 +265,14 @@ class Device:
 
 
 	def write_json(self, filename):
+		"""Summary
+		
+		Args:
+		    filename (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
 		json = self.get_json()
 		with open(filename, "wb") as f:
 			f.write(json)
@@ -267,6 +280,14 @@ class Device:
 
 	@staticmethod
 	def load_from_json(filename):
+		"""Summary
+		
+		Args:
+		    filename (TYPE): Description
+		
+		Returns:
+		    TYPE: Description
+		"""
 		with open(filename, "rb") as f:
 			data = json.load(f)
 

@@ -321,19 +321,22 @@ void loop() {
   }
 
   // GUI Communication.
-  digitalWrite(LED_COM, LOW);
+  //digitalWrite(LED_COM, LOW);
 
   if (Serial.available()) {
     
-    digitalWrite(LED_COM, HIGH);
+    //digitalWrite(LED_COM, HIGH);
 
     get_serial_data(inputMessage);
 
     char keyword = inputMessage[0];
 
-    if (keyword == 'i') {
-      Serial.print("device_id=");
-      Serial.println(deviceId);
+    if (keyword == 'c') {
+      Serial.print("v");
+      Serial.print((sizeof(vacuumValveValues) / sizeof(bool)));
+      Serial.print(",");
+      Serial.print("m");
+      Serial.println((sizeof(microSwitchPins) / sizeof(int)));
     }
     else if (keyword == 'q') {
       // Query.
@@ -434,12 +437,16 @@ void loop() {
       if (channelIdentifier == 's') {
         
         int number = (channelNumber == '0') ? 0 : 1;
-        
-        if ((valueToSet == "1") && (solenoidValveValues[number] == LOW)) {
+
+        //if ((valueToSet == '1') && (solenoidValveValues[number] == LOW)) {
+        if (valueToSet[0] == '1') {
           solenoidValveValues[number] = HIGH;
+          digitalWrite(LED_COM, HIGH);
         }
-        else if ((valueToSet == "0") && (solenoidValveValues[number] == HIGH)) {
+        //else if ((valueToSet == '0') && (solenoidValveValues[number] == HIGH)) {
+        else if (valueToSet[0] == '0') {
           solenoidValveValues[number] = LOW;
+          digitalWrite(LED_COM, LOW);
         }
          
       }

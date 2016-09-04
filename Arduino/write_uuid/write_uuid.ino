@@ -1,6 +1,6 @@
 #include <EEPROM.h>
 
-char id[] = "43d581f6-2ad5-4b51-b8f6-a945a26ab5f5";  // UUID4. One way of obtaining this is to do "import uuid;  uuid.uuid4()" in a python console.
+char id[] = "41056695-d374-48cc-8519-17d80c428a4e";  // UUID4. One way of obtaining this is to do "import uuid;  uuid.uuid4()" in a python console.
 
 void setup() {
   // put your setup code here, to run once:

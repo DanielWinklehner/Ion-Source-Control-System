@@ -5,10 +5,6 @@ To go through all devices in your network and look for a Raspberry Pi, run: arp 
 
 On Windows, install and run Wireshark(https://www.wireshark.org/) and use the filter: eth.addr[0:3] == B8:27:EB
 
-Login Credentials:
-
-Username: mist-1
-Password: h2+IonSource
 
 ====================================================
 

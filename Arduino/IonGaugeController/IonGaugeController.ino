@@ -33,8 +33,8 @@ Adafruit_SSD1306 display(OLED_RESET);
 // Relays and Gauge on/off switches
 #define RELAY1     50  // unused       
 #define RELAY2     51  // Gauge 2 on/off                     
-#define RELAY3     52  // Gauge 1 calibrate    
-#define RELAY4     53  // Gauge 1 on/off
+#define RELAY4     52  // Gauge 1 calibrate    
+#define RELAY3     53  // Gauge 1 on/off
 
 #define GAUGE1_ON    18
 #define GAUGE1_CALIB 3
@@ -81,7 +81,7 @@ volatile unsigned long last_micros;
 
 volatile bool gauge1_calib_flag = false;
 
-int samples = 50;
+int samples = 100;
 double gauge1_raw = 0;
 double gauge2_raw = 0;
 double gauge1_volt = 0.0;
@@ -98,6 +98,7 @@ String gauge2_state = "OFF";
 char deviceId[37];
 char inputMessage[128];
 
+bool LEDStatus = false;
 
 void setup()   { 
   // Initialize the pin for blinking com LED
@@ -171,7 +172,7 @@ void get_serial_data(char * message) {
   while(Serial.available()) {
       message[i] = Serial.read();
       i++;
-      delay(2);
+      delay(5);
   }
   
 }
@@ -371,6 +372,9 @@ void convert_scientific_notation_to_mist1(char * source, char * target, unsigned
 
 void gauge1_on_off_interrupt()
 {
+
+  //Serial.println("Gauge 1 on off interrupt called.");
+  
   if((long)(micros() - last_micros) >= debouncing_time * 1000) 
   {
     if (!gauge1_running && !gauge1_err)
@@ -412,6 +416,9 @@ void gauge1_calib_interrupt()
 
 void gauge2_on_off_interrupt()
 {
+
+  //Serial.println("Gauge 2 on off interrupt called.");
+  
   if((long)(micros() - last_micros) >= debouncing_time * 1000) 
   {
     if (!gauge2_running && !gauge2_err)
@@ -464,9 +471,12 @@ void loop() {
       gauge1_raw += double(analogRead(GAUGE1_IN));
     }
     gauge1_raw /= double(samples);
+    
     gauge1_volt = raw_to_volt(gauge1_raw);
     gauge1_torr = volt_to_torr_pirani(gauge1_volt);
     gauge1_torr_str = formatted_pressure(gauge1_torr);
+
+    //Serial.println(gauge1_volt);
 
     if (gauge1_volt > 9.2)
     {
@@ -485,13 +495,13 @@ void loop() {
     else if (gauge1_volt > 9.1)
     {
       // Above 10 V is considered out of range, so we tell the user and 
-      // display the maximum pressure value in the fit (@10 V).
+      // display the maximum pressure value in the fit (@9.1 V).
       gauge1_state = String("HIGH");
     }
     else if (gauge1_volt < 3.0)
     {
       // Below 3 V is considered out of range, so we tell the user and 
-      // display the minimum pressure value in the fit (@2 V).
+      // display the minimum pressure value in the fit (@3 V).
       gauge1_state = String("LOW");
     }
     else
@@ -604,9 +614,8 @@ void loop() {
 
     char keyword = inputMessage[0];
 
-    if (keyword == 'i') {
-      Serial.print("device_id=");
-      Serial.println(deviceId);
+    if (keyword == 'c') {
+      Serial.println("s1,p1");
     }
     else if (keyword == 'q') {
       // Query.
@@ -655,20 +664,19 @@ void loop() {
           if (channelIdentifiers[channelIndex] == 's') {
             
             // Gauge state.
-            if (channelNumbers[channelIndex] == 1) {
-              valueToOutput = (gauge1_state == "OFF") ? 0 : 1;
+            if (channelNumbers[channelIndex] == 0) {
+              valueToOutput = (gauge1_state == "OFF") ? 0 : 1;  
             }
-            else if (channelNumbers[channelIndex] == 2) {
+            else if (channelNumbers[channelIndex] == 1) {
               valueToOutput = (gauge2_state == "OFF") ? 0 : 1;
             }
-            
           }
           else if (channelIdentifiers[channelIndex] == 'p') {
             // Gauge pressure.
-            if (channelNumbers[channelIndex] == 1) {
+            if (channelNumbers[channelIndex] == 0) {
               valueToOutput = gauge1_torr;
             }
-            else if (channelNumbers[channelIndex] == 2) {
+            else if (channelNumbers[channelIndex] == 1) {
               valueToOutput = gauge2_torr;
             }
           }
@@ -691,7 +699,7 @@ void loop() {
     }
     else if (keyword == 's') {
       // Setting values.
-
+      
       char channelIdentifier = inputMessage[1];
       char channelNumber = inputMessage[2];
 
@@ -712,10 +720,10 @@ void loop() {
 
       //float value = atof(valueToSet);
 
-      if (channelIdentifier == 'g') {
-        if (channelNumber == '1') {
-          if (valueToSet == '1') {
-            if (!gauge1_running){
+      if (channelIdentifier == 's') {
+        if (channelNumber == '0') {
+          if (valueToSet[0] == '1') {
+            if ( ! gauge1_running){
               gauge1_on_off_interrupt();
             }
           } 
@@ -725,19 +733,31 @@ void loop() {
             }
           }
         }
-      }
-      else if (channelNumber == '2') {
-        if (valueToSet == '1') {
-          if (!gauge2_running){
-            gauge2_on_off_interrupt();
-          }
-        } 
-        else {
-          if (gauge2_running){
-            gauge2_on_off_interrupt();
+        else if (channelNumber == '1') {
+          if (valueToSet[0] == '1') {
+            if ( ! gauge2_running){
+              gauge2_on_off_interrupt();
+            }
+          } 
+          else {
+            if (gauge2_running){
+              gauge2_on_off_interrupt();
+            }
           }
         }
+
+        if (valueToSet[0] == '1') {
+          //Serial.println("Turning the light on!");
+          //digitalWrite(LED_COM, HIGH);
+        }
+        else if (valueToSet[0] == '0') {
+          //Serial.println("Turning the light off!");
+          //digitalWrite(LED_COM, LOW);
+        }
+
+            
       }
+      
     }
   }  
 }
@@ -784,7 +804,7 @@ double raw_to_volt(double raw)
   // Arduino samples 5 V into 1024 bins.
   // Because the ion gauges give back 0-10 V, there is a 
   // voltage divider after the differential amplifier.
-  return raw / 1023.0 * 5.0 / 3.9 * 8.6 ;
+  return raw / 1023.0 * 5.0 / 3.9 * 8.55 ;
 }
 
 double volt_to_torr_pirani(double volt)

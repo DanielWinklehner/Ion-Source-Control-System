@@ -89,7 +89,7 @@ void setup()   {
     digitalWrite(flowSensorPins[i], HIGH);
   }
 
-  Serial.begin(115200);
+  Serial.begin(115200); // 115200
 
   // Get this Arduino's device ID from memory.
   for (int i=0; i < 36; i++) {
@@ -174,9 +174,8 @@ void get_serial_data(char * message) {
   while(Serial.available()) {
       message[i] = Serial.read();
       i++;
-      delay(2);
+      delay(1);
   }
-  
 }
 
 int get_number_of_channels_queried(char * inputMessage ) {
@@ -391,7 +390,7 @@ void loop() {
   // Every half second, calculate and print litres/hour, and read temperatures
   // The temperatures can be moved into their own if clause to read them 
   // out more often.
-  if(currentTime >= (cloopTime + 1000)) {
+  if(currentTime >= (cloopTime + 500)) {
     
     cloopTime = currentTime; // Updates cloopTime
     // Read Flow Meters.
@@ -401,7 +400,7 @@ void loop() {
       flowSensorFreqs[i] = 0; // Reset counter.
     }
     
-    // Temperature sensors (read out avery second for now)
+    // Temperature sensors (read out every half second for now)
     t[0] = temperature1->readThermocouple(CELSIUS);
     t[1] = temperature2->readThermocouple(CELSIUS);
     t[2] = temperature3->readThermocouple(CELSIUS);
@@ -409,7 +408,7 @@ void loop() {
     t[4] = temperature5->readThermocouple(CELSIUS);
     t[5] = temperature6->readThermocouple(CELSIUS);
     t[6] = temperature7->readThermocouple(CELSIUS);
-//    t[7] = temperature8->readThermocouple(CELSIUS);
+    // t[7] = temperature8->readThermocouple(CELSIUS);
   }
    
   // GUI Communication.
@@ -421,13 +420,16 @@ void loop() {
 
     get_serial_data(inputMessage);
 
-    //Serial.println(inputMessage);
+    // Serial.println(inputMessage);
 
     char keyword = inputMessage[0];
 
-    if (keyword == 'i') {
-      Serial.print("device_id=");
-      Serial.println(deviceId);
+    if (keyword == 'c') {
+      Serial.print("f");
+      Serial.print((sizeof(flowSensorPins) / sizeof(int)));
+      Serial.print(",");
+      Serial.print("t");
+      Serial.println((sizeof(t) / sizeof(float)));
     }
     else if (keyword == 'q') {
       // Query.
@@ -476,13 +478,15 @@ void loop() {
           if (channelIdentifiers[channelIndex] == 'f') {
             // Flow meter.
             if ((channelNumbers[channelIndex] >= 0) && (channelNumbers[channelIndex] < (sizeof(flowSensorPins) / sizeof(int)))) {
-              valueToOutput = flowSensorFreqsWrite[channelNumbers[channelIndex]];
+              //valueToOutput = flowSensorFreqsWrite[channelNumbers[channelIndex]];
+              valueToOutput = random(0, 10);
             } 
           }
           else if (channelIdentifiers[channelIndex] == 't') {
             // Temperature sensor.
             if ((channelNumbers[channelIndex] >= 0) && (channelNumbers[channelIndex] < (sizeof(t) / sizeof(float)))) {
-              valueToOutput = t[channelNumbers[channelIndex]];
+              //valueToOutput = t[channelNumbers[channelIndex]];
+              valueToOutput = random(10, 20);
             } 
           }
   
@@ -569,6 +573,9 @@ void loop() {
 
   */
   
+  }
+  else {
+   //Serial.println("Serial not available!");
   }
 }
 

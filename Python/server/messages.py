@@ -42,11 +42,29 @@ def build_query_message(channel_names, precisions):
 def build_set_message(channel_names, values_to_set):
 
 	# Supports 1 message at at time only at the moment.
+	
+	if values_to_set[0] == "True":
+		values_to_set[0] = "1"
+	elif values_to_set[0] == "False":
+		values_to_set[0] = "0"
 
 	msg = "s"
-	msg += channel_names[0]
-	msg += values_to_set[0]
+	msg += str(channel_names[0])
+	msg += str(values_to_set[0])
 
-	return msg
+	return str(msg)
+
+def decode_channel_names(message):
+	all_channels = []
+	channel_names = message.split(",")
+
+	for channel_name in channel_names:
+		name = channel_name[0].strip(" \r\n")
+		total_number = int(channel_name[1].strip(" \r\n"))
+
+		for i in range(total_number):
+			all_channels.append( "{}{}".format(name, i) )
+
+	return all_channels
 
 # print parse_arduino_output_message("o04f0+60231+f1+000000+f2+000+f3+00000+")

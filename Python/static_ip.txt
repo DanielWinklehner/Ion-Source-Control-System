@@ -1,1 +1,15 @@
 http://raspberrypi.stackexchange.com/questions/37920/how-do-i-set-up-networking-wifi-static-ip
+
+Server IP:
+10.77.0.2
+
+cd /var/www/html/Ion-Source-Control-System/Python/server/
+
+ps aux | grep server.py
+
+sudo service apache2 stop (or start or reload)
+
+http://10.77.0.2/arduino/all
+
+How to find FTDI Serial Number:
+http://superuser.com/questions/748038/identifying-usb-devices
