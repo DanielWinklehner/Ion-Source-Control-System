@@ -1613,8 +1613,8 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
-	# control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=80)
-	control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=5000)
+	control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=80)
+	# control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=5000)
 
 	# Setup data logging.
 	current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
@@ -1643,6 +1643,7 @@ if __name__ == "__main__":
 	# Test three Arduinos running the sensor box software for now
 	# sensor_box_ids = ["95432313837351706152",
 					  # "95433343933351B012C2"]
+	'''
 	sensor_box_ids = ["95433343933351B012C2"]
 
 	for j, sensor_id in enumerate(sensor_box_ids):
@@ -1678,7 +1679,8 @@ if __name__ == "__main__":
 
 		# Add our device to the control system.
 		control_system.add_device(sensor_box)
-
+	'''
+	'''
 	# Add channels to the interlock box
 	# 2 Microswitches
 	for i in range(2):
@@ -1714,6 +1716,35 @@ if __name__ == "__main__":
 		interlock_box.add_channel(ch)
 
 	control_system.add_device(interlock_box)
+	'''
+
+	ion_gauge = Device("ion_gauge", arduino_id="954323138373519002A2", label="Ion Gauge")
+	ion_gauge.set_overview_page_presence(True)
+
+	for i in range(2):
+	    ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
+	                 upper_limit=1,
+	                 lower_limit=0,
+	                 data_type=bool,
+	                 mode="read",
+	                 display_order=(4 - i))
+
+	    ion_gauge.add_channel(ch)
+
+	for i in range(2):
+	    ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
+	                 upper_limit=1000,
+	                 lower_limit=0,
+	                 data_type=float,
+	                 mode="read",
+	                 unit="Torr",
+	                 display_order=(4 - i),
+	                 displayformat=".2e")
+
+	    ion_gauge.add_channel(ch)
+
+	control_system.add_device(ion_gauge)
+
 
 	# Run the control system, this has to be last as it does
 	# all the initializations and adding to the GUI.

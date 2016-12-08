@@ -1,0 +1,22 @@
+Arduino:
+1) Implement query / set.
+X) Move String to Character.
+X) Implement object prototype so that we don't have to copy/paste similar set / get functions for the Communication class.
+X) Some pre-defined functions, like a dummy function, simple on/off (set 1 pin to High / Low). Put these in the library. For both input and output.
+
+c) Generic Arduino code. Set all the pins to different values and output those. Helps figure out which pins are not working. PWMs and Analog stuff.
+
+Server:
+2) The server already knows if the output of a query is going to be > 128 bytes. So, if that's going to happen, the server should return an error.
+
+Once (1) is done, server + GUI so that we at least have a working version of the entire setup.
+
+
+If precision for any one of the channels queried (among multiple channels), then return ERROR for the entire operation. Abort everything and just return error.
+
+Version 3 => Subfolders for each of the arduinos and put the new codes there. Make a subfolder for power supply but do not change anything for it.
+
+Order to move the Arduino code to use new library:
+a) Sensor Box
+b) Interlock Box
+c) Ion Gauge Controller
