@@ -13,3 +13,9 @@ http://10.77.0.2/arduino/all
 
 How to find FTDI Serial Number:
 http://superuser.com/questions/748038/identifying-usb-devices
+
+
+
+address 10.77.0.3 (or .2)
+netmask 255.255.0.0
+gateway 10.77.0.1

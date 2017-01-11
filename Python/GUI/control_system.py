@@ -232,10 +232,10 @@ class MIST1ControlSystem:
 	def load_device_from_file_callback(self, button):
 
 		dialog = Gtk.FileChooserDialog("Please choose a file.", self._main_window,
-									   Gtk.FileChooserAction.OPEN,
-									   (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+										 Gtk.FileChooserAction.OPEN,
+										 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
 										Gtk.STOCK_OPEN, Gtk.ResponseType.OK),
-									   )
+										 )
 
 		filter_text = Gtk.FileFilter()
 		filter_text.set_name("JSON files")
@@ -311,13 +311,13 @@ class MIST1ControlSystem:
 
 			channel_iter = self._settings_page_tree_store.insert(device_iter, 0,
 																 [channel.label(), "Channel", "edit_channel",
-																  channel.name(), device.name()])
+																	channel.name(), device.name()])
 
 			print channel_iter, self._settings_page_tree_store.get_value(channel_iter, 0)
 
 			channel_iter = self._settings_page_tree_store.append(device_iter,
 																 ["<b>[ Add a New Channel ]</b>", "", "add_new_channel",
-																  device.name(), device.name()])
+																	device.name(), device.name()])
 
 			self._settings_tree_view.show_all()
 
@@ -358,6 +358,10 @@ class MIST1ControlSystem:
 
 		try:
 
+			print url
+			print data
+			print purpose
+			
 			# start = time.time()
 			r = requests.post(url, data=data)
 			response_code = r.status_code
@@ -515,19 +519,19 @@ class MIST1ControlSystem:
 		for channel_name, channel in device.channels().items():
 			channel_iter = self._settings_page_tree_store.append(device_iter,
 																 [channel.label(), "Channel", "edit_channel",
-																  channel.name(), device.name()])
+																	channel.name(), device.name()])
 
 			# Add to "values".
 			# Initialize with current time and 0.0 this will eventually flush out of the deque
 			self._x_values[(device.name(), channel_name)] = deque(np.linspace(time.time()-5, time.time(),
-																			  self._retain_last_n_values),
-																  maxlen=self._retain_last_n_values)
+																				self._retain_last_n_values),
+																	maxlen=self._retain_last_n_values)
 			self._y_values[(device.name(), channel_name)] = deque(np.zeros(self._retain_last_n_values),
-																  maxlen=self._retain_last_n_values)
+																	maxlen=self._retain_last_n_values)
 
 		channel_iter = self._settings_page_tree_store.append(device_iter,
 															 ["<b>[ Add a New Channel ]</b>", "", "add_new_channel",
-															  device.name(), device.name()])
+																device.name(), device.name()])
 
 		self._settings_tree_view.show_all()
 
@@ -643,35 +647,35 @@ class MIST1ControlSystem:
 
 			elif self._communication_thread_mode == "write" and self._set_value_for_widget is not None:
 			
-				    print "Setting value."
+						print "Setting value."
 				
-				    widget_to_set_value_for = self._set_value_for_widget
-				    channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
+						widget_to_set_value_for = self._set_value_for_widget
+						channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
 				
-				    print "Communicating updated value for widget {}".format(widget_to_set_value_for.get_name())
+						print "Communicating updated value for widget {}".format(widget_to_set_value_for.get_name())
 				
-				    # Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
+						# Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
 				
-				    if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
+						if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
 				
-				        try:
-				            value_to_update = widget_to_set_value_for.get_value()
-				        except ValueError:
-				            value_to_update = -1
+								try:
+										value_to_update = widget_to_set_value_for.get_value()
+								except ValueError:
+										value_to_update = -1
 				
-				        print "Setting value = {}".format(value_to_update)
+								print "Setting value = {}".format(value_to_update)
 				
-				        try:
-				            channel_to_set_value_for.set_value(value_to_update)
-				        except Exception, e:
-				            # Setting value failed. There was some exception.
-				            # Write the error message to the status bar.
-				            self._status_bar.push(2, str(e))
+								try:
+										channel_to_set_value_for.set_value(value_to_update)
+								except Exception, e:
+										# Setting value failed. There was some exception.
+										# Write the error message to the status bar.
+										self._status_bar.push(2, str(e))
 				
-				    self.update_channel_values_to_arduino(channel_to_set_value_for)
+						self.update_channel_values_to_arduino(channel_to_set_value_for)
 				
-				    self._communication_thread_mode = "read"
-				    self._set_value_for_widget = None
+						self._communication_thread_mode = "read"
+						self._set_value_for_widget = None
 
 		print "Closing communication thread."
 
@@ -795,10 +799,10 @@ class MIST1ControlSystem:
 				checkbox.set_active(False)
 
 		dialog = Gtk.FileChooserDialog("Save Device", self._main_window,
-									   Gtk.FileChooserAction.SELECT_FOLDER,
-									   (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+										 Gtk.FileChooserAction.SELECT_FOLDER,
+										 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
 										("_Save"), Gtk.ResponseType.OK),
-									   )
+										 )
 
 		content_area = dialog.get_content_area()
 
@@ -857,7 +861,7 @@ class MIST1ControlSystem:
 					device_count += 1
 
 			msg_dialog = Gtk.MessageDialog(dialog, 0, Gtk.MessageType.INFO,
-										   Gtk.ButtonsType.OK, "Device Save Successful")
+											 Gtk.ButtonsType.OK, "Device Save Successful")
 
 			noun = "device"
 			if device_count > 1:
@@ -885,18 +889,18 @@ class MIST1ControlSystem:
 		:return:
 		"""
 		con = {"main_quit": self.main_quit,
-			   "stop_button_clicked_cb": self.emergency_stop,
-			   "on_main_statusbar_text_pushed": self.statusbar_changed_callback,
-			   "about_program_menu_item_activated": self.about_program_callback,
-			   "add_device_toolbutton_clicked_cb": self.add_device_callback,
-			   "edit_device_toolbutton_clicked_cb": self.edit_device_callback,
-			   "load_device_from_file_toolbutton_cb": self.load_device_from_file_callback,
-			   "save_as_devices_toolbutton_clicked_cb": self.save_as_devices_callback,
-			   "settings_expand_all_clicked_cb": self.settings_expand_all_callback,
-			   "settings_collapse_all_clicked_cb": self.settings_collapse_all_callback,
-			   "plotting_setup_channels_clicked_cb": self.plotting_setup_channels_callback,
-			   "notebook_page_changed": self.notebook_page_changed_callback,
-			   }
+				 "stop_button_clicked_cb": self.emergency_stop,
+				 "on_main_statusbar_text_pushed": self.statusbar_changed_callback,
+				 "about_program_menu_item_activated": self.about_program_callback,
+				 "add_device_toolbutton_clicked_cb": self.add_device_callback,
+				 "edit_device_toolbutton_clicked_cb": self.edit_device_callback,
+				 "load_device_from_file_toolbutton_cb": self.load_device_from_file_callback,
+				 "save_as_devices_toolbutton_clicked_cb": self.save_as_devices_callback,
+				 "settings_expand_all_clicked_cb": self.settings_expand_all_callback,
+				 "settings_collapse_all_clicked_cb": self.settings_collapse_all_callback,
+				 "plotting_setup_channels_clicked_cb": self.plotting_setup_channels_callback,
+				 "notebook_page_changed": self.notebook_page_changed_callback,
+				 }
 
 		return con
 
@@ -1065,8 +1069,8 @@ class MIST1ControlSystem:
 
 				add_device_button = Gtk.Button(label="Add Device")
 				add_device_button.connect("clicked", self.settings_add_device_callback,
-										  dict(name=entries[0], label=entries[1], arduino_id=entries[2],
-											   overview_page_presence=entries[3]))
+											dict(name=entries[0], label=entries[1], arduino_id=entries[2],
+												 overview_page_presence=entries[3]))
 				grid.attach_next_to(add_device_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
 			elif selection_type == "edit_channel":
@@ -1084,7 +1088,7 @@ class MIST1ControlSystem:
 				labels = ["Name", "Label", "Lower Limit", "Upper Limit", "Unit"]
 				entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
 				values = [channel.name(), channel.label(), channel.lower_limit(),
-						  channel.upper_limit(), channel.unit()]
+							channel.upper_limit(), channel.unit()]
 
 				for label_text, entry, value in zip(labels, entries, values):
 
@@ -1210,9 +1214,9 @@ class MIST1ControlSystem:
 
 				add_device_button = Gtk.Button(label="Add Channel")
 				add_device_button.connect("clicked", self.settings_add_channel_callback, device_name,
-										  dict(name=entries[0], label=entries[1], 
-											   lower_limit=entries[2], upper_limit=entries[3], unit=entries[4],
-											   data_type=data_type_combo, mode=mode_combo))
+											dict(name=entries[0], label=entries[1], 
+												 lower_limit=entries[2], upper_limit=entries[3], unit=entries[4],
+												 data_type=data_type_combo, mode=mode_combo))
 				grid.attach_next_to(add_device_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
 			self._builder.get_object("settings_page_settings_box").add(self._edit_frame)
@@ -1332,8 +1336,8 @@ class MIST1ControlSystem:
 			mist1_plot = MIST1Plot(variable_name="{}:{}".format(self._devices[device_name].label(),
 																self._devices[device_name].channels()[
 																	channel_name].label()),
-								   x_s=self._x_values[(device_name, channel_name)],
-								   y_s=self._y_values[(device_name, channel_name)])
+									 x_s=self._x_values[(device_name, channel_name)],
+									 y_s=self._y_values[(device_name, channel_name)])
 
 			# mist1_plot.get_canvas().set_yscale('log')
 			self._mist1_plots[(device_name, channel_name)] = mist1_plot
@@ -1426,7 +1430,7 @@ class MIST1ControlSystem:
 
 			device_iter = self._plot_page_channels_tree_store.append(None,
 																	 [False, device.label(),
-																	  "Device", device.name(), device.name()])
+																		"Device", device.name(), device.name()])
 
 			for channel_name, channel in device.channels().items():
 
@@ -1434,9 +1438,9 @@ class MIST1ControlSystem:
 						channel.data_type() == float or channel.data_type() == int):
 
 					channel_iter = self._plot_page_channels_tree_store.append(device_iter,
-																			  [False,
-																			   channel.label(), "Channel",
-																			   device.name(), channel.name()])
+																				[False,
+																				 channel.label(), "Channel",
+																				 device.name(), channel.name()])
 
 	def setup_plotting_page(self):
 
@@ -1613,8 +1617,8 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
-	control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=80)
-	# control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=5000)
+	# control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=80)
+	control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=5000)
 
 	# Setup data logging.
 	current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
@@ -1635,14 +1639,14 @@ if __name__ == "__main__":
 	# Test Interlock Arduino => 41b70a36-a206-41c5-b743-1e5b8429b9a1
 	# ************************ #
 
-	interlock_box = Device("interlock_box",
-						   arduino_id="95432313837351706152",
-						   label="Interlock Box",
-						   on_overview_page=True)
+	# interlock_box = Device("interlock_box",
+	# 					   arduino_id="95432313837351706152",
+	# 					   label="Interlock Box",
+	# 					   on_overview_page=True)
 
 	# Test three Arduinos running the sensor box software for now
 	# sensor_box_ids = ["95432313837351706152",
-					  # "95433343933351B012C2"]
+						# "95433343933351B012C2"]
 	'''
 	sensor_box_ids = ["95433343933351B012C2"]
 
@@ -1718,32 +1722,79 @@ if __name__ == "__main__":
 	control_system.add_device(interlock_box)
 	'''
 
-	ion_gauge = Device("ion_gauge", arduino_id="954323138373519002A2", label="Ion Gauge")
-	ion_gauge.set_overview_page_presence(True)
+	# ion_gauge = Device("ion_gauge", arduino_id="954323138373519002A2", label="Ion Gauge")
+	# ion_gauge.set_overview_page_presence(True)
+
+	# for i in range(2):
+	#     ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
+	#                  upper_limit=1,
+	#                  lower_limit=0,
+	#                  data_type=bool,
+	#                  mode="read",
+	#                  display_order=(4 - i))
+
+	#     ion_gauge.add_channel(ch)
+
+	# for i in range(2):
+	#     ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
+	#                  upper_limit=1000,
+	#                  lower_limit=0,
+	#                  data_type=float,
+	#                  mode="read",
+	#                  unit="Torr",
+	#                  display_order=(4 - i),
+	#                  displayformat=".2e")
+
+	#     ion_gauge.add_channel(ch)
+
+	# control_system.add_device(ion_gauge)
+
+
+	ps_controller = Device("ps_controller", arduino_id="95432313837351E00271", label="Power Supple Controller")
+	ps_controller.set_overview_page_presence(True)
 
 	for i in range(2):
-	    ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-	                 upper_limit=1,
-	                 lower_limit=0,
-	                 data_type=bool,
-	                 mode="read",
-	                 display_order=(4 - i))
+			ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
+									 upper_limit=1,
+									 lower_limit=0,
+									 data_type=bool,
+									 mode="write",
+									 display_order=(4 - i))
 
-	    ion_gauge.add_channel(ch)
+			ps_controller.add_channel(ch)
+
 
 	for i in range(2):
-	    ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-	                 upper_limit=1000,
-	                 lower_limit=0,
-	                 data_type=float,
-	                 mode="read",
-	                 unit="Torr",
-	                 display_order=(4 - i),
-	                 displayformat=".2e")
+		ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
+								 upper_limit=1,
+								 lower_limit=0,
+								 data_type=bool,
+								 mode="write",
+								 display_order=(4 - i))
 
-	    ion_gauge.add_channel(ch)
+		ps_controller.add_channel(ch)
 
-	control_system.add_device(ion_gauge)
+	for i in range(2):
+		ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
+								 upper_limit=1,
+								 lower_limit=0,
+								 data_type=bool,
+								 mode="write",
+								 display_order=(4 - i))
+
+		ps_controller.add_channel(ch)
+
+
+	ch = Channel(name="x".format(i + 1), label="EXT_ILK",
+							 upper_limit=1,
+							 lower_limit=0,
+							 data_type=bool,
+							 mode="write",
+							 display_order=(4 - i))
+
+	ps_controller.add_channel(ch)
+
+	control_system.add_device(ps_controller)
 
 
 	# Run the control system, this has to be last as it does

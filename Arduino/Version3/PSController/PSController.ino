@@ -34,7 +34,7 @@
 
 // Set up serial communication
 char inputMessage[128];
-mist1::Communication com = mist1::Communication();
+mist1::Communication com = mist1::Communication("TestPSController1");
 
 // Set up interlock switch debounce time
 long debouncing_time = 150; //Debouncing Time in Milliseconds

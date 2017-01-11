@@ -13,13 +13,14 @@ String mist1::Communication::get_com_name() {
 void mist1::Communication::add_channel(Channel ch) {  
   _all_channels[_number_of_channels] = ch;
   _number_of_channels++;
-
+  /*
   Serial.print("Adding channel ");
   Serial.print(ch.get_name());
   Serial.print(", with identifier ");
   Serial.print(ch.get_channel_identifier());
   Serial.print(", and number ");
   Serial.println(ch.get_channel_number());
+  */
 }
 
 
