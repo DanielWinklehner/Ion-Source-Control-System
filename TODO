@@ -27,7 +27,7 @@ Wednesday, Jan 11, 2017:
 =========================
 
 -1) Dummy Server.
-+0) Ask on StackOverflow what the best way to do all this communication is.
+
 +1) Polling rate: Fresh start. Maintain a certain speed.
 +2) IDEA: Always present polling signal. The GUI, every second, asks each of the arduinos for their names (or something). 
 +3) Timeouts: arduino-to-server communication, how long we are willing to wait on the GUI for a response not caring what happens in-between, 
@@ -36,8 +36,14 @@ Wednesday, Jan 11, 2017:
 +6) For each received message, the set thread sees if it's a handshake. If it's not, the query thread takes it and uses it. Of course, all of this after checking if it's an error. The return message would be a shared memory object for these three threads (query, set, and error). Two flags: Message received, Not-a-handshake. Set thread looks at it. If both true, then query thread goes through the message; deletes the message and sets both the flags to False. 
 +7) The GUI needs to store its set messages in some array and needs to compare the responses to those set messages and time it to take to get the responses to the timeout we've set for waiting for an answer.
 +8) The set thread regularly needs to go through the stored set messages and each one of them need to have the set message and a timestamp. Compare to current time; if it's longer than the timeeout, resend it (third flag- "resent?"). If it's already been resent, the second time delete the message and throw an error saying, "Did not recieve an expected response from the Arduino."
-+9) If the GUI can't communicate to the server, there should be a big warning.
++9) If the GUI can't communicate to the server, there should be a big warning.b
 
 Things to Think Of:
 ====================
 +1) Note: We have to think about what happens, for example, if the interlock channels don't receive a value for a long time. Interlocks are critical and that should really shut down everything. 
+
+
+Done
+====
+
++0) Ask on StackOverflow what the best way to do all this communication is.
