@@ -1607,7 +1607,11 @@ class MIST1ControlSystem:
 if __name__ == "__main__":
 
     # control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=80)
+<<<<<<< HEAD
+    control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=5000)
+=======
     control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
+>>>>>>> 4f3a5b20741f63360988aa087738ef6845150596
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
@@ -1753,7 +1757,11 @@ if __name__ == "__main__":
 
     for i in range(2):
 
+<<<<<<< HEAD
+        ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
+=======
         ch = Channel(name="f{}".format(i + 1), label="PS{}_V".format(i + 1),
+>>>>>>> 4f3a5b20741f63360988aa087738ef6845150596
                      upper_limit=1,
                      lower_limit=0,
                      data_type=float,
@@ -1767,11 +1775,19 @@ if __name__ == "__main__":
                      upper_limit=1,
                      lower_limit=0,
                      data_type=float,
+<<<<<<< HEAD
+                     mode="read")
+
+        ps_controller.add_channel(ch)
+
+    ch = Channel(name="x".format(i + 1), label="EXT_ILK",
+=======
                      mode="write")
 
         ps_controller.add_channel(ch)
 
     ch = Channel(name="x0", label="EXT_ILK",
+>>>>>>> 4f3a5b20741f63360988aa087738ef6845150596
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
