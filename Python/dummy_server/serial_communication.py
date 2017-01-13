@@ -8,7 +8,7 @@ import subprocess
 import math
 import os
 
-from messages import convert_scientific_notation_to_mist1
+import messages
 
 
 
@@ -28,6 +28,7 @@ class DummySerial():
 		pass
 
 	def write(self, message):
+		print "Writing the following"
 		self._last_message = message
 
 	def read(self):
@@ -42,18 +43,19 @@ class DummySerial():
 
 		print "Called readline", self._last_message, time.localtime().tm_sec
 
-		# Decode this query message to get the precision that the user is asking for and then use that precision instead of hardcoding precision = 3 here.
-		precision = 1
-		current_seconds = time.localtime().tm_sec
+		# Take the query message (stored in self._last_message) and decode it to get everything we need.
 
-		if self._last_message == "c":
+		if self._last_message[0] == "q":
+			# This is a query message.
+			result = messages.decode_query_message(self._last_message)
+
+			output_message = messages.build_output_message(result, [math.sin(time.localtime().tm_sec)] * len(result.keys()))
+
+			return output_message
+
+		elif self._last_message == "c":
 			self._last_message = ""
 			return "f0"
-		else:
-			a = "{:.2e}".format(math.sin(current_seconds))
-
-			return "o01f0" + convert_scientific_notation_to_mist1(a, precision)
-			# return "o01f0+60231+f1+000000+f2+000+f3+00000+"
 
 class SerialCOM(object):
 
@@ -108,10 +110,10 @@ class SerialCOM(object):
 
 			response = self._ser.readline()
 
-			print "I sent a message", message, "and received", response
+			# print "I sent a message", message, "and received", response
 
 			if len(response) != 0:
-				print "And now I am returning a response"
+				# print "And now I am returning a response"
 				return response
 
 		return ""

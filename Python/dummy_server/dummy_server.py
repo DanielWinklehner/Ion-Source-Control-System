@@ -123,7 +123,7 @@ def mp_worker(serial_com, message):
 
 	arduino_response = serial_com.send_message(message)
 	
-	print "this is the arduino response", arduino_response
+	# print "this is the arduino response", arduino_response
 
 	end = time.time()
 
@@ -195,10 +195,14 @@ def pool_query_arduinos(arduino_ids, queries):
 	#print "It took", (end - start), "seconds to collect all the responses."
 	print messages.parse_arduino_output_message(all_responses[0][1])
 
+	print "parsing the responses"
+
 	parsed_response = dict()
 	for arduino_id, raw_output_message in all_responses:
 		parsed_response[arduino_id] = messages.parse_arduino_output_message(raw_output_message)
-		
+	
+	print parsed_response
+	
 	return parsed_response
 
 def set_channel_value_to_arduino(arduino_id, channel_name, value):
@@ -290,7 +294,7 @@ def query_arduinos():
 	arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
 
 
-	print ":the arduino response is", arduinos_response
+	# print ":the arduino response is", arduinos_response
 	end = time.time()
 
 	#print "The response took", (end - start), "seconds."

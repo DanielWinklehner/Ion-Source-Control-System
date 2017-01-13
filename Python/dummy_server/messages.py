@@ -8,9 +8,15 @@ import re
 def convert_scientific_notation_to_mist1(number, precision): 
 
 	print 'the number is', number
+
+	abc = "{:." + str(precision) + "e}"
+	print abc
+	number = abc.format(number)
 	number = str(number)
 	target = [None] * 100
 	
+	print "new nunmber is ", number
+
 	index = 0
 	
 	if (number[0] == '-'):
@@ -51,6 +57,9 @@ def convert_scientific_notation_to_mist1(number, precision):
 
 	final_target = ''.join(map(str, [t for t in target if t != None]))
 
+
+	print final_target
+
 	return final_target
 
 
@@ -63,7 +72,7 @@ def parse_arduino_output_message(output_message):
 
 	matches = re.findall(pattern, output_message[3:], flags=0)
 	
-	print matches
+	# print matches
 
 	result = {}	
 	for match in matches:
@@ -81,7 +90,7 @@ def parse_arduino_output_message(output_message):
 
 		result[channel_name] = value
 	
-	print "thre result is", result[channel_name]
+
 	return result
 
 def build_query_message(channel_names, precisions):
@@ -94,6 +103,47 @@ def build_query_message(channel_names, precisions):
 		msg += "{}{}".format(channel_name, precision)
 
 	return msg
+
+def decode_query_message(message):
+	# The next two letters should give the number of channels queried.
+	number_of_channels = int(message[1:3])
+
+	# Next, use regex to decode individual channel names and their precisions.
+
+	# Everybody stand back, I know regular expressions.
+	pattern = "([a-zA-Z][0-9])([0-9])"
+
+	matches = re.findall(pattern, message[3:], flags=0)
+	
+
+	result = {}	
+	for match in matches:
+		channel_name = match[0]
+		precision = match[1]
+
+		result[channel_name] = precision
+
+	return result
+
+
+def build_output_message(channels_and_precisions, values):
+	print channels_and_precisions
+
+	print values
+
+	output_message = "o" + "%02d" % (len(values),)
+
+	print output_message
+	for (i, (channel_name, precision)) in enumerate(channels_and_precisions.items()):
+		print "in the loop"
+		print channel_name 
+		print values[i], precision
+		print str(convert_scientific_notation_to_mist1(float(values[i]), int(precision)))
+
+		output_message += str(channel_name) + str(convert_scientific_notation_to_mist1(float(values[i]), int(precision)))
+
+	print output_message
+	return output_message
 
 def build_set_message(channel_names, values_to_set):
 
