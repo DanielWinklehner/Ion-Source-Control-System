@@ -4,7 +4,7 @@ import time
 import sys
 import glob
 import json
-import MIST1ControlSystemGUIWidgets
+import GUIWidgets
 
 class Device:
 	def __init__(self, name, arduino_id, label="", channels=None, on_overview_page=False):

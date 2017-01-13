@@ -4,7 +4,7 @@ import time
 import sys
 import glob
 import json
-import MIST1ControlSystemGUIWidgets
+import GUIWidgets
 
 class Channel:
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",

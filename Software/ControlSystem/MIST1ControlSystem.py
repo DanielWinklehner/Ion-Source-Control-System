@@ -21,7 +21,7 @@ from gi.repository import Gtk, GLib, GObject, Gdk
 from Procedure import Procedure
 from Device import Device
 from Channel import Channel
-from MIST1ControlSystemGUIWidgets import *
+from GUIWidgets import *
 
 from DataLogging import DataLogging
 
@@ -64,7 +64,7 @@ class MIST1ControlSystem:
 
         # --- Load the GUI from XML file and initialize connections --- #
         self._builder = Gtk.Builder()
-        self._builder.add_from_file("MIST1ControlSystemMainGUI.glade")
+        self._builder.add_from_file("MIST1ControlSystem.glade")
         self._builder.connect_signals(self.get_connections())
 
         self._main_window = self._builder.get_object("main_window")
