@@ -47,9 +47,9 @@ class DummySerial():
 
 		if self._last_message[0] == "q":
 			# This is a query message.
-			result = messages.decode_query_message(self._last_message)
+			result = Messages.decode_query_message(self._last_message)
 
-			output_message = messages.build_output_message(result, [math.sin(time.localtime().tm_sec)] * len(result.keys()))
+			output_message = Messages.build_output_message(result, [-0.5 * math.sin(time.localtime().tm_sec)] * len(result.keys()))
 
 			return output_message
 
