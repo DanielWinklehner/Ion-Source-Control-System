@@ -9,9 +9,8 @@ def convert_scientific_notation_to_mist1(number, precision):
 
 	print 'the number is', number
 
-	abc = "{:." + str(precision) + "e}"
-	print abc
-	number = abc.format(number)
+	formating_string = "{:." + str(precision) + "e}"
+	number = formating_string.format(number)
 	number = str(number)
 	target = [None] * 100
 	
@@ -138,7 +137,7 @@ def build_output_message(channels_and_precisions, values):
 		print "in the loop"
 		print channel_name 
 		print values[i], precision
-		print str(convert_scientific_notation_to_mist1(float(values[i]), int(precision)))
+		print str(convert_scientific_notation_to_mist1(round(float(values[i]), precision), int(precision)))
 
 		output_message += str(channel_name) + str(convert_scientific_notation_to_mist1(float(values[i]), int(precision)))
 
