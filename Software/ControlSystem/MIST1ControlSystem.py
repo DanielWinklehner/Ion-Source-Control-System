@@ -1,43 +1,21 @@
 from __future__ import division
 
 import gi
-
 gi.require_version('Gtk', '3.0')
-
-import json, ast
-import copy
-import time
-import random
-import threading
-import datetime
-import uuid
-import requests
-
-from collections import deque
-
 from gi.repository import Gtk, GLib, GObject, Gdk
 
-
-from Procedure import Procedure
+import json
+import time
+import threading
+import requests
+from collections import deque
 from Device import Device
 from Channel import Channel
 from GUIWidgets import *
-
 from DataLogging import DataLogging
-
 import Dialogs as MIST1Dialogs
-from MPLCanvasWrapper3 import MPLCanvasWrapper3
 from MIST1Plot import MIST1Plot
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.figure import Figure
-import matplotlib.cm as cm
-
-from matplotlib.backends.backend_gtk3cairo import FigureCanvasGTK3Cairo as FigureCanvas
-from matplotlib.backends.backend_gtk3 import NavigationToolbar2GTK3 as NavigationToolbar
-
-# Maybe have a dedicated add_channel() method just like add_device() so that it can take care of everything,
-# like adding the correct channel to the logger, updating the tree view, etc.
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
 __doc__ = """GUI without actual functionality"""
@@ -48,19 +26,27 @@ class MIST1ControlSystem:
     Main class that runs the GUI for the MIST-1 control system
     """
 
-    def __init__(self, server_ip="127.0.0.1", server_port=80):
+    def __init__(self, server_ip="127.0.0.1", server_port=80, debug=False):
         """
         Initialize the control system GUI
         """
+        self.debug = debug
 
         self._server_ip = server_ip
         self._server_port = server_port
         self._server_url = "http://{}:{}/".format(server_ip, server_port)
 
         r = requests.post(self._server_url + "arduino/all")
-        print r.status_code, r.text
+
+        if self.debug:
+
+            print("{}: {}".format(r.status_code, r.text))
+
         r = requests.post(self._server_url + "arduino/active")
-        print r.status_code, r.text
+
+        if self.debug:
+
+            print("{}: {}".format(r.status_code, r.text))
 
         # --- Load the GUI from XML file and initialize connections --- #
         self._builder = Gtk.Builder()
@@ -163,13 +149,14 @@ class MIST1ControlSystem:
     def log_data(self, channel):
         self._data_logger.log_value(channel=channel)
 
-    # pass
-
     def about_program_callback(self, menu_item):
         """
         :param menu_item:
         :return:
         """
+        if self.debug:
+            print("About Dialog called by {}".format(menu_item))
+
         dialog = self._builder.get_object("about_dialogbox")
         dialog.run()
         dialog.destroy()
@@ -177,6 +164,7 @@ class MIST1ControlSystem:
         return 0
 
     def add_device_callback(self, button):
+
         dialog = MIST1Dialogs.AddDevicesDialog(self._main_window)
 
         dialog.add_pre_existing_devices(self._devices)
@@ -188,15 +176,22 @@ class MIST1ControlSystem:
         if response == Gtk.ResponseType.OK:
             # Reinitialize all devices.
             for device_name, device in self._devices.items():
+
                 if not device.initialized():
+
                     del self._devices[device_name]
-                    print "Adding a new device."
+
+                    if self.debug:
+
+                        print("{} clicked. Adding a new device.".format(button))
+
                     self.add_device(device)
 
             self.reinitialize()
 
-        elif response == Gtk.ResponseType.CANCEL:
-            print("The Cancel button was clicked")
+        elif self.debug and response == Gtk.ResponseType.CANCEL:
+
+                print("Cancel clicked ({}).".format(button))
 
         dialog.destroy()
 
@@ -212,8 +207,11 @@ class MIST1ControlSystem:
 
         if response == Gtk.ResponseType.OK:
             # Reinitialize all devices.
+            if self.debug:
 
-            print "Save Changes clicked."
+                print("Save Changes clicked ({}).".format(button))
+
+            self.reinitialize()
 
             # for device_name, device in self._devices.items():
 
@@ -222,10 +220,9 @@ class MIST1ControlSystem:
             #   #   print "Adding a new device."
             #   #   self.add_device(device)
 
-            self.reinitialize()
+        elif self.debug and response == Gtk.ResponseType.CANCEL:
 
-        elif response == Gtk.ResponseType.CANCEL:
-            print("The Cancel button was clicked")
+                print("Cancel clicked ({}).".format(button))
 
         dialog.destroy()
 
@@ -247,8 +244,10 @@ class MIST1ControlSystem:
         if response == Gtk.ResponseType.OK:
             filename = dialog.get_filename()
 
-            print("Open clicked")
-            print("File selected: " + filename)
+            if self.debug:
+
+                print("Open clicked ({}).".format(button))
+                print("File selected: " + filename)
 
             device = Device.load_from_json(filename)
 
@@ -259,28 +258,38 @@ class MIST1ControlSystem:
 
                 self._devices[device.name()].get_overview_frame().show_all()
 
+        elif self.debug and response == Gtk.ResponseType.CANCEL:
 
-        elif response == Gtk.ResponseType.CANCEL:
-            print("Cancel clicked")
+            print("Cancel clicked.")
 
         dialog.destroy()
 
         return 0
 
     def set_widget_connections(self):
+
         for device_name, device in self._devices.items():
+
             for channel_name, channel in device.channels().items():
 
                 if channel.mode() == "both" or channel.mode() == "write":  # TODO: Find a better way to do this.
 
                     widget = channel.get_overview_page_display()
 
-                    try:  # According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-and-type-in-python, better to use try-except than check type / instanceof.
+                    # According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-
+                    # and-type-in-python, better to use try-except than check type / instanceof.
+                    try:
+
                         widget.get_radio_buttons()[0].connect("toggled", self.set_value_callback, widget)
+
                     except Exception as e:
+
+                        print("Exception {} happened".format(e))
+
                         pass
 
     def add_arduino_status_bar(self, arduino_id, status_bar):
+
         self._arduino_status_bars[arduino_id] = status_bar
 
     def add_channel(self, channel, device):
@@ -299,25 +308,33 @@ class MIST1ControlSystem:
 
             # Add channel to settings page tree.
             # First, find the position of device in the iterator.
+            device_iter = None
+            for j in range(len(self._settings_page_tree_store)):
 
-            for i in range(len(self._settings_page_tree_store)):
-                if device.name() == self._settings_page_tree_store[i][-1]:
-                    position = i
-                    device_path = Gtk.TreePath.new_from_string("{}".format(i))
+                if device.name() == self._settings_page_tree_store[j][-1]:
+
+                    # position = j
+                    device_path = Gtk.TreePath.new_from_string("{}".format(j))
                     device_iter = self._settings_page_tree_store.get_iter(device_path)
                     break
 
-            print device_iter, self._settings_page_tree_store.get_value(device_iter, 0)
+            print("{}: {}".format(device_iter, self._settings_page_tree_store.get_value(device_iter, 0)))
 
             channel_iter = self._settings_page_tree_store.insert(device_iter, 0,
-                                                                 [channel.label(), "Channel", "edit_channel",
-                                                                  channel.name(), device.name()])
+                                                                 [channel.label(),
+                                                                  "Channel",
+                                                                  "edit_channel",
+                                                                  channel.name(),
+                                                                  device.name()])
 
-            print channel_iter, self._settings_page_tree_store.get_value(channel_iter, 0)
+            print("{}: {}".format(channel_iter, self._settings_page_tree_store.get_value(channel_iter, 0)))
 
-            channel_iter = self._settings_page_tree_store.append(device_iter,
-                                                                 ["<b>[ Add a New Channel ]</b>", "", "add_new_channel",
-                                                                  device.name(), device.name()])
+            self._settings_page_tree_store.append(device_iter,
+                                                  ["<b>[ Add a New Channel ]</b>",
+                                                   "",
+                                                   "add_new_channel",
+                                                   device.name(),
+                                                   device.name()])
 
             self._settings_tree_view.show_all()
 
@@ -332,7 +349,7 @@ class MIST1ControlSystem:
         else:
             self._procedures[procedure.get_name()] = procedure
 
-    def send_message_to_server(self, purpose=None, args=[]):
+    def send_message_to_server(self, purpose=None, *args):
 
         url = self._server_url
         data = {}
@@ -358,14 +375,16 @@ class MIST1ControlSystem:
 
         try:
 
-            print url
-            print data
-            print purpose
+            if self.debug:
+
+                print(url)
+                print(data)
+                print(purpose)
 
             # start = time.time()
             r = requests.post(url, data=data)
             response_code = r.status_code
-            response = r.reason
+            # response = r.reason
             # end = time.time()
             # print "The request part took {} seconds.".format(end - start)
 
@@ -377,7 +396,7 @@ class MIST1ControlSystem:
 
         except Exception as e:
 
-            print e
+            print(e)
 
         return r"{}"
 
@@ -388,8 +407,8 @@ class MIST1ControlSystem:
     def get_all_channel_values(self, devices):
 
         arduino_ids = [device.get_arduino_id() for device_name, device in devices.items()]
-        channel_names = [[name for name, ch in device.channels().items() if ch.mode() == 'read'] for device_name, device
-                         in devices.items()]
+        channel_names = [[name for name, mych in device.channels().items() if mych.mode() == 'read'] for
+                         device_name, device in devices.items()]
         precisions = [[4] * len(device.channels()) for device_name, device in devices.items()]
 
         # print "Trying to get channel values for ", arduino_id
@@ -477,7 +496,9 @@ class MIST1ControlSystem:
 
         response = self.send_message_to_server(purpose='set_values', args=[arduino_id, channel_name, value_to_set])
 
-    # print response
+        if self.debug:
+
+            print(response)
 
     def add_device(self, device):
         """
@@ -1567,11 +1588,17 @@ class MIST1ControlSystem:
         :return:
         """
 
+        if self.debug:
+            print("Debug: Notebook {} changed page to {}".format(notebook, page))
+
         if page_num == 1:
+
             self.update_plots()
             self._we_are_on_plot_page = True
             GLib.idle_add(self.update_plots)
+
         else:
+
             self._we_are_on_plot_page = False
 
         return 0
@@ -1608,140 +1635,18 @@ class MIST1ControlSystem:
 if __name__ == "__main__":
 
     # control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=80)
-
-    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000)
-
+    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=True)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
     control_system.register_data_logging_file(filename="log/{}.h5".format(current_time))
 
-    # *** Generate Devices *** #
-    # Each device is connected to a single arduino, several devices can be connected to the
-    # same Arduino, but never several arduinos to a single device!
-    #
-    # --- Actual Arduinos ---- #
-    # SensorBox: 49ffb802-50c5-4194-879d-20a87bcfc6ef
-    # InterlockBox: bd0f5a84-a2eb-4ff3-9ff2-597bf3b2c20a
-    # IonGaugeController: cf436e6b-ba3d-479a-b221-bc387c37b858
-    #
-    # ----- Test Arduinos ------ #
-    # Daniel's dummy Arduino: 43d581f6-2ad5-4b51-b8f6-a945a26ab5f5
-    # Aashish's Sensor Arduino: 2cc580d6-fa29-44a7-9fec-035acd72340e
-    # Test Interlock Arduino => 41b70a36-a206-41c5-b743-1e5b8429b9a1
-    # ************************ #
+    # Set up a dummy device and channels
+    ps_controller = Device("ps_controller",
+                           arduino_id="R2D2",
+                           label="Power Supple Controller",
+                           debug=True)
 
-    # interlock_box = Device("interlock_box",
-    #                      arduino_id="95432313837351706152",
-    #                      label="Interlock Box",
-    #                      on_overview_page=True)
-
-    # Test three Arduinos running the sensor box software for now
-    # sensor_box_ids = ["95432313837351706152",
-    # "95433343933351B012C2"]
-    '''
-    sensor_box_ids = ["95433343933351B012C2"]
-
-    for j, sensor_id in enumerate(sensor_box_ids):
-        sensor_box = Device("sensor_box_{}".format(j),
-                            arduino_id=sensor_id,
-                            label="Sensor Box",
-                            on_overview_page=True)
-
-        # Add channels to the sensor box
-        # 5 Flow Meters:
-        for i in range(5):
-            ch = Channel(name="f{}".format(i), label="Flow Meter {}".format(i),
-                         upper_limit=1,
-                         lower_limit=0,
-                         data_type=float,
-                         mode="read",
-                         unit="lpm",
-                         display_order=(100 - i))
-
-            sensor_box.add_channel(ch)
-
-        # 8 Temperature Sensors: 7 for now (#8 is not connected)
-        for i in range(7):
-            ch = Channel(name="t{}".format(i), label="Temperature Sensor {}".format(i),
-                         upper_limit=1,
-                         lower_limit=0,
-                         data_type=float,
-                         mode="read",
-                         unit="C",
-                         display_order=(50 - i))
-
-            sensor_box.add_channel(ch)
-
-        # Add our device to the control system.
-        control_system.add_device(sensor_box)
-    '''
-    '''
-    # Add channels to the interlock box
-    # 2 Microswitches
-    for i in range(2):
-        ch = Channel(name="m{}".format(i), label="Micro Switch {}".format(i),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="read",
-                     display_order=(11 - 5 - i))
-
-        interlock_box.add_channel(ch)
-
-    # 2 Solenoid valves
-    for i in range(2):
-        ch = Channel(name="s{}".format(i), label="Solenoid Valve {}".format(i),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="write",
-                     display_order=(11 - 5 - 2 - i))
-
-        interlock_box.add_channel(ch)
-
-    # Vacuum Valves. x2.
-    for i in range(2):
-        ch = Channel(name="v{}".format(i), label="Vacuum Valve {}".format(i),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="read",
-                     display_order=(11 - 5 - 2 - 2 - i))
-
-        interlock_box.add_channel(ch)
-
-    control_system.add_device(interlock_box)
-    '''
-
-    # ion_gauge = Device("ion_gauge", arduino_id="954323138373519002A2", label="Ion Gauge")
-    # ion_gauge.set_overview_page_presence(True)
-
-    # for i in range(2):
-    #     ch = Channel(name="gauge_state#{}".format(i + 1), label="Gauge State {}".format(i + 1),
-    #                  upper_limit=1,
-    #                  lower_limit=0,
-    #                  data_type=bool,
-    #                  mode="read",
-    #                  display_order=(4 - i))
-
-    #     ion_gauge.add_channel(ch)
-
-    # for i in range(2):
-    #     ch = Channel(name="gauge_pressure#{}".format(i + 1), label="Gauge Pressure {}".format(i + 1),
-    #                  upper_limit=1000,
-    #                  lower_limit=0,
-    #                  data_type=float,
-    #                  mode="read",
-    #                  unit="Torr",
-    #                  display_order=(4 - i),
-    #                  displayformat=".2e")
-
-    #     ion_gauge.add_channel(ch)
-
-    # control_system.add_device(ion_gauge)
-
-    ps_controller = Device("ps_controller", arduino_id="R2D2", label="Power Supple Controller")
     ps_controller.set_overview_page_presence(True)
 
     for i in range(2):
@@ -1755,7 +1660,6 @@ if __name__ == "__main__":
         ps_controller.add_channel(ch)
 
     for i in range(2):
-
 
         ch = Channel(name="f{}".format(i + 1), label="PS{}_V".format(i + 1),
 
@@ -1775,8 +1679,6 @@ if __name__ == "__main__":
                      mode="read")
 
         ps_controller.add_channel(ch)
-
-    
 
     ch = Channel(name="x0", label="EXT_ILK",
                  upper_limit=1,
