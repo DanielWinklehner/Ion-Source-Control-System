@@ -28,20 +28,15 @@ class DummySerial():
 		pass
 
 	def write(self, message):
-		print "Writing the following"
 		self._last_message = message
 
 	def read(self):
 
 		# Return sin of current time.
-		print "Called read"
-
-
 		return "o04f0+60231+f1+000000+f2+000+f3+00000+"
 
 	def readline(self):
 
-		print "Called readline", self._last_message, time.localtime().tm_sec
 
 		# Take the query message (stored in self._last_message) and decode it to get everything we need.
 
@@ -49,7 +44,7 @@ class DummySerial():
 			# This is a query message.
 			result = Messages.decode_query_message(self._last_message)
 
-			output_message = Messages.build_output_message(result, [-0.5 * math.sin(time.localtime().tm_sec)] * len(result.keys()))
+			output_message = Messages.build_output_message(result, [math.sin(time.localtime().tm_sec)] * len(result.keys()))
 
 			return output_message
 
