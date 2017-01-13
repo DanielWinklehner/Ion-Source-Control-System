@@ -1,8 +1,9 @@
 from __future__ import division
 
 import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GLib, GObject, Gdk
+gi.require_version('Gtk', '3.0')  # nopep8
+from gi.repository import Gdk
+# from gi.repository import Gtk, GLib, GObject, Gdk
 
 import json
 import time
@@ -18,7 +19,7 @@ from MIST1Plot import MIST1Plot
 import numpy as np
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
-__doc__ = """GUI without actual functionality"""
+__doc__ = """GUI for a simple Ion Source Control System"""
 
 
 class MIST1ControlSystem:
@@ -349,7 +350,7 @@ class MIST1ControlSystem:
         else:
             self._procedures[procedure.get_name()] = procedure
 
-    def send_message_to_server(self, purpose=None, *args):
+    def send_message_to_server(self, purpose=None, **kwargs):
 
         url = self._server_url
         data = {}
@@ -357,21 +358,21 @@ class MIST1ControlSystem:
         if purpose == "register_device":
 
             url += "arduino/connect"
-            data['arduino_id'] = args[0]
+            data['arduino_id'] = kwargs[0]
 
         elif purpose == "query_values":
 
             url += "arduino/query"
-            data['arduino_id'] = json.dumps(args[0])
-            data['channel_names'] = json.dumps(args[1])
-            data['precisions'] = json.dumps(args[2])
+            data['arduino_id'] = json.dumps(kwargs[0])
+            data['channel_names'] = json.dumps(kwargs[1])
+            data['precisions'] = json.dumps(kwargs[2])
 
         elif purpose == "set_values":
 
             url += "arduino/set"
-            data['arduino_id'] = args[0]
-            data['channel_name'] = args[1]
-            data['value_to_set'] = args[2]
+            data['arduino_id'] = kwargs[0]
+            data['channel_name'] = kwargs[1]
+            data['value_to_set'] = kwargs[2]
 
         try:
 
@@ -412,9 +413,9 @@ class MIST1ControlSystem:
         precisions = [[4] * len(device.channels()) for device_name, device in devices.items()]
 
         # print "Trying to get channel values for ", arduino_id
-        start = time.time()
+        # start = time.time()
         response = self.send_message_to_server(purpose='query_values', args=[arduino_ids, channel_names, precisions])
-        end = time.time()
+        # end = time.time()
 
         # print "It took", (end - start), "seconds to get a response."
 
@@ -511,9 +512,9 @@ class MIST1ControlSystem:
 
         # if server_response == "error":
         #     print "There's no arduino with device_id={} connected to the server.".format(device.get_arduino_id())
-        #     self._status_bar.push(2, "There's no arduino with device_id={} connected to the server.".format(device.get_arduino_id()))
+        #     self._status_bar.push(2, "There's no arduino with device_id={} "
+        #                              "connected to the server.".format(device.get_arduino_id()))
         #     return
-
 
         # Set the control system as the device parent
         device.set_parent(self)
@@ -535,9 +536,9 @@ class MIST1ControlSystem:
                                                              device.name()])
 
         for channel_name, channel in device.channels().items():
-            channel_iter = self._settings_page_tree_store.append(device_iter,
-                                                                 [channel.label(), "Channel", "edit_channel",
-                                                                  channel.name(), device.name()])
+            self._settings_page_tree_store.append(device_iter,
+                                                  [channel.label(), "Channel", "edit_channel",
+                                                   channel.name(), device.name()])
 
             # Add to "values".
             # Initialize with current time and 0.0 this will eventually flush out of the deque
@@ -547,9 +548,9 @@ class MIST1ControlSystem:
             self._y_values[(device.name(), channel_name)] = deque(np.zeros(self._retain_last_n_values),
                                                                   maxlen=self._retain_last_n_values)
 
-        channel_iter = self._settings_page_tree_store.append(device_iter,
-                                                             ["<b>[ Add a New Channel ]</b>", "", "add_new_channel",
-                                                              device.name(), device.name()])
+        self._settings_page_tree_store.append(device_iter,
+                                              ["<b>[ Add a New Channel ]</b>", "", "add_new_channel",
+                                               device.name(), device.name()])
 
         self._settings_tree_view.show_all()
 
@@ -557,42 +558,49 @@ class MIST1ControlSystem:
 
     def set_value_callback(self, button, widget):
 
-        # print "Set callback called by {}".format(widget.get_name())
-
-        parent_channel = widget.get_parent_channel()
+        if self.debug:
+            print("Set callback called by {}, button {}".format(widget.get_name(),
+                                                                button))
+        # parent_channel = widget.get_parent_channel()
 
         self._set_value_for_widget = widget
         self._communication_thread_mode = "write"
 
     def listen_for_reconnected_devices(self, devices):
+
         for device in devices:
+
             if device.name() in self._devices.keys() and device.name() not in self._alive_device_names:
-                print "Reinitializing device ", device.name()
+
+                if self.debug:
+
+                    print("Reinitializing device {}".format(device.name()))
+
                 device.reinitialize()
 
-    def check_for_alive_devices(self, devices):
-        # Check which Arduinos are still alive.
-
-        '''
-        for device in devices:
-            if device.is_alive():
-
-                self._alive_device_names.add(device.name())
-
-                if device.locked():
-                    device.unlock()
-            else:
-                print "Device = {} not alive.".format(device.name())
-                print "Locking device", device.name()
-                device.lock()
-                self._alive_device_names.discard(device.name())
-
-        self._last_checked_for_devices_alive = time.time()
-
-        print "The set of all alive devices = ", self._alive_device_names
-        '''
-
-        pass
+    # def check_for_alive_devices(self, devices):
+    #     # Check which Arduinos are still alive.
+    #
+    #     '''
+    #     for device in devices:
+    #         if device.is_alive():
+    #
+    #             self._alive_device_names.add(device.name())
+    #
+    #             if device.locked():
+    #                 device.unlock()
+    #         else:
+    #             print "Device = {} not alive.".format(device.name())
+    #             print "Locking device", device.name()
+    #             device.lock()
+    #             self._alive_device_names.discard(device.name())
+    #
+    #     self._last_checked_for_devices_alive = time.time()
+    #
+    #     print "The set of all alive devices = ", self._alive_device_names
+    #     '''
+    #
+    #     pass
 
     def update_stored_values(self, device_name, channel_name):
 
@@ -604,7 +612,7 @@ class MIST1ControlSystem:
 
     def communicate(self):
         """
-        :param devices:
+
         :return:
         """
 
@@ -626,7 +634,7 @@ class MIST1ControlSystem:
 
                         if not device.locked():
 
-                            arduino_id = device.get_arduino_id()
+                            # arduino_id = device.get_arduino_id()
 
                             self._communication_thread_poll_count += 1
 
@@ -642,32 +650,32 @@ class MIST1ControlSystem:
                                             self.log_data(channel)
 
                                         except Exception as e:
-                                            print "Exception caught while trying to log data."
-                                            print e
+                                            print("Exception '{}' caught while trying to log data.".format(e))
                                             pass
 
                                         try:
                                             GLib.idle_add(self.update_stored_values, device.name(), channel_name)
 
                                         except Exception as e:
-                                            print "Exception caught while updating stored values."
-                                            print e
+                                            print("Exception '{}' caught while updating stored values.".format(e))
                                             pass
 
                                         GLib.idle_add(self.update_gui, channel)
 
                                     except Exception as e:
-                                        "Got an exception", e
 
+                                        print("Exception '{}' caught.".format(e))
 
             elif self._communication_thread_mode == "write" and self._set_value_for_widget is not None:
 
-                print "Setting value."
+                if self.debug:
+                    print("Setting value.")
 
                 widget_to_set_value_for = self._set_value_for_widget
                 channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
 
-                print "Communicating updated value for widget {}".format(widget_to_set_value_for.get_name())
+                if self.debug:
+                    print("Communicating updated value for widget {}".format(widget_to_set_value_for.get_name()))
 
                 # Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
 
@@ -678,11 +686,14 @@ class MIST1ControlSystem:
                     except ValueError:
                         value_to_update = -1
 
-                    print "Setting value = {}".format(value_to_update)
+                    if self.debug:
+                        print("Setting value = {}".format(value_to_update))
 
                     try:
                         channel_to_set_value_for.set_value(value_to_update)
-                    except Exception, e:
+
+                    except Exception as e:
+
                         # Setting value failed. There was some exception.
                         # Write the error message to the status bar.
                         self._status_bar.push(2, str(e))
@@ -692,7 +703,8 @@ class MIST1ControlSystem:
                 self._communication_thread_mode = "read"
                 self._set_value_for_widget = None
 
-        print "Closing communication thread."
+        if self.debug:
+            print("Closing communication thread.")
 
         return 0
 
@@ -703,6 +715,9 @@ class MIST1ControlSystem:
         :param widget:
         :return:
         """
+
+        if self.debug:
+            print("Emergency stop was called from {}".format(widget))
 
         self._status_bar.push(1, "Emergency stop button was pushed!")
         self.shut_down_communication_threads()
@@ -719,7 +734,8 @@ class MIST1ControlSystem:
             # print "Monitoring all non-critical threads here."
 
             # TODO:
-            # THOUGHT: Should this also have a while loop? I mean, so that we keep on trying to do the procedure until it succeeds.
+            # THOUGHT: Should this also have a while loop? I mean, so that we keep on
+            # trying to do the procedure until it succeeds.
 
             for procedure_name, procedure in self._procedures.items():
                 if procedure.should_perform_procedure():
@@ -728,39 +744,40 @@ class MIST1ControlSystem:
     def monitor_critical_procedure(self, critical_procedure):
 
         # TODO: NOT IN USE RIGHT NOW.
-
         # This is the method that all critical procedure threads run. Each of them run in a separate thread.
-
 
         while self._keep_critical_procedure_threads_running:
 
-            # print "Critical thread running on its own thread."
+            # print("Critical thread running on its own thread.")
 
-
-            # Technically, we don't have to check this here since it's checked in the Procedure class before actually performing the procedure.
-            # But double-checking it probably won't hurt (will have some non-zero cost associated with retrieving values and then computing whether or not all the conditions are satisfied).
-
-
-            # The second conditional is so that we can keep trying to perform the procedure until we succeed. This is crucial for "critical" procedures.
+            # Technically, we don't have to check this here since it's checked in the Procedure
+            # class before actually performing the procedure. But double-checking it probably
+            # won't hurt (will have some non-zero cost associated with retrieving values and then
+            # computing whether or not all the conditions are satisfied).
+            # The second conditional is so that we can keep trying to perform the procedure until we succeed.
+            # This is crucial for "critical" procedures.
             while critical_procedure.should_perform_procedure() and (not critical_procedure.act()):
+
                 critical_procedure.act()
 
     def setup_procedure_threads(self):
-        # TODO: NOT IN USE RIGHT NOW.
 
-        # For N critical threads, there's going to be (N + 1) total threads. The N threads are one each for the "crtical" (procedure.priority = -1) procedures. All remaining procedures are processed with just 1 thread.
+        # TODO: NOT IN USE RIGHT NOW.
+        # For N critical threads, there's going to be (N + 1) total threads. The N threads are one each
+        # for the "crtical" (procedure.priority = -1) procedures. All remaining procedures are processed
+        # with just 1 thread.
 
         # TODO: Need to implement proper thread waiting, especially for "critical" threads.
         # Because critical threads need to have higher priorities than "communication threads".
-
         # First, setup a general thread i.e. one thread for all non-critical procedures.
 
-
         # TODO: THOUGHT: We could pass a list / dictionary of all the procedures we want to monitor here as kwargs.
-        # But, that way, the thread would only act only on those procedures that were created at the very beginning.
-        # There wouldn't be a straightforward way for this thread to also handle the procedures that were added later on.
+        # But, that way, the thread would only act only on those procedures that were created at the
+        # very beginning. There wouldn't be a straightforward way for this thread to also handle the
+        # procedures that were added later on.
 
-        if self._procedure_thread == None:
+        if self._procedure_thread is None:
+
             self._procedure_thread = threading.Thread(target=self.monitor_procedures)
 
             self._keep_procedure_thread_running = True
@@ -769,6 +786,7 @@ class MIST1ControlSystem:
 
         # Next, setup one thread each for each of the critical procedures we have.
         for critical_procedure_name, critical_procedure in self._critical_procedures.items():
+
             critical_procedure_thread = threading.Thread(target=self.monitor_critical_procedure)
 
             self._critical_procedure_threads[critical_procedure_name] = critical_procedure_thread
@@ -785,7 +803,6 @@ class MIST1ControlSystem:
         :return:
         """
         # for arduino_id, serial_com in self._serial_comms.items():
-
 
         communication_thread = threading.Thread(target=self.communicate)
 
@@ -805,18 +822,31 @@ class MIST1ControlSystem:
 
     def save_as_devices_callback(self, button):
 
+        if self.debug:
+            print("Called the save_as_devices callback from {}".format(button))
+
         def select_all_callback(widget, checkboxes):
-            for device_name, checkbox in checkboxes.items():
-                checkbox.set_active(True)
+
+            if self.debug:
+                print("Called the select_all callback from {}".format(widget))
+
+            for mydevice_name, mycheckbox in checkboxes.items():
+
+                mycheckbox.set_active(True)
 
         def unselect_all_callback(widget, checkboxes):
-            for device_name, checkbox in checkboxes.items():
-                checkbox.set_active(False)
+
+            if self.debug:
+                print("Called the unselect_all callback from {}".format(widget))
+
+            for mydevice_name, mycheckbox in checkboxes.items():
+
+                mycheckbox.set_active(False)
 
         dialog = Gtk.FileChooserDialog("Save Device", self._main_window,
                                        Gtk.FileChooserAction.SELECT_FOLDER,
                                        (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                        ("_Save"), Gtk.ResponseType.OK),
+                                        "_Save", Gtk.ResponseType.OK),
                                        )
 
         content_area = dialog.get_content_area()
@@ -838,8 +868,8 @@ class MIST1ControlSystem:
         select_all_hbox.pack_start(select_all_label, expand=False, fill=False, padding=5)
         select_all_hbox.pack_start(unselect_all_label, expand=False, fill=False, padding=5)
 
-        select_all_handler_id = select_all_label.connect("clicked", select_all_callback, device_checkboxes)
-        select_all_handler_id = unselect_all_label.connect("clicked", unselect_all_callback, device_checkboxes)
+        select_all_label.connect("clicked", select_all_callback, device_checkboxes)
+        unselect_all_label.connect("clicked", unselect_all_callback, device_checkboxes)
 
         device_name_hboxes = []
 
@@ -893,9 +923,17 @@ class MIST1ControlSystem:
         dialog.destroy()
 
     def settings_expand_all_callback(self, button):
+
+        if self.debug:
+            print("Called the settings_expand_all callback from {}".format(button))
+
         self._settings_tree_view.expand_all()
 
     def settings_collapse_all_callback(self, button):
+
+        if self.debug:
+            print("Called the settings_collapse_all callback from {}".format(button))
+
         self._settings_tree_view.collapse_all()
 
     def get_connections(self):
@@ -948,12 +986,16 @@ class MIST1ControlSystem:
 
     def settings_add_device_callback(self, button, params):
 
+        if self.debug:
+            print("Called the settings_add_device callback from {}".format(button))
+
         device_name = params['name'].get_text()
         device_label = params['label'].get_text()
         arduino_id = params['arduino_id'].get_text()
         overview_page_presence = params['overview_page_presence'].get_active()
 
-        print "Got a new device!"
+        if self.debug:
+            print("Got a new device!")
 
         new_device = Device(name=device_name, label=device_label, arduino_id=arduino_id)
         new_device.set_overview_page_presence(overview_page_presence)
@@ -967,11 +1009,16 @@ class MIST1ControlSystem:
 
     def settings_add_channel_callback(self, button, device_name, params):
         # Default values.
+
+        if self.debug:
+            print("Called the settings_add_channel callback from {}".format(button))
+
         data_type, mode = float, "both"
 
         data_type_iter = params['data_type'].get_active_iter()
 
-        if data_type_iter != None:
+        if data_type_iter is not None:
+
             model = params['data_type'].get_model()
             data_type, data_type_str = model[data_type_iter][:2]
             data_type = eval(data_type)
@@ -979,35 +1026,37 @@ class MIST1ControlSystem:
         mode_iter = params['mode'].get_active_iter()
 
         if mode_iter is not None:
+
             model = params['mode'].get_model()
             mode, mode_str = model[mode_iter][:2]
 
         # Create a new channel.
-        ch = Channel(name=params['name'].get_text(),
-                     label=params['label'].get_text(),
-                     upper_limit=float(params['upper_limit'].get_text()),
-                     lower_limit=float(params['lower_limit'].get_text()),
-                     data_type=data_type,
-                     mode=mode,
-                     unit=params['unit'].get_text())
+        mych = Channel(name=params['name'].get_text(),
+                       label=params['label'].get_text(),
+                       upper_limit=float(params['upper_limit'].get_text()),
+                       lower_limit=float(params['lower_limit'].get_text()),
+                       data_type=data_type,
+                       mode=mode,
+                       unit=params['unit'].get_text())
 
         # Add the newly created channel to the correct device.
-        self.add_channel(ch, self._devices[device_name])
+        self.add_channel(mych, self._devices[device_name])
 
     # if self._edit_frame != None:
     #   self._builder.get_object("settings_page_settings_box").remove(self._edit_frame)
 
     def device_settings_tree_selection_callback(self, selection):
 
-        if self._edit_frame != None:
+        if self._edit_frame is not None:
+
             self._builder.get_object("settings_page_settings_box").remove(self._edit_frame)
 
         model, treeiter = selection.get_selected()
 
-        if treeiter != None:
+        if treeiter is not None:
 
             label = model[treeiter][0]
-            object_type = model[treeiter][1]
+            # object_type = model[treeiter][1]
             selection_type = model[treeiter][2]
             name = model[treeiter][3]
             device_name = model[treeiter][4]
@@ -1030,23 +1079,31 @@ class MIST1ControlSystem:
                 entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.CheckButton()]
                 values = [device.name(), device.label(), device.get_arduino_id(), device.is_on_overview_page()]
 
+                last_entry, last_label = None, None
+
                 for label_text, entry, value in zip(labels, entries, values):
 
                     label = Gtk.Label(xalign=1)
                     label.set_markup("<span foreground='#888a85'>" + label_text + "</span>")
 
                     if label_text == "Name":
+
                         grid.add(label)
                         grid.attach_next_to(entry, label, Gtk.PositionType.RIGHT, width=20, height=1)
+
                     else:
+
                         grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
                         grid.attach_next_to(entry, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
                     entry_type = str(type(entry)).split("'")[1]
 
                     if entry_type == "gi.repository.Gtk.Entry":
+
                         entry.set_text(value)
+
                     elif entry_type == "gi.repository.Gtk.CheckButton":
+
                         entry.set_active(value)
 
                     last_entry, last_label = entry, label
@@ -1066,15 +1123,20 @@ class MIST1ControlSystem:
                 labels = ["Name", "Label", "Arduino ID", "Overview Page Presence"]
                 entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.CheckButton()]
 
+                last_entry, last_label = None, None
+
                 for label_text, entry in zip(labels, entries):
 
                     label = Gtk.Label(xalign=1)
-                    label.set_markup("<span foreground='#888a85'>" + label_text + "</span>");
+                    label.set_markup("<span foreground='#888a85'>" + label_text + "</span>")
 
                     if label_text == "Name":
+
                         grid.add(label)
                         grid.attach_next_to(entry, label, Gtk.PositionType.RIGHT, width=20, height=1)
+
                     else:
+
                         grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
                         grid.attach_next_to(entry, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
@@ -1084,6 +1146,7 @@ class MIST1ControlSystem:
                 add_device_button.connect("clicked", self.settings_add_device_callback,
                                           dict(name=entries[0], label=entries[1], arduino_id=entries[2],
                                                overview_page_presence=entries[3]))
+
                 grid.attach_next_to(add_device_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
             elif selection_type == "edit_channel":
@@ -1102,6 +1165,8 @@ class MIST1ControlSystem:
                 entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
                 values = [channel.name(), channel.label(), channel.lower_limit(),
                           channel.upper_limit(), channel.unit()]
+
+                last_entry, last_label = None, None
 
                 for label_text, entry, value in zip(labels, entries, values):
 
@@ -1161,6 +1226,7 @@ class MIST1ControlSystem:
                 grid.attach_next_to(edit_channel_save_button, last_entry, Gtk.PositionType.BOTTOM, width=20, height=1)
 
             elif selection_type == "add_new_channel":
+
                 device = self._devices[device_name]
 
                 self._edit_frame = Gtk.Frame(label="Add a New Channel to {}".format(device.label()))
@@ -1172,6 +1238,8 @@ class MIST1ControlSystem:
 
                 labels = ["Name", "Label", "Lower Limit", "Upper Limit", "Unit"]
                 entries = [Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry(), Gtk.Entry()]
+
+                last_entry, last_label = None, None
 
                 for label_text, entry in zip(labels, entries):
 
@@ -1261,8 +1329,9 @@ class MIST1ControlSystem:
         self._plotting_page_grid.remove(plotting_frame)
 
         # Move all other frames so that the cell that we just removed the frame from does not remain empty.
+        # max_y depends on whether or not the bottom-most row has just one plot. If it is, that row
+        # will eventually be removed since all the plots move one step back.
 
-        # # max_y depends on whether or not the bottom-most row has just one plot. If it is, that row will eventually be removed since all the plots move one step back.
         # if (total_number_of_plot_frames % number_of_plots_per_row) == 1:
         #   print "bingo! new max_y is",
         #   max_y = int(n_rows) - 1
@@ -1273,22 +1342,33 @@ class MIST1ControlSystem:
         for y in range(int(n_rows)):
 
             if y < int(n_rows) - 1:
+
                 max_x = int(number_of_plots_per_row)
+
             else:
-                print "bingo"
+
+                if self.debug:
+                    print("bingo")
+
                 max_x = total_number_of_plot_frames % number_of_plots_per_row
 
-            print "max x is", max_x
+            if self.debug:
+
+                print("max x is {}".format(max_x))
 
             if y < position[1]:
                 # Elements before the row where the removal happened. These need not do anything.
+
                 pass
+
             elif y == position[1]:
-                # Elements in the row where the removal happened. What happens to each frame depends on what column it occupied.
+                # Elements in the row where the removal happened.
+                # What happens to each frame depends on what column it occupied.
 
                 for x in range(max_x):
 
-                    print "Current x, y = ", (x, y)
+                    if self.debug:
+                        print("Current x, y = {}, {}".format(x, y))
 
                     widget = self._plotting_page_grid.get_child_at(x, y)
 
@@ -1297,32 +1377,32 @@ class MIST1ControlSystem:
                         pass
                     elif x >= position[1]:
                         # Just shift it one step to the left.
-
-                        print "I need to move {} one step to the left.".format(widget.get_label())
+                        if self.debug:
+                            print("I need to move {} one step to the left.".format(widget.get_label()))
                         self._plotting_page_grid.remove(widget)
                         self._plotting_page_grid.attach(widget, x - 1, y, width=1, height=1)
 
             elif y > position[1]:
-                #
 
                 for x in range(max_x):
 
-                    print "Current x, y = ", (x, y)
+                    if self.debug:
+                        print("Current x, y = {}, {}".format(x, y))
 
                     widget = self._plotting_page_grid.get_child_at(x, y)
 
                     if x == 0:
                         # This needs to move to the previous row.
-
-                        print "I need to move {} to the previous row.".format(widget.get_label())
+                        if self.debug:
+                            print("I need to move {} to the previous row.".format(widget.get_label()))
 
                         self._plotting_page_grid.remove(widget)
                         self._plotting_page_grid.attach(widget, int(number_of_plots_per_row) - 1, y - 1, width=1,
                                                         height=1)
                     else:
                         # Just move it one step to the left.
-
-                        print "I need to move {} one step to the left.".format(widget.get_label())
+                        if self.debug:
+                            print("I need to move {} one step to the left.".format(widget.get_label()))
 
                         self._plotting_page_grid.remove(widget)
                         self._plotting_page_grid.attach(widget, x - 1, y, width=1, height=1)
@@ -1368,11 +1448,12 @@ class MIST1ControlSystem:
 
         total_number_of_plot_frames = len(self._plotting_frames.keys())
 
-        print "Total plots = ", total_number_of_plot_frames
+        if self.debug:
+            print("Total plots = {}".format(total_number_of_plot_frames))
 
         if total_number_of_plot_frames == 1:
-
-            print "Total number = 0"
+            if self.debug:
+                print("Total number = 0")
 
             self._plotting_page_grid.add(plot_frame)
         else:
@@ -1384,14 +1465,17 @@ class MIST1ControlSystem:
             else:
                 current_column_number = (total_number_of_plot_frames % number_of_plots_per_row)
 
-            print "Total rows =", n_rows
-            print "Current col.  =", current_column_number
+            if self.debug:
+                print("Total rows = {}".format(n_rows))
+                print("Current # of columns = {}".format(current_column_number))
 
             if n_rows == 1.:
                 # Always insert "RIGHT TO SIBLING".
 
                 sibling = self._plotting_page_grid.get_child_at(total_number_of_plot_frames - 2, 0)
-                print "Inserting to the Right of", (total_number_of_plot_frames - 2, 0)
+
+                if self.debug:
+                    print("Inserting to the Right of ({}, {})".format(total_number_of_plot_frames - 2, 0))
 
                 # grid.attach_next_to(label, last_label, Gtk.PositionType.BOTTOM, width=1, height=1)
                 self._plotting_page_grid.attach_next_to(plot_frame, sibling, Gtk.PositionType.RIGHT, width=1, height=1)
@@ -1400,7 +1484,8 @@ class MIST1ControlSystem:
 
                 sibling = self._plotting_page_grid.get_child_at(current_column_number - 1, n_rows - 2)
 
-                print "Inserting to the Bottom of ", (current_column_number - 1, n_rows - 2)
+                if self.debug:
+                    print("Inserting to the Bottom of ({}, {})".format(current_column_number - 1, n_rows - 2))
 
                 self._plotting_page_grid.attach_next_to(plot_frame, sibling, Gtk.PositionType.BOTTOM, width=1, height=1)
 
@@ -1408,7 +1493,8 @@ class MIST1ControlSystem:
 
     def plotting_setup_channels_callback(self, button):
 
-        print "Opening Plotting Channels Dialog"
+        if self.debug:
+            print("Opening Plotting Channels Dialog from {}".format(button))
 
         dialog = MIST1Dialogs.PlottingChannelsDialog(self._main_window, self._plot_page_channels_tree_store,
                                                      self._plotting_frames.keys())
@@ -1416,7 +1502,10 @@ class MIST1ControlSystem:
         response = dialog.run()
 
         if response == Gtk.ResponseType.OK:
-            print "The OK button was clicked."
+
+            if self.debug:
+                print("The OK button was clicked.")
+
             selections = dialog.get_selection()
 
             # Go throught the list of self._plotting_frames.keys()
@@ -1428,7 +1517,10 @@ class MIST1ControlSystem:
 
             for (device_name, channel_name) in selections:
                 if (device_name, channel_name) not in self._plotting_frames.keys():
-                    print "Recreating a new frame for", device_name, channel_name
+
+                    if self.debug:
+                        print("Recreating a new frame for {}, {}".format(device_name, channel_name))
+
                     self.show_plotting_frame(device_name, channel_name)
 
         dialog.destroy()
@@ -1449,10 +1541,10 @@ class MIST1ControlSystem:
 
                 if channel.mode() == "read" or channel.mode() == "both" and (
                                 channel.data_type() == float or channel.data_type() == int):
-                    channel_iter = self._plot_page_channels_tree_store.append(device_iter,
-                                                                              [False,
-                                                                               channel.label(), "Channel",
-                                                                               device.name(), channel.name()])
+                    self._plot_page_channels_tree_store.append(device_iter,
+                                                               [False,
+                                                                channel.label(), "Channel",
+                                                                device.name(), channel.name()])
 
     def setup_plotting_page(self):
 
@@ -1471,16 +1563,20 @@ class MIST1ControlSystem:
 
         # for device_name, device in self._devices.items():
 
-        #   device_iter = self._settings_page_tree_store.append(None, [device.label(), "Device", "edit_device", device.name(), device.name()])
+        # device_iter = self._settings_page_tree_store.append(None,
+        #                                                     [device.label(), "Device", "edit_device", device.name(),
+        #                                                      device.name()])
 
-        #   for channel_name, channel in device.channels().items():
-        #       channel_iter = self._settings_page_tree_store.append(device_iter, [channel.label(), "Channel", "edit_channel", channel.name(), device.name()])
+        # for channel_name, channel in device.channels().items():
+        #     channel_iter = self._settings_page_tree_store.append(device_iter,
+        #                                                          [channel.label(), "Channel", "edit_channel",
+        #                                                           channel.name(), device.name()])
+        #
+        # channel_iter = self._settings_page_tree_store.append(device_iter,
+        #                                                      ["<b>[ Add a New Channel ]</b>", "", "add_new_channel",
+        #                                                       device.name(), device.name()])
 
-        #   channel_iter = self._settings_page_tree_store.append(device_iter, ["<b>[ Add a New Channel ]</b>", "", "add_new_channel", device.name(), device.name()])
-
-        device_iter = self._settings_page_tree_store.append(None,
-                                                            ["<b>[ Add a New Device ]</b>", "", "add_new_device", "",
-                                                             ""])
+        self._settings_page_tree_store.append(None, ["<b>[ Add a New Device ]</b>", "", "add_new_device", "", ""])
 
         title = Gtk.CellRendererText()
         column = Gtk.TreeViewColumn("Label", title, markup=0)
@@ -1513,6 +1609,9 @@ class MIST1ControlSystem:
         Shuts down the program (and threads) gracefully.
         :return:
         """
+
+        if self.debug:
+            print("Called main_quit for {}".format(widget))
 
         self._main_window.destroy()
 
@@ -1557,6 +1656,9 @@ class MIST1ControlSystem:
         Callback that handles what happens when a message is pushed in the
         statusbar
         """
+
+        if self.debug:
+            print("Called statusbar_changed callback for statusbar {}, ID = {}".format(statusbar, context_id))
 
         timestr = time.strftime("%d %b, %Y, %H:%M:%S: ", time.localtime())
 

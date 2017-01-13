@@ -1,10 +1,11 @@
 from __future__ import division
 
-import time
-import sys
-import glob
+# import time
+# import sys
+# import glob
 import json
 import GUIWidgets
+
 
 class Channel:
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
