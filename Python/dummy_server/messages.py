@@ -137,7 +137,8 @@ def build_output_message(channels_and_precisions, values):
 		print "in the loop"
 		print channel_name 
 		print values[i], precision
-		print str(convert_scientific_notation_to_mist1(round(float(values[i]), precision), int(precision)))
+		# print str(convert_scientific_notation_to_mist1(round(float(values[i]), precision), int(precision)))
+		print str(convert_scientific_notation_to_mist1(float(values[i]), int(precision)))
 
 		output_message += str(channel_name) + str(convert_scientific_notation_to_mist1(float(values[i]), int(precision)))
 
