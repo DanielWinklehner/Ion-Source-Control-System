@@ -13,3 +13,14 @@
 
 
 ## Libraries to Install
+
+
+## Killing the server.
+
+```bash
+ps aux | grep DummyServer.py | head -n 1 | grep -o '[a-z]  [0-9]*' | grep -o '\([0-9]*\) \{0\}' | xargs kill -9
+```
+
+```bash
+ps aux | grep DummyServer.py | head -n 1 | grep -o '[a-z]  [0-9]*' | grep -o '\([0-9]*\) \{0\}' | xargs kill -9 && python DummyServer.py
+```

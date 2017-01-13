@@ -68,7 +68,7 @@ class SerialCOM(object):
 
 				response = self._ser.readline()
 
-				# print "I sent a message", message, "and received", response
+				print "I sent a message", message, "and received", response
 
 				if len(response) != 0:
 					return response
@@ -112,10 +112,12 @@ class SerialCOM(object):
 
 
 def get_all_arduino_ports():
-	proc = subprocess.Popen('/var/www/html/Ion-Source-Control-System/Python/server/usb.sh', stdout=subprocess.PIPE, shell=True)
+	proc = subprocess.Popen('/home/aashish/Dropbox\ \(MIT\)/Research/Ion\ Source/Software/RasPiServer/usb.sh', stdout=subprocess.PIPE, shell=True)
 	output = proc.stdout.read().strip()
+
 	all_usb_devices = output.split("\n")
 	all_arduino_ports =  [x.split(" - ")[0] for x in all_usb_devices if "Arduino" in x]
+
 	return all_arduino_ports
 
 

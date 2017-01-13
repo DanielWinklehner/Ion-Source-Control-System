@@ -7,14 +7,14 @@ import re
 # void mist1::Communication::convert_scientific_notation_to_mist1(char * source, char * target, unsigned precision) {
 def convert_scientific_notation_to_mist1(number, precision): 
 
-	print 'the number is', number
+	# print 'the number is', number
 
 	formating_string = "{:." + str(precision) + "e}"
 	number = formating_string.format(number)
 	number = str(number)
 	target = [None] * 100
 	
-	print "new nunmber is ", number
+	# print "new nunmber is ", number
 
 	index = 0
 	
@@ -57,8 +57,6 @@ def convert_scientific_notation_to_mist1(number, precision):
 	final_target = ''.join(map(str, [t for t in target if t != None]))
 
 
-	print final_target
-
 	return final_target
 
 
@@ -71,7 +69,6 @@ def parse_arduino_output_message(output_message):
 
 	matches = re.findall(pattern, output_message[3:], flags=0)
 	
-	# print matches
 
 	result = {}	
 	for match in matches:
@@ -124,25 +121,50 @@ def decode_query_message(message):
 
 	return result
 
+def round_off_mist1_notation(number, precision):
+
+
+	rounded_off_number = ""
+
+
+	# First byte is the sign of the number.
+	# Second byte is the mentissa unless the number is -1 < 0 < 1.
+	# To find out whether or not that is the case, look for the exponent.
+	# Last byte is sign of the exponent.
+	# Second to last byte is the exponent.
+
+	if (number[-1] == '-') and (number[-2] == '1'):
+		# This means the number is -1 < 0 < 1.
+		
+		# The mentissa really is just 0. So,
+
+		if precision == 1:
+			rounded_off_number = number[0] + number[1] + '0' + number[2:precision + 1]	# + 1 for sign of number. Another + 1 would be for the mentissa but since it's going to be 0 which is not written here, we exclude it. So, it becomes just a single +1.
+		else:
+			rounded_off_number = number[:precision + 1 + 1 - 1]	# + 1 for sign of number. Another + 1 for the mentissa.
+	else:
+		# Second bye is the mentissa.
+		# Chop off the number after "precision" bytes.
+		rounded_off_number = number[:precision + 1 + 1 - 1]	# + 1 for sign of number. Another + 1 for the mentissa.
+
+		# TODO: This is almost right except we need to implement proper rounding off. But since accuracy does not matter for dummy server, leave it for now.
+
+
+
+	# Need to add the last two bytes:
+	rounded_off_number += number[-2:]
+
+
+	return rounded_off_number
 
 def build_output_message(channels_and_precisions, values):
-	print channels_and_precisions
-
-	print values
 
 	output_message = "o" + "%02d" % (len(values),)
 
-	print output_message
 	for (i, (channel_name, precision)) in enumerate(channels_and_precisions.items()):
-		print "in the loop"
-		print channel_name 
-		print values[i], precision
-		# print str(convert_scientific_notation_to_mist1(round(float(values[i]), precision), int(precision)))
-		print str(convert_scientific_notation_to_mist1(float(values[i]), int(precision)))
+		number_to_return = float(values[i])
+		output_message += str(channel_name) + str(round_off_mist1_notation( str(convert_scientific_notation_to_mist1(float(values[i]), int(precision))), int(precision)))
 
-		output_message += str(channel_name) + str(convert_scientific_notation_to_mist1(float(values[i]), int(precision)))
-
-	print output_message
 	return output_message
 
 def build_set_message(channel_names, values_to_set):
