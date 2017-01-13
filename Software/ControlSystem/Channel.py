@@ -65,14 +65,14 @@ class Channel:
 
             if self._data_type == bool:
 
-                self._overview_page_display = MIST1ControlSystemGUIWidgets.FrontPageDisplayBool(name=self._label,
+                self._overview_page_display = GUIWidgets.FrontPageDisplayBool(name=self._label,
                                                                            set_flag=set_flag,
                                                                            parent_channel=self)
 
             else:
 
                 # Create a display
-                self._overview_page_display = MIST1ControlSystemGUIWidgets.FrontPageDisplayValue(name=self._label,
+                self._overview_page_display = GUIWidgets.FrontPageDisplayValue(name=self._label,
                                                                             unit=self._unit,
                                                                             displayformat=self._displayformat,
                                                                             set_flag=set_flag,
