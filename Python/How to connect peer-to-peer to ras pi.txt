@@ -1,8 +1,0 @@
-The Raspberry Pi needs to have a static IP set on it. For this document, let's assume it's 10.77.0.3
-
-On your computer:
-
-1) Disable WiFi
-2) Set up static IP for your computer as well. Set it to: 10.77.0.1. Set the netmask to 255.255.0.0 and the gateway to 10.77.0.1 (or whatever static IP you have set your computer's address to).
-3) Ping the IP of the Pi to see if it responds.
-4) SSH.
