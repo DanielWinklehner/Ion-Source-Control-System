@@ -1,5 +1,5 @@
 from __future__ import division
-import device
+import Device
 
 import h5py
 import numpy as np

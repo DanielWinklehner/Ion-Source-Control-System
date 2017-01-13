@@ -17,14 +17,15 @@ from collections import deque
 
 from gi.repository import Gtk, GLib, GObject, Gdk
 
-from client import Client
-from procedure import Procedure
-from device import Device, Channel
-from MIST1_Control_System_GUI_Widgets import *
 
-import data_logging
+from Procedure import Procedure
+from Device import Device
+from Channel import Channel
+from MIST1ControlSystemGUIWidgets import *
 
-import dialogs as MIST1Dialogs
+from DataLogging import DataLogging
+
+import Dialogs as MIST1Dialogs
 from MPLCanvasWrapper3 import MPLCanvasWrapper3
 from MIST1Plot import MIST1Plot
 import matplotlib.pyplot as plt
@@ -63,7 +64,7 @@ class MIST1ControlSystem:
 
         # --- Load the GUI from XML file and initialize connections --- #
         self._builder = Gtk.Builder()
-        self._builder.add_from_file("mist_control_system_main_gui.glade")
+        self._builder.add_from_file("MIST1ControlSystemMainGUI.glade")
         self._builder.connect_signals(self.get_connections())
 
         self._main_window = self._builder.get_object("main_window")
@@ -81,12 +82,12 @@ class MIST1ControlSystem:
         style_provider = Gtk.CssProvider()
 
         css = """
-		GtkButton#stop_button {
-			color: #000000;
-			font-size: 18pt;
-			background-image: url('bg.png');
-		}
-		"""
+        GtkButton#stop_button {
+            color: #000000;
+            font-size: 18pt;
+            background-image: url('bg.png');
+        }
+        """
 
         style_provider.load_from_data(css)
 
@@ -156,7 +157,7 @@ class MIST1ControlSystem:
         self._y_values = {}
 
     def register_data_logging_file(self, filename):
-        self._data_logger = data_logging.DataLogging(log_filename=filename)
+        self._data_logger = DataLogging(log_filename=filename)
         self._data_logger.initialize()
 
     def log_data(self, channel):
@@ -216,10 +217,10 @@ class MIST1ControlSystem:
 
             # for device_name, device in self._devices.items():
 
-            # 	# if not device.initialized():
-            # 	# 	del self._devices[device_name]
-            # 	# 	print "Adding a new device."
-            # 	# 	self.add_device(device)
+            #   # if not device.initialized():
+            #   #   del self._devices[device_name]
+            #   #   print "Adding a new device."
+            #   #   self.add_device(device)
 
             self.reinitialize()
 
@@ -591,8 +592,8 @@ class MIST1ControlSystem:
             devices = self._devices
 
             # if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
-            # 	self.check_for_alive_devices(devices)
-            # 	self.listen_for_reconnected_devices(devices)
+            #   self.check_for_alive_devices(devices)
+            #   self.listen_for_reconnected_devices(devices)
 
             # GLib.idle_add(self.dummy_update)
 
@@ -941,7 +942,7 @@ class MIST1ControlSystem:
         self.reinitialize()
 
     # if self._edit_frame != None:
-    # 	self._builder.get_object("settings_page_settings_box").remove(self._edit_frame)
+    #   self._builder.get_object("settings_page_settings_box").remove(self._edit_frame)
 
     def settings_add_channel_callback(self, button, device_name, params):
         # Default values.
@@ -973,7 +974,7 @@ class MIST1ControlSystem:
         self.add_channel(ch, self._devices[device_name])
 
     # if self._edit_frame != None:
-    # 	self._builder.get_object("settings_page_settings_box").remove(self._edit_frame)
+    #   self._builder.get_object("settings_page_settings_box").remove(self._edit_frame)
 
     def device_settings_tree_selection_callback(self, selection):
 
@@ -1242,11 +1243,11 @@ class MIST1ControlSystem:
 
         # # max_y depends on whether or not the bottom-most row has just one plot. If it is, that row will eventually be removed since all the plots move one step back.
         # if (total_number_of_plot_frames % number_of_plots_per_row) == 1:
-        # 	print "bingo! new max_y is",
-        # 	max_y = int(n_rows) - 1
-        # 	print max_y
+        #   print "bingo! new max_y is",
+        #   max_y = int(n_rows) - 1
+        #   print max_y
         # else:
-        # 	max_y = int(n_rows)
+        #   max_y = int(n_rows)
 
         for y in range(int(n_rows)):
 
@@ -1449,12 +1450,12 @@ class MIST1ControlSystem:
 
         # for device_name, device in self._devices.items():
 
-        # 	device_iter = self._settings_page_tree_store.append(None, [device.label(), "Device", "edit_device", device.name(), device.name()])
+        #   device_iter = self._settings_page_tree_store.append(None, [device.label(), "Device", "edit_device", device.name(), device.name()])
 
-        # 	for channel_name, channel in device.channels().items():
-        # 		channel_iter = self._settings_page_tree_store.append(device_iter, [channel.label(), "Channel", "edit_channel", channel.name(), device.name()])
+        #   for channel_name, channel in device.channels().items():
+        #       channel_iter = self._settings_page_tree_store.append(device_iter, [channel.label(), "Channel", "edit_channel", channel.name(), device.name()])
 
-        # 	channel_iter = self._settings_page_tree_store.append(device_iter, ["<b>[ Add a New Channel ]</b>", "", "add_new_channel", device.name(), device.name()])
+        #   channel_iter = self._settings_page_tree_store.append(device_iter, ["<b>[ Add a New Channel ]</b>", "", "add_new_channel", device.name(), device.name()])
 
         device_iter = self._settings_page_tree_store.append(None,
                                                             ["<b>[ Add a New Device ]</b>", "", "add_new_device", "",
@@ -1598,7 +1599,7 @@ class MIST1ControlSystem:
         # If display on overview page is desired, update:
         if channel.get_parent_device().is_on_overview_page():
             # if count == 9:
-            # 	print "Updating", channel.name(), channel.get_value()
+            #   print "Updating", channel.name(), channel.get_value()
             channel.get_overview_page_display().set_value(channel.get_value())
 
         return False
@@ -1631,9 +1632,9 @@ if __name__ == "__main__":
     # ************************ #
 
     # interlock_box = Device("interlock_box",
-    # 					   arduino_id="95432313837351706152",
-    # 					   label="Interlock Box",
-    # 					   on_overview_page=True)
+    #                      arduino_id="95432313837351706152",
+    #                      label="Interlock Box",
+    #                      on_overview_page=True)
 
     # Test three Arduinos running the sensor box software for now
     # sensor_box_ids = ["95432313837351706152",
@@ -1775,10 +1776,7 @@ if __name__ == "__main__":
 
         ps_controller.add_channel(ch)
 
-    ch = Channel(name="x".format(i + 1), label="EXT_ILK",
-                     mode="write")
-
-        ps_controller.add_channel(ch)
+    
 
     ch = Channel(name="x0", label="EXT_ILK",
                  upper_limit=1,

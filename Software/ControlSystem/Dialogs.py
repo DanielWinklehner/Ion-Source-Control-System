@@ -4,7 +4,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
 import copy
 
-from device import *
+from Device import *
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
 __doc__ = """A number of widgets inheriting from gi to be placed in the GUI repeatedly"""

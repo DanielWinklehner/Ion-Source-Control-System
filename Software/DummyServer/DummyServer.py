@@ -1,21 +1,32 @@
 from flask import Flask, redirect
 from flask import request
 
-from serial_communication import *
+
+
+from SerialCOM import SerialCOM
+
 from collections import defaultdict
 
 import subprocess
-import messages
 import json
 import urllib2
 import copy
 import time
-import messages
+import Messages
 
 import threading
 
 import multiprocessing
 from multiprocessing.managers import BaseManager
+
+def find_arudinos_connected():
+	return [("R2D2", "/dev/ttyACM0"), ("BB8", "/dev/ttyACM1"), ("C3PO", "/dev/ttyACM2")]
+	
+
+
+
+
+
 
 class MyManager(BaseManager): pass
 
@@ -99,7 +110,7 @@ def update_arduinos_connected():
 				all_active_managers.append(new_manager)
 				channel_values[arduino[0]] = {}				
 
-				all_channels = messages.decode_channel_names( new_manager.send_message("c") )
+				all_channels = Messages.decode_channel_names( new_manager.send_message("c") )
 
 				for channel in all_channels:
 					device_channel_names[arduino[0]].append(channel)
@@ -193,13 +204,13 @@ def pool_query_arduinos(arduino_ids, queries):
 	end = time.time()
 
 	#print "It took", (end - start), "seconds to collect all the responses."
-	print messages.parse_arduino_output_message(all_responses[0][1])
+	print Messages.parse_arduino_output_message(all_responses[0][1])
 
 	print "parsing the responses"
 
 	parsed_response = dict()
 	for arduino_id, raw_output_message in all_responses:
-		parsed_response[arduino_id] = messages.parse_arduino_output_message(raw_output_message)
+		parsed_response[arduino_id] = Messages.parse_arduino_output_message(raw_output_message)
 	
 	print parsed_response
 	
@@ -211,7 +222,7 @@ def set_channel_value_to_arduino(arduino_id, channel_name, value):
 	print "Setting value = {} for channel_name = {} for arduino_id = {}".format(value, channel_name, arduino_id)
 
 	manager = filter(lambda x: x.get_arduino_id() == arduino_id, all_active_managers)[0]
-	set_message = messages.build_set_message([channel_name], [value])
+	set_message = Messages.build_set_message([channel_name], [value])
 	
 	print "My set message is", set_message
 
@@ -288,7 +299,7 @@ def query_arduinos():
 	all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in zip(all_arduino_ids, all_channel_names, all_precisions)]
 	
 
-	all_query_messages = [messages.build_query_message(channel_names, precisions) for (arduino_id, channel_names, precisions) in all_queries]
+	all_query_messages = [Messages.build_query_message(channel_names, precisions) for (arduino_id, channel_names, precisions) in all_queries]
 
 
 	arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
