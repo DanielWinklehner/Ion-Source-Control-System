@@ -55,6 +55,10 @@ def build_set_message(channel_names, values_to_set):
 	return str(msg)
 
 def decode_channel_names(message):
+
+
+	print "the message I get here is", message
+
 	all_channels = []
 	channel_names = message.split(",")
 
