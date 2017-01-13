@@ -2,6 +2,7 @@ from __future__ import division
 
 import gi
 gi.require_version('Gtk', '3.0')  # nopep8
+gi.require_version('Gdk', '3.0')  # nopep8
 from gi.repository import Gdk
 # from gi.repository import Gtk, GLib, GObject, Gdk
 
@@ -363,16 +364,16 @@ class MIST1ControlSystem:
         elif purpose == "query_values":
 
             url += "arduino/query"
-            data['arduino_id'] = json.dumps(kwargs[0])
-            data['channel_names'] = json.dumps(kwargs[1])
-            data['precisions'] = json.dumps(kwargs[2])
+            data['arduino_id'] = json.dumps(kwargs["arduino_ids"])
+            data['channel_names'] = json.dumps(kwargs["channel_names"])
+            data['precisions'] = json.dumps(kwargs["precisions"])
 
         elif purpose == "set_values":
 
             url += "arduino/set"
-            data['arduino_id'] = kwargs[0]
-            data['channel_name'] = kwargs[1]
-            data['value_to_set'] = kwargs[2]
+            data['arduino_id'] = kwargs["arduino_ids"]
+            data['channel_name'] = kwargs["channel_names"]
+            data['value_to_set'] = kwargs["precisions"]
 
         try:
 
@@ -414,7 +415,10 @@ class MIST1ControlSystem:
 
         # print "Trying to get channel values for ", arduino_id
         # start = time.time()
-        response = self.send_message_to_server(purpose='query_values', args=[arduino_ids, channel_names, precisions])
+        response = self.send_message_to_server(purpose='query_values',
+                                               arduino_ids=arduino_ids,
+                                               channel_names=channel_names,
+                                               precisions=precisions)
         # end = time.time()
 
         # print "It took", (end - start), "seconds to get a response."
@@ -1379,6 +1383,7 @@ class MIST1ControlSystem:
                         # Just shift it one step to the left.
                         if self.debug:
                             print("I need to move {} one step to the left.".format(widget.get_label()))
+
                         self._plotting_page_grid.remove(widget)
                         self._plotting_page_grid.attach(widget, x - 1, y, width=1, height=1)
 
@@ -1736,8 +1741,10 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
+    mydebug = False
+
     # control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=80)
-    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=True)
+    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=mydebug)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
@@ -1747,7 +1754,7 @@ if __name__ == "__main__":
     ps_controller = Device("ps_controller",
                            arduino_id="R2D2",
                            label="Power Supple Controller",
-                           debug=True)
+                           debug=mydebug)
 
     ps_controller.set_overview_page_presence(True)
 
