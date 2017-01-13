@@ -1,7 +1,2 @@
-Documents
-*.pdf
-*.hdf5
-Comsol
-KiCAD
-Backup-from-pi
+*.h5
 *.pyc
