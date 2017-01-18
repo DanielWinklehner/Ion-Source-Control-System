@@ -72,7 +72,7 @@ def update_arduinos_connected():
                     #print "Case 2"
                     all_active_arduinos[j] = arduino
                     all_active_managers[j] = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
-                    all_active_managers[j].send_message("c")
+                    all_active_managers[j].send_message("i")
                 else:
                     pass
 
@@ -100,7 +100,7 @@ def update_arduinos_connected():
                 channel_values[arduino[0]] = {}             
 
 
-                print new_manager.send_message("c")
+                print new_manager.send_message("i")
 
                 all_channels = Messages.decode_channel_names( new_manager.send_message("i") )
 
@@ -144,6 +144,9 @@ def mp_worker(serial_com, message):
 
     #print "it took", (end - start), "to get a message from the arduino"
 
+
+    print "Got the response", arduino_response
+
     return serial_com.get_arduino_id(), arduino_response
 
 
@@ -183,6 +186,7 @@ def pool_query_arduinos(arduino_ids, queries):
                 queries_to_use.append( query )
 
 
+
     start = time.time()
 
     p = multiprocessing.Pool(len(serial_coms_to_use))
@@ -204,7 +208,6 @@ def pool_query_arduinos(arduino_ids, queries):
     end = time.time()
 
     #print "It took", (end - start), "seconds to collect all the responses."
-
 
     parsed_response = dict()
     for arduino_id, raw_output_message in all_responses:
@@ -287,6 +290,8 @@ def query_arduinos():
     all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in zip(all_arduino_ids, all_channel_names, all_precisions)]
     
     all_query_messages = [Messages.build_query_message(channel_names, precisions) for (arduino_id, channel_names, precisions) in all_queries]
+
+    print all_query_messages
 
     arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
 

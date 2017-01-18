@@ -228,7 +228,7 @@ unsigned long mist1::Communication::ipow10(unsigned power)
 void mist1::Communication::convert_scientific_notation_to_mist1(char * source, char * target, unsigned precision) {
   
 
-  Serial.println(source);
+  // Serial.println(source);
 
   // First figure out the sign.
   int index = 0;
@@ -403,7 +403,7 @@ void mist1::Communication::respond_to_input_message() {
       Serial.println("ERR2");
     }
     else {
-          Serial.print(messageToReturn);
+      Serial.print(messageToReturn);
     }
       
   } else if (keyword == 's') {

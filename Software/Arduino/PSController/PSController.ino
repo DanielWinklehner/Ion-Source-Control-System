@@ -172,8 +172,8 @@ void setup() {
   com.add_channel(mist1::Channel("PS2_ON", 'o', 2, &set_ps2_on, &dummyFunc));
   com.add_channel(mist1::Channel("PS1_V", 'v', 1, &set_ps1_v, &get_ps1_v));
   com.add_channel(mist1::Channel("PS2_V", 'v', 2, &set_ps2_v, &get_ps1_v));
-  com.add_channel(mist1::Channel("PS1_I", 'i', 1, &set_ps1_i, &set_ps1_i));
-  com.add_channel(mist1::Channel("PS2_I", 'i', 2, &set_ps2_i, &set_ps2_i));
+  com.add_channel(mist1::Channel("PS1_I", 'i', 1, &set_ps1_i, &get_ps1_i));
+  com.add_channel(mist1::Channel("PS2_I", 'i', 2, &set_ps2_i, &get_ps2_i));
   com.add_channel(mist1::Channel("EXT_ILK", 'x', 1, &dummyFunc, &get_ext_ilk));  //To read interlock status
   
 }

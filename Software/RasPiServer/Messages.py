@@ -4,12 +4,14 @@ import re
 
 
 def parse_arduino_output_message(output_message):
+
+
 	parsed_message = ""
 
 	# Everybody stand back. I know regular expressions.
 	pattern = "([a-zA-Z][0-9])([\+\-])([0-9])([0-9]+)([0-9])([\+\-])"
 
-	matches = re.findall(pattern, output_message[3:], flags=0)
+	matches = re.findall(pattern, output_message, flags=0)
 	
 	result = {}	
 	for match in matches:
@@ -26,6 +28,7 @@ def parse_arduino_output_message(output_message):
 			value = 0 - value
 
 		result[channel_name] = value
+
 		
 	return result
 
@@ -57,7 +60,6 @@ def build_set_message(channel_names, values_to_set):
 def decode_channel_names(message):
 
 
-	print "the message I get here is", message
 
 	all_channels = []
 	channel_names = message.split(",")
