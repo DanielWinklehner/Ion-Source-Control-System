@@ -60,6 +60,10 @@ class SerialCOM(object):
 		
 		try:
 			
+
+			print "My name is SerialCOM and I am going to send the following message:"
+			print message
+			
 			# self._ser.flushInput()
 			# self._ser.flushOutput()
 

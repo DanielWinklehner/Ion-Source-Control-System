@@ -134,24 +134,38 @@ def update_arduinos_connected():
 
 
 
-def mp_worker(serial_com, message):
+def mp_worker(serial_com, messages):
 
     start = time.time()
 
 
-    print "The message I am going to send is", message
+    print type(messages)
+    all_responses = []
+
+    for msg in messages:
+        print "The message I am going to send is", msg
 
 
-    arduino_response = serial_com.send_message(message)
+        try:
+            arduino_response = serial_com.send_message(msg)
+            all_responses.append(arduino_response)
+
+            print "Got the response",  arduino_response
+
+        except Exception as e:
+            print "Something went wrong! I'm sorry!", e
+            all_responses.append(None)
     
+
+
     end = time.time()
 
     #print "it took", (end - start), "to get a message from the arduino"
 
 
-    print "Got the response", arduino_response
+    
 
-    return serial_com.get_arduino_id(), arduino_response
+    return serial_com.get_arduino_id(), all_responses
 
 
 def build_arduino_port_map(arduino_ids):
@@ -215,7 +229,10 @@ def pool_query_arduinos(arduino_ids, queries):
 
     parsed_response = dict()
     for arduino_id, raw_output_message in all_responses:
-        parsed_response[arduino_id] = Messages.parse_arduino_output_message(raw_output_message)
+        try:
+            parsed_response[arduino_id] = Messages.parse_arduino_output_message(raw_output_message)
+        except Exception as e:
+            parsed_response[arduino_id] = str(e[0]) + ": " + str(e[1])
         
     return parsed_response
 
@@ -295,7 +312,9 @@ def query_arduinos():
     
     all_query_messages = [Messages.build_query_message(channel_names, precisions) for (arduino_id, channel_names, precisions) in all_queries]
 
+    print "all query messages:"
     print all_query_messages
+
 
     arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
 

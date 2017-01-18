@@ -3,44 +3,54 @@ import time
 import re
 
 
-def parse_arduino_output_message(output_message):
+arduino_error_messages_dict = {'ERR0': "Undefined error (does not fall into any of the other 9 categories).", 'ERR1': "Asking a precision that's too high (> 6).", 'ERR2': "Asking for something that would return more than 128 bytes.", 'ERR3': "Invalid number of channels.", 'ERR4': "Querying for one or more non-existing channel/s."}
+
+def parse_arduino_output_message(output_messages):
 
 
-	parsed_message = ""
-
-	# Everybody stand back. I know regular expressions.
-	pattern = "([a-zA-Z][0-9])([\+\-])([0-9])([0-9]+)([0-9])([\+\-])"
-
-	matches = re.findall(pattern, output_message, flags=0)
-	
 	result = {}	
-	for match in matches:
-		channel_name = match[0]
-
-		value = float("{}.{}".format(match[2], match[3]))
-
-		if match[5] == "+":
-			value *= 10**(int(match[4]))
-		elif match[5] == "-":
-			value *= 10**( - int(match[4]))
-
-		if match[1] == "-":
-			value = 0 - value
-
-		result[channel_name] = value
-
+	for output_message in output_messages:
 		
+		if "ERR" in output_message:
+			error_key = output_message.split("\r\n")[0]
+			raise Exception(error_key, arduino_error_messages_dict[error_key])
+		else:
+
+			parsed_message = ""
+
+			# Everybody stand back. I know regular expressions.
+			pattern = "([a-zA-Z][0-9])([\+\-])([0-9])([0-9]+)([0-9])([\+\-])"
+
+			matches = re.findall(pattern, output_message, flags=0)
+			
+
+			for match in matches:
+				channel_name = match[0]
+
+				value = float("{}.{}".format(match[2], match[3]))
+
+				if match[5] == "+":
+					value *= 10**(int(match[4]))
+				elif match[5] == "-":
+					value *= 10**( - int(match[4]))
+
+				if match[1] == "-":
+					value = 0 - value
+
+				result[channel_name] = value
+
 	return result
 
 
 
 def output_message_per_channel_length(precision):
+
 	sign = 1
  	channel_name = 2
  	mentissa = 1
  	exponent = 1
  	exponent_sign = 1
- 	per_channel_length = channel_name + sign + mentissa + precision + exponent + exponent_sign 
+ 	per_channel_length = channel_name + sign + mentissa + int(precision) + exponent + exponent_sign 
 
  	return per_channel_length
 
@@ -185,4 +195,4 @@ def decode_channel_names(message):
 # print build_query_message(["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7"], [9, 9, 9, 9, 9, 9, 9, 9])
 # print build_query_message(["f8", "f9", "g0", "g1", "g2", "g3", "g4", "g5", "g6"], [9, 9, 9, 9, 9, 9, 9, 9, 9])
 # print build_query_message(["g7", "g8", "g9"], [9, 9, 9])
-print build_query_message(["g7"], [1])
+# print build_query_message(["g7"], [1])
