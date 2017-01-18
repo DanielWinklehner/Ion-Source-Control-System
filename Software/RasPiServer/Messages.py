@@ -32,15 +32,118 @@ def parse_arduino_output_message(output_message):
 		
 	return result
 
-def build_query_message(channel_names, precisions):
-	
-	msg = "q"
-	msg += "{0:0>2}".format(len(channel_names))
-	
-	for channel_name, precision in zip(channel_names, precisions):
-		msg += "{}{}".format(channel_name, precision)
 
-	return msg
+
+def output_message_per_channel_length(precision):
+	sign = 1
+ 	channel_name = 2
+ 	mentissa = 1
+ 	exponent = 1
+ 	exponent_sign = 1
+ 	per_channel_length = channel_name + sign + mentissa + precision + exponent + exponent_sign 
+
+ 	return per_channel_length
+
+
+def calculate_expected_output_message_length(precisions):
+	message_identifier = 1	# The "o" at the beginning.
+ 	number_of_channels = 2	# 2 because if it is < 10, then it gets padded with a precedding zero.
+
+ 	total_length = message_identifier + number_of_channels + sum([output_message_per_channel_length(precision) for precision in precisions])
+
+ 	return total_length
+
+
+def split_query_message(channel_names, precisions):
+
+
+	message_identifier = 1	# The "o" at the beginning.
+ 	number_of_channels = 2	# 2 because if it is < 10, then it gets padded with a precedding zero.
+
+ 	message_length = message_identifier + number_of_channels
+
+ 	# Keep adding channels to query until you reach message_length == 127.
+
+ 	indices_to_split_after = [] 	
+ 	for i in range(len(channel_names)):
+ 		# Length that current channel would give.
+ 		current_channel_msg_length = output_message_per_channel_length(precisions[i])
+
+ 		message_length += current_channel_msg_length
+
+ 		# print "message length is", message_length, "vs.", 127
+
+ 		if message_length > 127:
+ 			# print "I think I'm gonna split."
+ 			indices_to_split_after.append(i)
+
+ 			message_length = message_identifier + current_channel_msg_length
+
+
+ 	split_channels = []
+ 	split_precisions = []
+
+ 	split_from = 0
+ 	for index_to_split_after in indices_to_split_after:
+ 		split_channels.append(channel_names[ split_from  : index_to_split_after])
+ 		split_precisions.append(precisions[ split_from : index_to_split_after])
+
+ 		split_from = index_to_split_after
+
+ 	# Finally, add the remainder.
+ 	split_channels.append(channel_names[split_from : ])
+ 	split_precisions.append(precisions[split_from : ])
+
+ 	
+ 	# print split_channels, len(split_channels)
+ 	# print split_precisions, len(split_precisions)
+
+ 	all_messages_less_than_128_bytes = [1 if calculate_expected_output_message_length(precisions) else 0 for precisions in split_precisions]
+
+ 	
+ 	if len(all_messages_less_than_128_bytes) != len(split_channels):
+ 		raise Exception("ERROR: One or more of the split message is going to be > 128 bytes long. Please fix the bug.")
+ 	else:
+ 		return split_channels, split_precisions
+
+
+ 	
+
+
+def build_query_message(channel_names, precisions, safe_messages=[]):
+
+
+	if len(channel_names) != len(precisions):
+		raise Exception("Number of channel names to query does not match the number of precisions requested.", len(channel_names), len(precisions))
+
+	# Here, make sure that we don't send a message that gives us an output that's more than 128 characters long.
+	# If the message seems to be that way, split it into smaller messages.
+
+ 	# First, calculate the expected length of the output message.
+	total_length = calculate_expected_output_message_length(precisions) 	
+
+ 	if total_length > 127:
+ 		# We need to split our message into smaller chunks.
+
+ 		split_channels, split_precisions = split_query_message(channel_names, precisions)
+
+ 		all_messages = []
+ 		for split_channel, split_precision in zip(split_channels, split_precisions):
+ 			# return build_query_message(split_channel, split_precision, safe_messages=[])
+ 			all_messages.append(build_query_message(split_channel, split_precision))
+ 		
+ 		return [msg[0] for msg in all_messages]
+
+ 	else:
+		msg = "q"
+		msg += "{0:0>2}".format(len(channel_names))
+		
+		for channel_name, precision in zip(channel_names, precisions):
+			msg += "{}{}".format(channel_name, precision)
+
+		return [msg]
+
+
 
 def build_set_message(channel_names, values_to_set):
 
@@ -74,3 +177,12 @@ def decode_channel_names(message):
 	return all_channels
 
 # print parse_arduino_output_message("o04f0+60231+f1+000000+f2+000+f3+00000+")
+# For the query message q02f12f24, we get: o02f1+1230+f2+456789+
+
+
+# print build_query_message(["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "g0", "g1", "g2"], [2, 4, 1, 5, 4, 5, 1, 3, 5, 5, 4, 3, 4])
+# print build_query_message(["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8", "g9"], [1, 1, 1, 1, 1, 1, 3, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9])
+# print build_query_message(["f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7"], [9, 9, 9, 9, 9, 9, 9, 9])
+# print build_query_message(["f8", "f9", "g0", "g1", "g2", "g3", "g4", "g5", "g6"], [9, 9, 9, 9, 9, 9, 9, 9, 9])
+# print build_query_message(["g7", "g8", "g9"], [9, 9, 9])
+print build_query_message(["g7"], [1])

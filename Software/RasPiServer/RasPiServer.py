@@ -138,6 +138,10 @@ def mp_worker(serial_com, message):
 
     start = time.time()
 
+
+    print "The message I am going to send is", message
+
+
     arduino_response = serial_com.send_message(message)
     
     end = time.time()
