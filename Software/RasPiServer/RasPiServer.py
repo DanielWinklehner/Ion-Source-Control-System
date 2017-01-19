@@ -44,6 +44,8 @@ device_channel_names = defaultdict(list)    # key = arduino id; value = list( ch
 all_active_arduinos = []
 all_active_managers = []
 
+
+
 def update_arduinos_connected():
     global all_active_arduinos
     global all_active_managers
@@ -93,44 +95,19 @@ def update_arduinos_connected():
             else:
                 #print "nope! Not there!"
 
+
                 new_manager = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
 
                 all_active_arduinos.append(arduino)
                 all_active_managers.append(new_manager)
-                channel_values[arduino[0]] = {}             
-
-
-                print new_manager.send_message("i")
+                channel_values[arduino[0]] = {}
 
                 all_channels = Messages.decode_channel_names( new_manager.send_message("i") )
 
                 for channel in all_channels:
                     device_channel_names[arduino[0]].append(channel)
-                    
-        ''' 
-        # Next, update values for all devices.
-        for manager in all_active_managers:
-            arduino_id = manager.get_arduino_id()
-
-            channel_names = device_channel_names[arduino[0]][0:3]
-
-            # Build a query message.
-            query_message = Messages.build_query_message(channel_names, [3] * len(channel_names))
-            
-            if arduino_id in channel_values:
-                # Get current value.
-                response = manager.send_message(query_message)
-                parsed_response = Messages.parse_arduino_output_message(response)
-                #print value                
-                #channel_values[arduino_id] = 
-                pass
-        '''
-        #print all_active_arduinos
-        #print all_active_managers
-        #print device_channel_names
 
 
-#update_arduinos_connected()
 
 
 
@@ -295,34 +272,36 @@ def active_arduinos():
 @app.route("/arduino/query", methods=['GET', 'POST'])
 def query_arduinos():
     
-    start = time.time()
 
-    if request.method == 'POST':
-        all_arduino_ids = json.loads(request.form['arduino_id'])
-        all_channel_names = json.loads(request.form['channel_names'])
-        all_precisions = json.loads(request.form['precisions'])
+    return {"95432313837351706152": {"i1": 1022.9999999999999, "i2": 1000.0}}
+    # start = time.time()
+
+    # if request.method == 'POST':
+    #     all_arduino_ids = json.loads(request.form['arduino_id'])
+    #     all_channel_names = json.loads(request.form['channel_names'])
+    #     all_precisions = json.loads(request.form['precisions'])
         
-    elif request.method == 'GET':
-        all_arduino_ids = json.loads(request.args.get('arduino_id'))
-        all_channel_names = json.loads(request.args.get('channel_names'))
-        all_precisions = json.loads(request.args.get('precisions'))
+    # elif request.method == 'GET':
+    #     all_arduino_ids = json.loads(request.args.get('arduino_id'))
+    #     all_channel_names = json.loads(request.args.get('channel_names'))
+    #     all_precisions = json.loads(request.args.get('precisions'))
         
 
-    all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in zip(all_arduino_ids, all_channel_names, all_precisions)]
+    # all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in zip(all_arduino_ids, all_channel_names, all_precisions)]
     
-    all_query_messages = [Messages.build_query_message(channel_names, precisions) for (arduino_id, channel_names, precisions) in all_queries]
+    # all_query_messages = [Messages.build_query_message(channel_names, precisions) for (arduino_id, channel_names, precisions) in all_queries]
 
-    print "all query messages:"
-    print all_query_messages
+    # print "all query messages:"
+    # print all_query_messages
 
 
-    arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
+    # arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
 
-    end = time.time()
+    # end = time.time()
 
-    #print "The response took", (end - start), "seconds."
+    # #print "The response took", (end - start), "seconds."
 
-    return json.dumps(arduinos_response)
+    # return json.dumps(arduinos_response)
     
 def shutdown_server():
     func = request.environ.get('werkzeug.server.shutdown')

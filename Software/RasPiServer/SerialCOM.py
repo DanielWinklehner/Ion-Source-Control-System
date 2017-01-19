@@ -11,7 +11,7 @@ import os
 
 class SerialCOM(object):
 
-	def __init__(self, arduino_id, port_name, timeout=2.):
+	def __init__(self, arduino_id, port_name, timeout=1.):
 		"""Summary
 		
 		Args:
@@ -64,15 +64,14 @@ class SerialCOM(object):
 			print "My name is SerialCOM and I am going to send the following message:"
 			print message
 			
-			# self._ser.flushInput()
-			# self._ser.flushOutput()
-
+			self._ser.flushInput()
+			self._ser.flushOutput()
 
 			self._ser.write(message)
 
 			response = self._ser.readline()
 
-			print "I sent a message", message, "and received", response
+			print "I sent a message", message, "and received", response, len(response)
 
 			if len(response) != 0:
 				return response
@@ -84,6 +83,7 @@ class SerialCOM(object):
 		except Exception as e3:
 			raise Exception("Something's wrong! I cannot send any messages!" + str(e3))
 
+		# raise Exception("Arduino with device id = " + str(self._arduino_id) + " is not responding to my message: '" + str(message) + "'")
 		return ""
 
 	def read_message(self):

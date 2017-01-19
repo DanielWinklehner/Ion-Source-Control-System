@@ -186,6 +186,8 @@ def decode_channel_names(message):
 	all_channels = []
 	channel_names = message.split(",")
 
+	print message
+	
 	for channel_name in channel_names:
 		name = channel_name[0].strip(" \r\n")
 		total_number = int(channel_name[1].strip(" \r\n"))

@@ -411,7 +411,9 @@ class MIST1ControlSystem:
         arduino_ids = [device.get_arduino_id() for device_name, device in devices.items()]
         channel_names = [[name for name, mych in device.channels().items() if mych.mode() == 'read'] for
                          device_name, device in devices.items()]
-        precisions = [[4] * len(device.channels()) for device_name, device in devices.items()]
+        # precisions = [[4] * len(device.channels()) for device_name, device in devices.items()]
+        precisions = [[4 for name, mych in device.channels().items() if mych.mode() == 'read'] for
+                         device_name, device in devices.items()]
 
         # print "Trying to get channel values for ", arduino_id
         # start = time.time()
@@ -1741,8 +1743,9 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
-    mydebug = False
+    mydebug = True
 
+    # 95432313837351E00271
     # control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=80)
     control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=mydebug)
 
@@ -1752,8 +1755,8 @@ if __name__ == "__main__":
 
     # Set up a dummy device and channels
     ps_controller = Device("ps_controller",
-                           arduino_id="R2D2",
-                           label="Power Supple Controller",
+                           arduino_id="95432313837351706152",
+                           label="Power Supple Controller 1",
                            debug=mydebug)
 
     ps_controller.set_overview_page_presence(True)
@@ -1798,6 +1801,58 @@ if __name__ == "__main__":
     ps_controller.add_channel(ch)
 
     control_system.add_device(ps_controller)
+
+
+    # Set up a dummy device and channels
+    ps_controller_2 = Device("ps_controller_2",
+                           arduino_id="95432313837351E00271",
+                           label="Power Supple Controller 2",
+                           debug=mydebug)
+
+    ps_controller_2.set_overview_page_presence(True)
+
+    for i in range(2):
+
+        ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=bool,
+                     mode="write")
+
+        ps_controller_2.add_channel(ch)
+
+    for i in range(2):
+
+        ch = Channel(name="f{}".format(i + 1), label="PS{}_V".format(i + 1),
+
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=float,
+                     mode="read")
+
+        ps_controller_2.add_channel(ch)
+
+    for i in range(2):
+
+        ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=float,
+                     mode="read")
+
+        ps_controller_2.add_channel(ch)
+
+    ch = Channel(name="x0", label="EXT_ILK",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="read")
+
+    ps_controller_2.add_channel(ch)
+
+    control_system.add_device(ps_controller_2)
+
+
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
