@@ -85,7 +85,7 @@ def build_message(msg_type, device_address="254", category="setup", for_what="wi
     else:
         raise Exception("Error: Unknown message type.")
 
-    if data_variable != None:
+    if data_variable is not None:
         msg += data_variable
 
     msg += ";"
