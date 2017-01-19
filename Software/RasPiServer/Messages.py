@@ -172,20 +172,22 @@ def build_set_message(channel_names, values_to_set):
 
 def decode_channel_names(message):
 
+	if len(message.strip()) != 0:
+		all_channels = []
+		channel_names = message.split(",")
 
+		for channel_name in channel_names:
+			name = channel_name[0].strip(" \r\n")
+			total_number = int(channel_name[1].strip(" \r\n"))
 
-	all_channels = []
-	channel_names = message.split(",")
+			for i in range(total_number):
+				all_channels.append( "{}{}".format(name, i) )
 
-	for channel_name in channel_names:
-		name = channel_name[0].strip(" \r\n")
-		total_number = int(channel_name[1].strip(" \r\n"))
+		return all_channels
 
-		for i in range(total_number):
-			all_channels.append( "{}{}".format(name, i) )
+	return []
 
-	return all_channels
-
+	
 # print parse_arduino_output_message("o04f0+60231+f1+000000+f2+000+f3+00000+")
 # For the query message q02f12f24, we get: o02f1+1230+f2+456789+
 
