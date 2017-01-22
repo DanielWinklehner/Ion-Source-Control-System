@@ -17,7 +17,7 @@ def get_error(error_code):
 
 
 def get_command(category, for_what):
-    setup_dict = {"change_baud_rate": 'CC', "change_address": 'CA', "user_tag": 'UT', "operating_mode": 'OM',
+    setup_dict = {"baud_rate": 'CC', "address": 'CA', "user_tag": 'UT', "operating_mode": 'OM',
                   "programmed_gas_table_size": 'GTS', "programmed_gas_table_search": 'GL',
                   "activate_programmed_gas": 'PG', "flow_units": 'U', "full_scale_range": 'FS', "wink": 'WK',
                   "run_hours_meter": 'RH'}
@@ -57,7 +57,8 @@ def parse_message(message):
         response_value = message[9:-3]
         return {'acknowledged': True, 'value': response_value}
     elif (response == "NAK"):
-        return {'acknowledged': False}
+        response_value = message[9:-3]
+        return {'acknowledged': False, 'error message': get_error(response_value)}
 
 
 def build_message(msg_type, device_address="254", category="setup", for_what="wink", data_variable=None):
@@ -105,8 +106,8 @@ def tests():
 if __name__ == '__main__':
     tests()
 
-    print build_message(msg_type="query", category="setup", for_what="wink")
-
+    print build_message(msg_type="query", category="setup", for_what="programmed_gas_table_search", data_variable="0")
+    print parse_message("@@@000ACKCR,H,HH;FF")
     # print parse_message(message="@@@000ACK9600;A9")
     # print parse_message(message="@@@000ACK10;FF")
     # print parse_message(message="@@@000ACKAr,4,500,SCCM;FF")
