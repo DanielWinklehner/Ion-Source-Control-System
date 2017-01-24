@@ -52,5 +52,7 @@ class DummySerial():
 			self._last_message = ""
 			return "f0"
 
+		return ""
+
 
 

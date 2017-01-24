@@ -127,6 +127,8 @@ void dummyFunc(float set_value){
 void setup() {
   Serial.begin(115200);
 
+  delay(10);
+
   // Set up analog reference
   analogReference(EXTERNAL);
 

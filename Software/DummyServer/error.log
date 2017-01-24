@@ -1,0 +1,93 @@
+[2017-01-24 13:32:39 +0000] [32489] [DEBUG] GET /arduino/query
+[2017-01-24 13:33:10 +0000] [32485] [CRITICAL] WORKER TIMEOUT (pid:32489)
+[2017-01-24 13:33:10 +0000] [32489] [INFO] Worker exiting (pid: 32489)
+[2017-01-24 13:33:10 +0000] [32548] [INFO] Booting worker with pid: 32548
+[2017-01-24 13:33:14 +0000] [32485] [INFO] Handling signal: int
+[2017-01-24 13:33:14 +0000] [32548] [INFO] Worker exiting (pid: 32548)
+[2017-01-24 13:33:14 +0000] [32485] [INFO] Shutting down: Master
+[2017-01-24 13:33:16 +0000] [32551] [DEBUG] Current configuration:
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-SSL': 'on'}
+  proxy_protocol: False
+  worker_connections: 1000
+  statsd_host: None
+  max_requests_jitter: 0
+  post_fork: <function post_fork at 0x7f13e7b72b90>
+  pythonpath: None
+  enable_stdio_inheritance: False
+  worker_class: sync
+  ssl_version: 3
+  suppress_ragged_eofs: True
+  syslog: False
+  syslog_facility: user
+  when_ready: <function when_ready at 0x7f13e7b728c0>
+  pre_fork: <function pre_fork at 0x7f13e7b72a28>
+  cert_reqs: 0
+  preload_app: False
+  keepalive: 2
+  accesslog: None
+  group: 1000
+  graceful_timeout: 30
+  do_handshake_on_connect: False
+  spew: False
+  workers: 1
+  proc_name: None
+  sendfile: None
+  pidfile: None
+  umask: 0
+  on_reload: <function on_reload at 0x7f13e7b72758>
+  pre_exec: <function pre_exec at 0x7f13e7e071b8>
+  worker_tmp_dir: None
+  post_worker_init: <function post_worker_init at 0x7f13e7b72cf8>
+  limit_request_fields: 100
+  on_exit: <function on_exit at 0x7f13e7e07848>
+  config: None
+  logconfig: None
+  check_config: False
+  statsd_prefix: 
+  proxy_allow_ips: ['127.0.0.1']
+  pre_request: <function pre_request at 0x7f13e7e07320>
+  post_request: <function post_request at 0x7f13e7e07410>
+  user: 1000
+  forwarded_allow_ips: ['127.0.0.1']
+  worker_int: <function worker_int at 0x7f13e7b72e60>
+  threads: 1
+  max_requests: 0
+  limit_request_line: 4094
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  certfile: None
+  worker_exit: <function worker_exit at 0x7f13e7e07578>
+  chdir: /home/aashish/Dropbox (MIT)/Research/Ion Source/Software/DummyServer
+  paste: None
+  default_proc_name: wsgi
+  errorlog: ./error.log
+  loglevel: DEBUG
+  capture_output: True
+  syslog_addr: udp://localhost:514
+  syslog_prefix: None
+  daemon: False
+  ciphers: TLSv1
+  on_starting: <function on_starting at 0x7f13e7b725f0>
+  worker_abort: <function worker_abort at 0x7f13e7e07050>
+  bind: ['127.0.0.1:5000']
+  raw_env: []
+  reload: False
+  limit_request_field_size: 8190
+  nworkers_changed: <function nworkers_changed at 0x7f13e7e076e0>
+  timeout: 30
+  ca_certs: None
+  django_settings: None
+  tmp_upload_dir: None
+  keyfile: None
+  backlog: 2048
+  logger_class: gunicorn.glogging.Logger
+[2017-01-24 13:33:16 +0000] [32551] [INFO] Starting gunicorn 19.6.0
+[2017-01-24 13:33:16 +0000] [32551] [DEBUG] Arbiter booted
+[2017-01-24 13:33:16 +0000] [32551] [INFO] Listening at: http://127.0.0.1:5000 (32551)
+[2017-01-24 13:33:16 +0000] [32551] [INFO] Using worker: sync
+[2017-01-24 13:33:16 +0000] [32555] [INFO] Booting worker with pid: 32555
+[2017-01-24 13:33:16 +0000] [32551] [DEBUG] 1 workers
+[2017-01-24 13:33:17 +0000] [32555] [DEBUG] GET /arduino/query
+[2017-01-24 13:33:17 +0000] [32555] [DEBUG] We are querying arduinos
+[2017-01-24 13:33:26 +0000] [32551] [INFO] Handling signal: int
+[2017-01-24 13:33:26 +0000] [32555] [INFO] Worker exiting (pid: 32555)
+[2017-01-24 13:33:26 +0000] [32551] [INFO] Shutting down: Master
