@@ -1,0 +1,10 @@
+
+Needs:
+gunicorn
+gevent
+
+
+Command:
+gunicorn -k gevent --worker-connections 1000 --bind 127.0.0.1:5000 wsgi
+
+The number after --worker-connections is the number of workers you want (like threads but less resource-intensive).

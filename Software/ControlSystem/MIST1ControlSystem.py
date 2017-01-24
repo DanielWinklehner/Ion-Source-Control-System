@@ -425,6 +425,11 @@ class MIST1ControlSystem:
 
         # print "It took", (end - start), "seconds to get a response."
 
+
+        if self.debug:
+            print "Got the following response:"
+            print response
+
         if response.strip() != r"{}" and "error" not in str(response).lower():
             parsed_response = json.loads(response)
 
@@ -432,9 +437,13 @@ class MIST1ControlSystem:
                 device_name = self._device_name_arduino_id_map[arduino_id]
                 device = self._devices[device_name]
 
-                for channel_name, value in parsed_response[arduino_id].items():
-                    # print channel_name, value
-                    device.get_channel_by_name(channel_name).set_value(value)
+                if "ERR" in parsed_response[arduino_id]:
+                    # self._status_bar.push(2, "Error: " + str(parsed_response[arduino_id]))
+                    pass
+                else:
+                    for channel_name, value in parsed_response[arduino_id].items():
+                        # print channel_name, value
+                        device.get_channel_by_name(channel_name).set_value(value)
 
         '''
         try:
@@ -1754,10 +1763,18 @@ if __name__ == "__main__":
     control_system.register_data_logging_file(filename="log/{}.h5".format(current_time))
 
     # Set up a dummy device and channels
+    # ps_controller = Device("ps_controller",
+    #                        arduino_id="95432313837351706152",
+    #                        label="Power Supple Controller 1",
+    #                        debug=mydebug)
+
+
     ps_controller = Device("ps_controller",
-                           arduino_id="95432313837351706152",
+                           arduino_id="R2D2",
                            label="Power Supple Controller 1",
                            debug=mydebug)
+
+
 
     ps_controller.set_overview_page_presence(True)
 
@@ -1773,7 +1790,7 @@ if __name__ == "__main__":
 
     for i in range(2):
 
-        ch = Channel(name="f{}".format(i + 1), label="PS{}_V".format(i + 1),
+        ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
 
                      upper_limit=1,
                      lower_limit=0,
@@ -1792,7 +1809,7 @@ if __name__ == "__main__":
 
         ps_controller.add_channel(ch)
 
-    ch = Channel(name="x0", label="EXT_ILK",
+    ch = Channel(name="x1", label="EXT_ILK",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
@@ -1804,10 +1821,17 @@ if __name__ == "__main__":
 
 
     # Set up a dummy device and channels
+    # ps_controller_2 = Device("ps_controller_2",
+    #                        arduino_id="95432313837351E00271",
+    #                        label="Power Supple Controller 2",
+    #                        debug=mydebug)
+
+
     ps_controller_2 = Device("ps_controller_2",
-                           arduino_id="95432313837351E00271",
+                           arduino_id="C3PO",
                            label="Power Supple Controller 2",
                            debug=mydebug)
+
 
     ps_controller_2.set_overview_page_presence(True)
 
@@ -1823,7 +1847,7 @@ if __name__ == "__main__":
 
     for i in range(2):
 
-        ch = Channel(name="f{}".format(i + 1), label="PS{}_V".format(i + 1),
+        ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
 
                      upper_limit=1,
                      lower_limit=0,
@@ -1842,7 +1866,7 @@ if __name__ == "__main__":
 
         ps_controller_2.add_channel(ch)
 
-    ch = Channel(name="x0", label="EXT_ILK",
+    ch = Channel(name="x1", label="EXT_ILK",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,

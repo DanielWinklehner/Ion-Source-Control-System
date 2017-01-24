@@ -64,12 +64,26 @@ class SerialCOM(object):
 			print "My name is SerialCOM and I am going to send the following message:"
 			print message
 			
-			self._ser.flushInput()
-			self._ser.flushOutput()
+			# self._ser.flushInput()
+			# self._ser.flushOutput()
 
-			self._ser.write(message)
+			# for i in range(10):
+			# 	self._ser.write(message)
+			# 	response = self._ser.readline()
 
+			
+			# ser.write(message)
+
+			time.sleep(100)
+
+			self._ser.write("i")
+			
+
+			time.sleep(100)
+			
 			response = self._ser.readline()
+
+				
 
 			print "I sent a message", message, "and received", response, len(response)
 
