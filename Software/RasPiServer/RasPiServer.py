@@ -55,68 +55,72 @@ def update_arduinos_connected():
     global all_active_arduinos
     global all_active_managers
 
+    # print "I am updating arduinos connected."
+
     # while True:
-    for count_abc in range(2):
+    # for count_abc in range(2):
 
-        all_arduinos = find_arudinos_connected()
+    all_arduinos = find_arudinos_connected()
 
-        #all_active_arduinos = all_arduinos
-        #all_active_managers = [Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1]) for arduino in all_active_arduinos]
+    #all_active_arduinos = all_arduinos
+    #all_active_managers = [Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1]) for arduino in all_active_arduinos]
+    
+
+    for i, arduino in enumerate(all_arduinos):
+
+        arduinos_to_remove = []
         
+        for j, arduino_already_added in enumerate(all_active_arduinos):
 
-        for i, arduino in enumerate(all_arduinos):
+            #print arduino, arduino_already_added
 
-            arduinos_to_remove = []
-            
-            for j, arduino_already_added in enumerate(all_active_arduinos):
-
-                #print arduino, arduino_already_added
-
-                if arduino_already_added[0] == arduino[0] and arduino_already_added[1] == arduino[1]:
-                    # Both arduino id and port name matches. Do nothing.
-                    #print "Case I"
-                    pass
-                elif arduino_already_added[0] == arduino[0] and arduino_already_added[1] != arduino[1]:
-                    # Arduino id matches but port name does not. Replace them with new entries.
-                    #print "Case 2"
-                    all_active_arduinos[j] = arduino
-                    all_active_managers[j] = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
-                    time.sleep(1)
-                    all_active_managers[j].send_message("i")
-                else:
-                    pass
-
-                if arduino_already_added not in all_arduinos:
-                    arduinos_to_remove.append(arduino_already_added)
-
-            for arduino_to_remove in arduinos_to_remove:
-                print arduino_to_remove, "no longer there so removing it."
-                try:
-                    all_active_arduinos.remove(arduino_to_remove)
-                except ValueError:
-                    pass
-
-            # Next, "brand new" arduinos that we've never added before.
-            if arduino in all_active_arduinos:
-                #print "arduino already added"
+            if arduino_already_added[0] == arduino[0] and arduino_already_added[1] == arduino[1]:
+                # Both arduino id and port name matches. Do nothing.
+                #print "Case I"
                 pass
+            elif arduino_already_added[0] == arduino[0] and arduino_already_added[1] != arduino[1]:
+                # Arduino id matches but port name does not. Replace them with new entries.
+                #print "Case 2"
+                all_active_arduinos[j] = arduino
+                all_active_managers[j] = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
+                time.sleep(1)
+                all_active_managers[j].send_message("i")
             else:
-                #print "nope! Not there!"
+                pass
+
+            if arduino_already_added not in all_arduinos:
+                arduinos_to_remove.append(arduino_already_added)
+
+        for arduino_to_remove in arduinos_to_remove:
+            print arduino_to_remove, "no longer there so removing it."
+            try:
+                all_active_arduinos.remove(arduino_to_remove)
+            except ValueError:
+                pass
+
+        # Next, "brand new" arduinos that we've never added before.
+        if arduino in all_active_arduinos:
+            #print "arduino already added"
+            pass
+        else:
+            #print "nope! Not there!"
 
 
-                new_manager = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
+            new_manager = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
 
-                all_active_arduinos.append(arduino)
-                all_active_managers.append(new_manager)
-                channel_values[arduino[0]] = {}
+            all_active_arduinos.append(arduino)
+            all_active_managers.append(new_manager)
+            channel_values[arduino[0]] = {}
 
-                all_channels = Messages.decode_channel_names( new_manager.send_message("i") )
+            all_channels = Messages.decode_channel_names( new_manager.send_message("i") )
 
-                for channel in all_channels:
-                    device_channel_names[arduino[0]].append(channel)
+            for channel in all_channels:
+                device_channel_names[arduino[0]].append(channel)
 
+        
+    threading.Timer(1., update_arduinos_connected).start()
 
-
+        # time.sleep(0.1)
 
 
 def build_arduino_port_map(arduino_ids):
@@ -190,7 +194,7 @@ def mp_worker(machine):
 def pool_query_arduinos(arduino_ids, queries):
 
     # First, find correct SerialCOM objects to use.
-    update_arduinos_connected()
+    # update_arduinos_connected()
 
     serial_coms_to_use = []
     queries_to_use = []
@@ -223,7 +227,7 @@ def pool_query_arduinos(arduino_ids, queries):
         try:
 
             # p = multiprocessing.Pool(len(machines))
-            p = ThreadPool(processes=1)
+            p = ThreadPool()
 
             start2 = time.time()
 
@@ -377,8 +381,8 @@ def shutdown():
 
 if __name__ == "__main__":
     
-    connected_arduinos_thread = threading.Thread(target=update_arduinos_connected)
-    connected_arduinos_thread.start()
+    # connected_arduinos_thread = threading.Thread(target=update_arduinos_connected)
+    threading.Timer(0.1, update_arduinos_connected).start()
 
     # update_arduinos_connected()
 

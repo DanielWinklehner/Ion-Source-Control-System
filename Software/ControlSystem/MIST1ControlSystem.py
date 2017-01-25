@@ -353,6 +353,8 @@ class MIST1ControlSystem:
 
     def send_message_to_server(self, purpose=None, **kwargs):
 
+
+
         url = self._server_url
         data = {}
 
@@ -371,9 +373,9 @@ class MIST1ControlSystem:
         elif purpose == "set_values":
 
             url += "arduino/set"
-            data['arduino_id'] = kwargs["arduino_ids"]
-            data['channel_name'] = kwargs["channel_names"]
-            data['value_to_set'] = kwargs["precisions"]
+            data['arduino_id'] = kwargs["arduino_id"]
+            data['channel_name'] = kwargs["channel_name"]
+            data['value_to_set'] = kwargs["value_to_set"]
 
         try:
 
@@ -509,7 +511,7 @@ class MIST1ControlSystem:
         channel_name = channel.name()
         value_to_set = channel.read_value()
 
-        response = self.send_message_to_server(purpose='set_values', args=[arduino_id, channel_name, value_to_set])
+        response = self.send_message_to_server(purpose='set_values', arduino_id=arduino_id, channel_name=channel_name, value_to_set=value_to_set)
 
         if self.debug:
 
