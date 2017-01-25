@@ -1,5 +1,9 @@
 
 
+gui_to_server = [ {'device_driver': 'mfc', 'device_id': '254', 'channel_ids': ["f0", "f1", "g0"], 'precisions': [1, 2, 3]} ]
+
+# The server adds the 'set': True / False part.
+
 server_to_driver = {'device_driver': 'mfc', 'device_id': '254', 'channel_ids': ["f0", "f1", "g0"], 'precisions': [1, 2, 3], 'set': False}
 
 drivers_response_to_server = ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF"]    # Query messages.
@@ -11,4 +15,4 @@ server_to_driver_again = ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90
 # The driver then translates these into "nicer" forms.
 driver_to_server_again = [3.1, 3.14, 3.142] # Note the precisions match what we had in the first message. 
 
-server_to_gui = {'device_driver': 'mfc', 'device_id': '254', 'channel_ids': ["f0", "f1", "g0"], 'precisions': [1, 2, 3], 'set': False}
+server_to_gui = [ [3.1, 3.14, 3.142] ]

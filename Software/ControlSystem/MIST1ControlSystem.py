@@ -413,7 +413,7 @@ class MIST1ControlSystem:
                          device_name, device in devices.items()]
         # precisions = [[4] * len(device.channels()) for device_name, device in devices.items()]
         precisions = [[4 for name, mych in device.channels().items() if mych.mode() == 'read'] for
-                         device_name, device in devices.items()]
+                      device_name, device in devices.items()]
 
         # print "Trying to get channel values for ", arduino_id
         # start = time.time()
@@ -425,10 +425,9 @@ class MIST1ControlSystem:
 
         # print "It took", (end - start), "seconds to get a response."
 
-
         if self.debug:
-            print "Got the following response:"
-            print response
+
+            print("Got the following response: {}".format(response))
 
         if response.strip() != r"{}" and "error" not in str(response).lower():
             parsed_response = json.loads(response)
@@ -1763,6 +1762,9 @@ if __name__ == "__main__":
     control_system.register_data_logging_file(filename="log/{}.h5".format(current_time))
 
     # Set up a dummy device and channels
+
+
+
     ps_controller = Device("ps_controller",
                            arduino_id="95432313837351706152",
                            label="Power Supple Controller 1",
@@ -1819,18 +1821,18 @@ if __name__ == "__main__":
 
     control_system.add_device(ps_controller)
 
-
     # Set up a dummy device and channels
+
     ps_controller_2 = Device("ps_controller_2",
                            arduino_id="95432313837351E00271",
                            label="Power Supple Controller 2",
                            debug=mydebug)
 
 
-    # ps_controller_2 = Device("ps_controller_2",
-    #                        arduino_id="C3PO",
-    #                        label="Power Supple Controller 2",
-    #                        debug=mydebug)
+    ps_controller_2 = Device("ps_controller_2",
+                             arduino_id="C3PO",
+                             label="Power Supple Controller 2",
+                             debug=mydebug)
 
 
     ps_controller_2.set_overview_page_presence(True)
@@ -1875,8 +1877,6 @@ if __name__ == "__main__":
     ps_controller_2.add_channel(ch)
 
     control_system.add_device(ps_controller_2)
-
-
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
