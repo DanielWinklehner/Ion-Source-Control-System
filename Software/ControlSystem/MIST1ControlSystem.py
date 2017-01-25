@@ -1829,10 +1829,10 @@ if __name__ == "__main__":
                            debug=mydebug)
 
 
-    ps_controller_2 = Device("ps_controller_2",
-                             arduino_id="C3PO",
-                             label="Power Supple Controller 2",
-                             debug=mydebug)
+    # ps_controller_2 = Device("ps_controller_2",
+    #                          arduino_id="C3PO",
+    #                          label="Power Supple Controller 2",
+    #                          debug=mydebug)
 
 
     ps_controller_2.set_overview_page_presence(True)
