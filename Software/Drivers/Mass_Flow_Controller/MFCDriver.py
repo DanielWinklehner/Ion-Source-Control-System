@@ -1,6 +1,6 @@
 from __future__ import division
 import binascii
-
+import json
 
 def calculate_checksum(message):
     checksum = sum(map(ord, [x for x in message]))
@@ -79,9 +79,9 @@ def build_message(msg_type, device_address="254", category="setup", for_what="wi
 
     msg += get_command(category, for_what)
 
-    if msg_type == "query":
+    if msg_type == False:
         msg += "?"
-    elif msg_type == "set":
+    elif msg_type == True:
         msg += "!"
     else:
         raise Exception("Error: Unknown message type.")
@@ -106,8 +106,23 @@ def tests():
 if __name__ == '__main__':
     tests()
 
-    print build_message(msg_type="query", category="setup", for_what="programmed_gas_table_search", data_variable="0")
-    print parse_message("@@@000ACKCR,H,HH;FF")
+    server_to_driver_string='{"channel_ids": ["wink", "wink", "wink"], "device_driver": "mfc", "set": false, "precisions": [1, 2, 3], "device_id": "254"}'
+
+
+    server_to_driver=json.loads(server_to_driver_string)
+
+    num_of_mesg = len(server_to_driver['channel_ids'])
+    assert num_of_mesg == len(server_to_driver['precisions'])
+    assert server_to_driver['device_driver']=="mfc"
+    drivers_response_to_server=[]
+
+    for i in range(0,num_of_mesg):
+        drivers_response_to_server.append(build_message(msg_type=server_to_driver['set'], device_address=server_to_driver['device_id'], category="setup", for_what=server_to_driver['channel_ids'][i]))
+
+    print drivers_response_to_server
+
+
+    #print parse_message("@@@000ACKCR,H,HH;FF")
     # print parse_message(message="@@@000ACK9600;A9")
     # print parse_message(message="@@@000ACK10;FF")
     # print parse_message(message="@@@000ACKAr,4,500,SCCM;FF")
