@@ -11,12 +11,13 @@ import os
 
 class SerialCOM(object):
 
-	def __init__(self, port_name, timeout=1.):
+	def __init__(self, arduino_id, port_name, timeout=1.0):
 		"""Summary
 		
 		Args:
 		    arduino_id (TYPE): Description
 		"""
+		self._arduino_id = arduino_id
 		self._port_name = port_name
 
 		self._baudrate = 115200
@@ -25,7 +26,15 @@ class SerialCOM(object):
 		# self._ser = serial.Serial(port_name, baudrate=self._baudrate)
 
 		
-
+		time.sleep(1)
+		
+	def get_arduino_id(self):
+		"""Summary
+		
+		Returns:
+		    TYPE: Description
+		"""
+		return self._arduino_id
 
 	def get_port(self):
 		"""Summary
@@ -52,8 +61,8 @@ class SerialCOM(object):
 		try:
 			
 
-			# print "My name is SerialCOM and I am going to send the following message:"
-			# print message
+			print "My name is SerialCOM and I am going to send the following message:"
+			print message
 			
 			# self._ser.flushInput()
 			# self._ser.flushOutput()
@@ -65,17 +74,18 @@ class SerialCOM(object):
 			
 			# ser.write(message)
 
-			# print "I am sleeping yo!"
-
-			# time.sleep(0.9)
+			# time.sleep(1.0)
 
 			self._ser.write(message)
-
 			
-			# print "Come on, don't wake me up. I want to sleep."
-			# time.sleep(0.9)
+
+			# time.sleep(1)
 			
 			response = self._ser.readline()
+
+				
+
+			print "I sent a message", message, "and received", response, len(response)
 
 			if len(response) != 0:
 				return response
@@ -87,6 +97,7 @@ class SerialCOM(object):
 		except Exception as e3:
 			raise Exception("Something's wrong! I cannot send any messages!" + str(e3))
 
+		# raise Exception("Arduino with device id = " + str(self._arduino_id) + " is not responding to my message: '" + str(message) + "'")
 		return ""
 
 	def read_message(self):
@@ -227,9 +238,7 @@ def find_port(arduino_id):
 def find_arudinos_connected():
 	all_arduino_ports = get_all_arduino_ports()
 	
-	by_arduio_id = {}
-	by_port = {}
-
+	all_arduinos = []
 	for arduino_port in all_arduino_ports:
 		name = arduino_port.split("/")[2]
 		
@@ -241,9 +250,7 @@ def find_arudinos_connected():
 			if "serial" in all_files:
 				with open(os.path.abspath(os.curdir) + "/serial") as serial_number_file:
 					serial_number = serial_number_file.readline().strip(" \r\n")
-					by_arduio_id[serial_number] = arduino_port
-					by_port[arduino_port] = serial_number
-	
+					all_arduinos.append( (serial_number, arduino_port))
 		except OSError as e:
 			print "OSError occured", str(e)
 			pass
@@ -251,7 +258,7 @@ def find_arudinos_connected():
 			print "Exception occured", str(e2)
 			pass
 
-	return (by_arduio_id, by_port)
+	return all_arduinos
 
 '''
 def find_arudinos_connected():

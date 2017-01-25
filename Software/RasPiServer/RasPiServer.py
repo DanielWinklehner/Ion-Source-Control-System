@@ -16,12 +16,22 @@ import threading
 
 import multiprocessing
 from multiprocessing.managers import BaseManager
-# from multiprocessing.pool import ThreadPool
 from multiprocessing.dummy import Pool as ThreadPool
+
 from functools import partial
 
 
-import serial
+
+class MyManager(BaseManager): pass
+
+def Manager():
+    m = MyManager()
+    m.start()
+    return m 
+
+MyManager.register('SerialCOM', SerialCOM)
+
+
 
 
 app = Flask(__name__)
@@ -33,13 +43,123 @@ app.debug = True
     
 
 
-def mp_worker(args):
+channel_values = {}             # key = arduino id; value = dictionary (key = channel name; value = float/int/bool).
+device_channel_names = defaultdict(list)    # key = arduino id; value = list( channel names ).
 
+all_active_arduinos = []
+all_active_managers = []
+
+
+
+def update_arduinos_connected():
+    global all_active_arduinos
+    global all_active_managers
+
+    # while True:
+    for count_abc in range(2):
+
+        all_arduinos = find_arudinos_connected()
+
+        #all_active_arduinos = all_arduinos
+        #all_active_managers = [Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1]) for arduino in all_active_arduinos]
+        
+
+        for i, arduino in enumerate(all_arduinos):
+
+            arduinos_to_remove = []
+            
+            for j, arduino_already_added in enumerate(all_active_arduinos):
+
+                #print arduino, arduino_already_added
+
+                if arduino_already_added[0] == arduino[0] and arduino_already_added[1] == arduino[1]:
+                    # Both arduino id and port name matches. Do nothing.
+                    #print "Case I"
+                    pass
+                elif arduino_already_added[0] == arduino[0] and arduino_already_added[1] != arduino[1]:
+                    # Arduino id matches but port name does not. Replace them with new entries.
+                    #print "Case 2"
+                    all_active_arduinos[j] = arduino
+                    all_active_managers[j] = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
+                    time.sleep(1)
+                    all_active_managers[j].send_message("i")
+                else:
+                    pass
+
+                if arduino_already_added not in all_arduinos:
+                    arduinos_to_remove.append(arduino_already_added)
+
+            for arduino_to_remove in arduinos_to_remove:
+                print arduino_to_remove, "no longer there so removing it."
+                try:
+                    all_active_arduinos.remove(arduino_to_remove)
+                except ValueError:
+                    pass
+
+            # Next, "brand new" arduinos that we've never added before.
+            if arduino in all_active_arduinos:
+                #print "arduino already added"
+                pass
+            else:
+                #print "nope! Not there!"
+
+
+                new_manager = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
+
+                all_active_arduinos.append(arduino)
+                all_active_managers.append(new_manager)
+                channel_values[arduino[0]] = {}
+
+                all_channels = Messages.decode_channel_names( new_manager.send_message("i") )
+
+                for channel in all_channels:
+                    device_channel_names[arduino[0]].append(channel)
+
+
+
+
+
+def build_arduino_port_map(arduino_ids):
     
+    arduinos_map = []
+
+    found = True
+    for arduino_id in arduino_ids:
+        for arduino in all_arduinos_info:
+            if arduino_id == arduino[0]:
+                arduinos_map.append(  [arduino_id, arduino[1]] )
+                found = True
+                break
+
+        if not found:
+            arduinos_map.append( [arduino_id, None] )
+
+        found = False
+
+    return arduinos_map
+
+class QueryMachine:
+    def __init__(self, serial_com, queries):
+        self._serial_com = serial_com
+        self._queries = queries
+
+    def serial_com(self):
+        return self._serial_com
+
+    def queries(self):
+        return self._queries
+
+    def __str__(self):
+        return str(self._serial_com) + "; " + str(self._queries)
+
+def mp_worker(machine):
+# def mp_worker(args):
+
     start = time.time()
 
     # print machine
-    port, messages = args
+    serial_com = machine.serial_com()
+    messages = machine.queries()
 
 
     all_responses = []
@@ -48,28 +168,10 @@ def mp_worker(args):
 
 
         try:
-            # serial_com = SerialCOM(port)
-            # arduino_response = serial_com.send_message(msg)
-            # all_responses.append(arduino_response)
+            arduino_response = serial_com.send_message(msg)
+            all_responses.append(arduino_response)
 
-            start456 = time.time()
-            ser = serial.Serial(port, baudrate=115200, timeout=1.0)
-            end456 = time.time()
-
-            print "It took {} seconds to initialize serial connection.".format(end456 - start456)
-
-            for i in range(10):
-                ser.write(msg)
-                response = ser.readline()
-                print response.strip("\r\n")
-                if len(response.strip("\r\n")) > 0:
-                    break
-
-            print "The response is", response
-
-            all_responses.append(response)
-
-            # print "Got the response",  arduino_response
+            print "Got the response",  arduino_response
 
         except Exception as e:
             print "Something went wrong! I'm sorry!", e
@@ -79,34 +181,39 @@ def mp_worker(args):
 
     end = time.time()
 
-    print "it took", (end - start), "to get a message from the arduino"
+    # print "it took", (end - start), "to get a message from the arduino"
     
-
-    return port, all_responses
+    return serial_com.get_arduino_id(), all_responses
     # return None
 
 
-
-
 def pool_query_arduinos(arduino_ids, queries):
-    
 
-
-
-    # Using multiprocessing.
     # First, find correct SerialCOM objects to use.
+    update_arduinos_connected()
 
-    
+    serial_coms_to_use = []
+    queries_to_use = []
+
     machines = []
 
-    by_arduio_id, by_port = find_arudinos_connected()
-
     for arduino_id, query in zip(arduino_ids, queries):
-        machines.append((by_arduio_id[arduino_id], query))
+
+        print arduino_id
+
+        for i in range(len(all_active_managers)):
+            
+            print i, " manager = ", all_active_managers[i].get_arduino_id()
+
+            if all_active_managers[i].get_arduino_id() == arduino_id:
+
+                machines.append(QueryMachine(all_active_managers[i], query))
 
 
 
     parsed_response = dict()
+
+    print "Machines length is", len(machines)
 
     if len(machines) > 0:
         start = time.time()
@@ -125,37 +232,24 @@ def pool_query_arduinos(arduino_ids, queries):
             end2 = time.time()
 
         finally:
-            p.close()
-            p.join()
-            # p.shutdown()
+            # p.close()
+            # p.join()
             pass
-            
 
         end = time.time()
 
         #print "It took", (end - start), "seconds to collect all the responses."
 
-        
-
-        # if len(all_responses) == 0 or len(all_responses[0]) == 0:
         if len(all_responses) == 0 or len(all_responses[0]) == 0:
             return None
         else:
-            for response in all_responses:
-                for port, raw_output_message in all_responses:
-
-                    arduino_id = by_port[port]
-                    # print arduino_id, raw_output_message
-
-                    try:
-                        parsed_response[arduino_id] = Messages.parse_arduino_output_message(raw_output_message)
-                    except Exception as e:
-                        parsed_response[arduino_id] = str(e[0]) + ": " + str(e[1])
-            
+            for arduino_id, raw_output_message in all_responses:
+                try:
+                    parsed_response[arduino_id] = Messages.parse_arduino_output_message(raw_output_message)
+                except Exception as e:
+                    parsed_response[arduino_id] = str(e[0]) + ": " + str(e[1])
+        
     return parsed_response
-
-
-
 
 def set_channel_value_to_arduino(arduino_id, channel_name, value):
     global all_active_managers
@@ -217,13 +311,10 @@ def active_arduinos():
 def query_arduinos():
 
 
-    start123 = time.time()
-
-
     # print "I've been queried at:", time.strftime("%H:%M:%S:%m")
 
 
-    
+    start = time.time()
 
     if request.method == 'POST':
         all_arduino_ids = json.loads(request.form['arduino_id'])
@@ -250,15 +341,15 @@ def query_arduinos():
 
     end2 = time.time()
 
-    print "The arduino response is", arduinos_response
+    print arduinos_response
 
-    end123 = time.time()
+    end = time.time()
 
     print "\n"*2
 
-    print "The function query_arduinos() took", (end123 - start123), "seconds."
+    print "The function query_arduinos() took", (end - start), "seconds."
 
-    print "Out of that:"
+    print "Out of that:",
 
     print "It took {} to collect responses [pool_query_arduinos()].".format(end2 - start2)
 
@@ -286,6 +377,8 @@ def shutdown():
 
 if __name__ == "__main__":
     
+    connected_arduinos_thread = threading.Thread(target=update_arduinos_connected)
+    connected_arduinos_thread.start()
 
     # update_arduinos_connected()
 

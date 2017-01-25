@@ -174,7 +174,7 @@ def decode_channel_names(message):
 
 	if len(message.strip()) != 0:
 		all_channels = []
-		channel_names = message.split(";")
+		channel_names = message.split(",")
 
 		for channel_name in channel_names:
 			name = channel_name[0].strip(" \r\n")
