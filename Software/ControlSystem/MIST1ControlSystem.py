@@ -353,8 +353,6 @@ class MIST1ControlSystem:
 
     def send_message_to_server(self, purpose=None, **kwargs):
 
-
-
         url = self._server_url
         data = {}
 
@@ -511,7 +509,10 @@ class MIST1ControlSystem:
         channel_name = channel.name()
         value_to_set = channel.read_value()
 
-        response = self.send_message_to_server(purpose='set_values', arduino_id=arduino_id, channel_name=channel_name, value_to_set=value_to_set)
+        response = self.send_message_to_server(purpose='set_values',
+                                               arduino_id=arduino_id,
+                                               channel_name=channel_name,
+                                               value_to_set=value_to_set)
 
         if self.debug:
 
@@ -1765,20 +1766,15 @@ if __name__ == "__main__":
 
     # Set up a dummy device and channels
 
-
-
     ps_controller = Device("ps_controller",
                            arduino_id="95432313837351706152",
                            label="Power Supple Controller 1",
                            debug=mydebug)
 
-
     # ps_controller = Device("ps_controller",
     #                        arduino_id="R2D2",
     #                        label="Power Supple Controller 1",
     #                        debug=mydebug)
-
-
 
     ps_controller.set_overview_page_presence(True)
 
@@ -1826,16 +1822,14 @@ if __name__ == "__main__":
     # Set up a dummy device and channels
 
     ps_controller_2 = Device("ps_controller_2",
-                           arduino_id="95432313837351E00271",
-                           label="Power Supple Controller 2",
-                           debug=mydebug)
-
+                             arduino_id="95432313837351E00271",
+                             label="Power Supply Controller 2",
+                             debug=mydebug)
 
     # ps_controller_2 = Device("ps_controller_2",
     #                          arduino_id="C3PO",
     #                          label="Power Supple Controller 2",
     #                          debug=mydebug)
-
 
     ps_controller_2.set_overview_page_presence(True)
 
