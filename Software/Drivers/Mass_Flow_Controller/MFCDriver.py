@@ -58,7 +58,7 @@ def parse_message(message):
         return {'acknowledged': True, 'value': response_value}
     elif (response == "NAK"):
         response_value = message[9:-3]
-        return {'acknowledged': False, 'error message': get_error(response_value)}
+        return {'acknowledged': False, 'value': response_value}
 
 
 def build_message(msg_type, device_address="254", category="setup", for_what="wink", data_variable=None):
@@ -102,25 +102,45 @@ def build_message(msg_type, device_address="254", category="setup", for_what="wi
 def tests():
     assert calculate_checksum("@001UT!TEST;") == "16"
 
-
-if __name__ == '__main__':
-    tests()
-
-    server_to_driver_string='{"channel_ids": ["wink", "wink", "wink"], "device_driver": "mfc", "set": false, "precisions": [1, 2, 3], "device_id": "254"}'
-
-
-    server_to_driver=json.loads(server_to_driver_string)
-
-    num_of_mesg = len(server_to_driver['channel_ids'])
-    assert num_of_mesg == len(server_to_driver['precisions'])
-    assert server_to_driver['device_driver']=="mfc"
+def server_to_driver_command(server_to_driver, num_of_mesg):
+    
     drivers_response_to_server=[]
 
     for i in range(0,num_of_mesg):
         drivers_response_to_server.append(build_message(msg_type=server_to_driver['set'], device_address=server_to_driver['device_id'], category="setup", for_what=server_to_driver['channel_ids'][i]))
 
-    print drivers_response_to_server
+    return drivers_response_to_server
 
+def server_to_driver_response(response,precision):
+
+    drivers_response_to_server=[]
+
+    for i in range(0,num_of_mesg):
+        x = parse_message(response[i])  
+        if x['acknowledged']==True:
+            concat_value = '{0:.{1}f}'.format(float(x['value']
+),precision[i])
+            drivers_response_to_server.append(concat_value)
+        
+    return drivers_response_to_server
+
+if __name__ == '__main__':
+    tests()
+
+    message_to_driver_string='{"channel_ids": ["wink", "wink", "wink"], "device_driver": "mfc", "set": false, "precisions": [1, 2, 3], "device_id": "254"}'
+
+    message_to_driver=json.loads(message_to_driver_string)
+
+    num_of_mesg = len(message_to_driver['channel_ids'])
+    assert num_of_mesg == len(message_to_driver['precisions'])
+    assert message_to_driver['device_driver']=="mfc"
+ 
+    print server_to_driver_command(message_to_driver, num_of_mesg)
+
+    response_from_driver = ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF"] 
+    assert len(response_from_driver)==num_of_mesg
+    
+    print server_to_driver_response(response_from_driver, message_to_driver['precisions'])
 
     #print parse_message("@@@000ACKCR,H,HH;FF")
     # print parse_message(message="@@@000ACK9600;A9")
