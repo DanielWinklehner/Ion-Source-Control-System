@@ -1,5 +1,6 @@
 from __future__ import division
 import json
+import time
 import GUIWidgets
 from Channel import Channel
 
@@ -11,6 +12,8 @@ class Device:
 
         self._name = name
         self._label = label
+        self._poll_count = 0
+        self._poll_start_time = 0.0
 
         self._channels = {}  # This is a dictionary of channels with their names as keys.
         if channels is not None:
@@ -37,6 +40,23 @@ class Device:
 
     def set_parent(self, parent):
         self._parent = parent
+
+    def add_one_to_poll_count(self):
+        self._poll_count += 1
+
+    def reset_poll_count(self):
+        self._poll_count = 0
+
+    @property
+    def poll_count(self):
+        return self._poll_count
+
+    @property
+    def poll_start_time(self):
+        return self._poll_start_time
+
+    def reset_poll_start_time(self):
+        self._poll_start_time = time.time()
 
     def name(self):
         return self._name

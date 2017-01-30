@@ -34,6 +34,9 @@ class MIST1ControlSystem:
         """
         self.debug = debug
 
+        # TODO: make this a user-adjustable parameter
+        self._com_period = 0.05  # Period between calls to the communicate function (s) 0.1 s --> 10 Hz
+
         self._server_ip = server_ip
         self._server_port = server_port
         self._server_url = "http://{}:{}/".format(server_ip, server_port)
@@ -635,6 +638,9 @@ class MIST1ControlSystem:
 
         while self._keep_communicating:
 
+            # Do the timing of this thread:
+            thread_start_time = time.time()
+
             devices = self._devices
 
             # if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
@@ -645,6 +651,9 @@ class MIST1ControlSystem:
 
             if self._communication_thread_mode == "read":
 
+                # CAVE: This is where all the communication happens now!
+                # TODO: I think this nested loop can be deconvoluted, because get_all_channel_values also implicitly
+                # TODO: loops over all devices and channels. Maybe we could move that out here or the rest in there?
                 if self.get_all_channel_values(devices):  # Returns true only if successfully got a value.
 
                     for device_name, device in devices.items():
@@ -653,7 +662,10 @@ class MIST1ControlSystem:
 
                             # arduino_id = device.get_arduino_id()
 
-                            self._communication_thread_poll_count += 1
+                            # TODO: This is to be treated as a temporary fix. With the RasPi Server and Arduinos,
+                            # TODO: we will have to implement a master polling rate (GUI <--> RasPi) and have the
+                            # TODO: RasPi report back the individual polling rates with the Devices (RasPi <--> Arduino)
+                            device.add_one_to_poll_count()
 
                             for channel_name, channel in device.channels().items():
 
@@ -719,6 +731,13 @@ class MIST1ControlSystem:
 
                 self._communication_thread_mode = "read"
                 self._set_value_for_widget = None
+
+            sleepy_time = self._com_period - time.time() + thread_start_time
+
+            # print("Sleeping for {} s".format(sleepy_time))
+
+            if sleepy_time > 0.0:
+                time.sleep(sleepy_time)
 
         if self.debug:
             print("Closing communication thread.")
@@ -822,7 +841,6 @@ class MIST1ControlSystem:
         # for arduino_id, serial_com in self._serial_comms.items():
 
         communication_thread = threading.Thread(target=self.communicate)
-
         self._communication_thread = communication_thread
         self._communication_thread_mode = 'read'
         self._communication_thread_poll_count = 0
@@ -1730,16 +1748,17 @@ class MIST1ControlSystem:
         """
         # Update the polling rate (frequency) for this arduino:
         arduino_id = channel.get_arduino_id()
-        count = self._communication_thread_poll_count
+        device = channel.get_parent_device()
+        count = device.poll_count
 
         # print arduino_id
 
         if count >= 10:
-            elapsed = time.time() - self._communication_thread_start_time
-            frequency = self._communication_thread_poll_count / elapsed
+            elapsed = time.time() - device.poll_start_time
+            frequency = count / elapsed
 
-            self._communication_thread_start_time = time.time()
-            self._communication_thread_poll_count = 0
+            device.reset_poll_start_time()
+            device.reset_poll_count()
 
             self._arduino_status_bars[arduino_id].set_value(frequency)
 
@@ -1766,15 +1785,15 @@ if __name__ == "__main__":
 
     # Set up a dummy device and channels
 
-    ps_controller = Device("ps_controller",
-                           arduino_id="95432313837351706152",
-                           label="Power Supple Controller 1",
-                           debug=mydebug)
-
     # ps_controller = Device("ps_controller",
-    #                        arduino_id="R2D2",
-    #                        label="Power Supple Controller 1",
+    #                        arduino_id="95432313837351706152",
+    #                        label="Power Supply Controller 1",
     #                        debug=mydebug)
+
+    ps_controller = Device("ps_controller",
+                           arduino_id="R2D2",
+                           label="Power Supply Controller 1",
+                           debug=mydebug)
 
     ps_controller.set_overview_page_presence(True)
 
@@ -1821,15 +1840,15 @@ if __name__ == "__main__":
 
     # Set up a dummy device and channels
 
+    # ps_controller_2 = Device("ps_controller_2",
+    #                          arduino_id="95432313837351E00271",
+    #                          label="Power Supply Controller 2",
+    #                          debug=mydebug)
+
     ps_controller_2 = Device("ps_controller_2",
-                             arduino_id="95432313837351E00271",
+                             arduino_id="C3PO",
                              label="Power Supply Controller 2",
                              debug=mydebug)
-
-    # ps_controller_2 = Device("ps_controller_2",
-    #                          arduino_id="C3PO",
-    #                          label="Power Supple Controller 2",
-    #                          debug=mydebug)
 
     ps_controller_2.set_overview_page_presence(True)
 
