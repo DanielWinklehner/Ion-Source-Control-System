@@ -11,48 +11,43 @@ import os
 import Messages
 
 
+class DummySerial:
+    def __init__(self, port_name, baudrate, timeout=5.):
+        self._port_name = port_name
+        self._baudrate = baudrate
+        self._timeout = timeout
 
-class DummySerial():
+        self._last_message = ""
 
-	def __init__(self, port_name, baudrate, timeout=5.):
-		self._port_name = port_name
-		self._baudrate = baudrate
-		self._timeout = timeout
+    def flushInput(self):
+        pass
 
-		self._last_message = ""
+    def flushOutput(self):
+        pass
 
-	def flushInput(self):
-		pass
+    def write(self, message):
+        self._last_message = message
 
-	def flushOutput(self):
-		pass
+    def read(self):
 
-	def write(self, message):
-		self._last_message = message
+        # Return sin of current time.
+        return "o04f0+60231+f1+000000+f2+000+f3+00000+"
 
-	def read(self):
+    def readline(self):
 
-		# Return sin of current time.
-		return "o04f0+60231+f1+000000+f2+000+f3+00000+"
+        # Take the query message (stored in self._last_message) and decode it to get everything we need.
 
-	def readline(self):
+        if self._last_message[0] == "q":
+            # This is a query message.
+            result = Messages.decode_query_message(self._last_message)
 
+            output_message = Messages.build_output_message(result,
+                                                           [math.sin(time.time() % 60.0)] * len(result.keys()))
 
-		# Take the query message (stored in self._last_message) and decode it to get everything we need.
+            return output_message
 
-		if self._last_message[0] == "q":
-			# This is a query message.
-			result = Messages.decode_query_message(self._last_message)
+        elif self._last_message == "c":
+            self._last_message = ""
+            return "f0"
 
-			output_message = Messages.build_output_message(result, [math.sin(time.localtime().tm_sec)] * len(result.keys()))
-
-			return output_message
-
-		elif self._last_message == "c":
-			self._last_message = ""
-			return "f0"
-
-		return ""
-
-
-
+        return ""
