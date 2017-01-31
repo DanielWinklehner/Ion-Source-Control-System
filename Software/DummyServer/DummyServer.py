@@ -12,7 +12,6 @@ import cPickle
 import time
 import Messages
 # import threading
-# from multiprocessing import Pool as ThreadPool
 from multiprocessing.dummy import Pool as ThreadPool
 # from multiprocessing.managers import BaseManager
 import logging
@@ -20,8 +19,8 @@ import logging
 app = Flask(__name__)
 
 # Opening a pool of threads to re-use.
-# TODO: Think about proper termination! Also, what happens if another query comes along while these
-# TODO: are still working?
+# TODO: Think about proper termination! (Use 127.0.0.1:5000/kill)
+# TODO: Also, what happens if another query comes along while these are still working?
 p = ThreadPool(10)
 
 app.debug = True
@@ -162,6 +161,8 @@ def kill():
     func = request.environ.get('werkzeug.server.shutdown')
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
+    p.terminate()
+    p.join()
     func()
     return "Shutting down..."
 
@@ -279,7 +280,7 @@ def query_arduinos2():
 
     elif request.method == 'GET':
 
-        # TODO: Implement GET method
+        # TODO: Implement GET method?
         pass
 
     # LOGGER.info(all_arduino_ids)
@@ -306,5 +307,3 @@ if __name__ == "__main__":
     # connected_arduinos_thread.start()
     # app.run(host='0.0.0.0', port=80)
     app.run(host='0.0.0.0', port=5000)
-    p.close()
-    p.join()

@@ -9,7 +9,9 @@ import GUIWidgets
 
 class Channel:
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
-                 scaling=1., mode="both", display_order=0, displayformat=".2f"):
+                 scaling=1., mode="both", display_order=0, displayformat=".2f",
+                 precision=2):
+
         """Summary
         
         Args:
@@ -41,10 +43,11 @@ class Channel:
         self._initialized = False
         self._overview_page_display = None
         self._displayformat = displayformat
+        self._precision = precision
 
         self._timeout = 2   # In seconds.
 
-        self._display_order = display_order # Higher number on the top.
+        self._display_order = display_order  # Higher number on the top.
 
         self._locked = False
 
@@ -67,23 +70,29 @@ class Channel:
             if self._data_type == bool:
 
                 self._overview_page_display = GUIWidgets.FrontPageDisplayBool(name=self._label,
-                                                                           set_flag=set_flag,
-                                                                           parent_channel=self)
+                                                                              set_flag=set_flag,
+                                                                              parent_channel=self)
 
             else:
 
                 # Create a display
                 self._overview_page_display = GUIWidgets.FrontPageDisplayValue(name=self._label,
-                                                                            unit=self._unit,
-                                                                            displayformat=self._displayformat,
-                                                                            set_flag=set_flag,
-                                                                            parent_channel=self)
+                                                                               unit=self._unit,
+                                                                               displayformat=self._displayformat,
+                                                                               set_flag=set_flag,
+                                                                               parent_channel=self)
 
             parent_device.get_overview_frame().pack_start(self._overview_page_display, False, False, 4)
             
         # TODO: Adding the device to its main page and to the settings page
 
         return 0
+
+    def get_precision(self):
+        return self._precision
+
+    def set_precision(self, precision):
+        self._precision = precision
 
     def lock(self):
         """Summary
@@ -147,8 +156,6 @@ class Channel:
         """
         return self._display_order
 
-
-
     def initialized(self):
         """Summary
         
@@ -157,7 +164,6 @@ class Channel:
         """
         return self._initialized
 
-
     def initialize(self):
         """
         Initializes the channel
@@ -165,7 +171,6 @@ class Channel:
         """
 
         self.add_channel_to_gui()
-
 
         self._initialized = True
 
@@ -178,8 +183,6 @@ class Channel:
             TYPE: Description
         """
         pass
-
-
 
     def get_parent_device(self):
         """Summary
@@ -226,8 +229,6 @@ class Channel:
             TYPE: Description
         """
         return self._name
-
-
 
     def upper_limit(self):
         """Summary

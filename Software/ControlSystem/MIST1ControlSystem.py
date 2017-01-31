@@ -7,7 +7,6 @@ from gi.repository import Gdk
 # from gi.repository import Gtk, GLib, GObject, Gdk
 
 import json
-import cPickle
 import time
 import threading
 import requests
@@ -36,7 +35,7 @@ class MIST1ControlSystem:
         self.debug = debug
 
         # TODO: make this a user-adjustable parameter
-        self._com_period = 0.05  # Period between calls to the communicate function (s) 0.1 s --> 10 Hz
+        self._com_period = 0.025  # Period between calls to the communicate function (s) 0.025 s --> 40 Hz
 
         self._server_ip = server_ip
         self._server_port = server_port
