@@ -172,53 +172,53 @@ def all_arduinos():
     return json.dumps(find_arduinos_connected()[1])
 
 
+# @app.route("/arduino/query", methods=['GET', 'POST'])
+# def query_arduinos():
+#     # print "We are querying arduinos"
+#     # LOGGER.info("We are querying arduinos")
+#
+#     # print request.args
+#     # start = time.time()
+#
+#     if request.method == 'POST':
+#         all_arduino_ids = json.loads(request.form['arduino_id'])
+#         all_channel_names = json.loads(request.form['channel_names'])
+#         all_precisions = json.loads(request.form['precisions'])
+#
+#     elif request.method == 'GET':
+#         all_arduino_ids = json.loads(request.args.get('arduino_id'))
+#         all_channel_names = json.loads(request.args.get('channel_names'))
+#         all_precisions = json.loads(request.args.get('precisions'))
+#
+#     all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in
+#                    zip(all_arduino_ids, all_channel_names, all_precisions)]
+#
+#     all_query_messages = [Messages.build_query_message(channel_names, precisions) for
+#                           (arduino_id, channel_names, precisions) in all_queries]
+#
+#     # LOGGER.info(all_arduino_ids)
+#     # LOGGER.info(all_query_messages)
+#
+#     arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
+#
+#     # arduinos_response = {
+#     #     "C3PO": {"i1": 0.4121000000000001, "v1": 0.4121000000000001,
+#     #              "v2": 0.4121000000000001, "i2": 0.4121000000000001,
+#     #              "x1": 0.4121000000000001},
+#     #     "R2D2": {"i1": 0.4121000000000001, "v1": 0.4121000000000001,
+#     #              "v2": 0.4121000000000001, "i2": 0.4121000000000001,
+#     #              "x1": 0.4121000000000001}}
+#
+#     # print ":the arduino response is", arduinos_response
+#     # end = time.time()
+#
+#     # print "The response took", (end - start), "seconds."
+#
+#     return json.dumps(arduinos_response)
+
+
 @app.route("/arduino/query", methods=['GET', 'POST'])
 def query_arduinos():
-    # print "We are querying arduinos"
-    # LOGGER.info("We are querying arduinos")
-
-    # print request.args
-    # start = time.time()
-
-    if request.method == 'POST':
-        all_arduino_ids = json.loads(request.form['arduino_id'])
-        all_channel_names = json.loads(request.form['channel_names'])
-        all_precisions = json.loads(request.form['precisions'])
-
-    elif request.method == 'GET':
-        all_arduino_ids = json.loads(request.args.get('arduino_id'))
-        all_channel_names = json.loads(request.args.get('channel_names'))
-        all_precisions = json.loads(request.args.get('precisions'))
-
-    all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in
-                   zip(all_arduino_ids, all_channel_names, all_precisions)]
-
-    all_query_messages = [Messages.build_query_message(channel_names, precisions) for
-                          (arduino_id, channel_names, precisions) in all_queries]
-
-    # LOGGER.info(all_arduino_ids)
-    # LOGGER.info(all_query_messages)
-
-    arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
-
-    # arduinos_response = {
-    #     "C3PO": {"i1": 0.4121000000000001, "v1": 0.4121000000000001,
-    #              "v2": 0.4121000000000001, "i2": 0.4121000000000001,
-    #              "x1": 0.4121000000000001},
-    #     "R2D2": {"i1": 0.4121000000000001, "v1": 0.4121000000000001,
-    #              "v2": 0.4121000000000001, "i2": 0.4121000000000001,
-    #              "x1": 0.4121000000000001}}
-
-    # print ":the arduino response is", arduinos_response
-    # end = time.time()
-
-    # print "The response took", (end - start), "seconds."
-
-    return json.dumps(arduinos_response)
-
-
-@app.route("/arduino/query2", methods=['GET', 'POST'])
-def query_arduinos2():
     # print "We are querying arduinos"
     # LOGGER.info("We are querying arduinos")
 
@@ -252,7 +252,7 @@ def query_arduinos2():
             # Use existing global pool of 10 worker threads
             # TODO: Let the user decide how many threads to use?
             # But first let's see if they are all alive
-            print("Currently we have {} threads alive!".format(threading.active_count()))
+            # print("Currently we have {} threads alive!".format(threading.active_count()))
 
             all_responses = p.map(mp_worker, message_data)
 

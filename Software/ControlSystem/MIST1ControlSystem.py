@@ -462,88 +462,88 @@ class MIST1ControlSystem:
         # return self.send_message_to_server("register_device", [device.get_arduino_id()])
         pass
 
-    def get_all_channel_values(self, devices):
-
-        # duration = 1.0e3 * time.time() - start_time
-        #
-        # print("New method took {} ms".format(duration))
-
-        if self.debug:
-
-            print("Got the following response: {}".format(response))
-
-        if response.strip() != r"{}" and "error" not in str(response).lower():
-            parsed_response = json.loads(response)
-
-            for arduino_id in parsed_response:
-                device_name = self._device_name_arduino_id_map[arduino_id]
-                device = self._devices[device_name]
-
-                if "ERR" in parsed_response[arduino_id]:
-                    # self._status_bar.push(2, "Error: " + str(parsed_response[arduino_id]))
-                    pass
-                else:
-                    for channel_name, value in parsed_response[arduino_id].items():
-                        # print channel_name, value
-                        device.get_channel_by_name(channel_name).set_value(value)
-
-        '''
-        try:
-            if response.strip() != r"{}" and "error" not in str(response).lower():
-                # print response
-                for channel_name, value in ast.literal_eval(response).items():
-
-                    device.get_channel_by_name(channel_name).set_value(value)
-
-                return True
-
-            else:
-                # print "got an error"
-                pass
-                # self._status_bar.push(2, "Error: " + str(response))
-                return False
-
-        except Exception as e:
-
-            self._status_bar.push(2, str(e))
-            return False
-        '''
-        return True
-
-    '''
-    def get_channel_values(self, device):
-
-        arduino_id = device.get_arduino_id()
-        channel_names = [name for name, ch in device.channels().items() if ch.mode() == 'read']
-        precisions = [4] * len(channel_names)  # For sensor box, precision = 5 needs messages longer than 128 bytes.
-
-        # print "Trying to get channel values for ", arduino_id
-        response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
-
-        print "the server response is", response
-
-        try:
-            if response.strip() != r"{}" and "error" not in str(response).lower():
-                # print response
-                for channel_name, value in ast.literal_eval(response).items():
-
-                    device.get_channel_by_name(channel_name).set_value(value)
-
-                return True
-
-            else:
-                # print "got an error"
-                pass
-                # self._status_bar.push(2, "Error: " + str(response))
-                return False
-
-        except Exception as e:
-
-            self._status_bar.push(2, str(e))
-            return False
-
-        return False
-    '''
+    # def get_all_channel_values(self, devices):
+    #
+    #     # duration = 1.0e3 * time.time() - start_time
+    #     #
+    #     # print("New method took {} ms".format(duration))
+    #
+    #     if self.debug:
+    #
+    #         print("Got the following response: {}".format(response))
+    #
+    #     if response.strip() != r"{}" and "error" not in str(response).lower():
+    #         parsed_response = json.loads(response)
+    #
+    #         for arduino_id in parsed_response:
+    #             device_name = self._device_name_arduino_id_map[arduino_id]
+    #             device = self._devices[device_name]
+    #
+    #             if "ERR" in parsed_response[arduino_id]:
+    #                 # self._status_bar.push(2, "Error: " + str(parsed_response[arduino_id]))
+    #                 pass
+    #             else:
+    #                 for channel_name, value in parsed_response[arduino_id].items():
+    #                     # print channel_name, value
+    #                     device.get_channel_by_name(channel_name).set_value(value)
+    #
+    #     '''
+    #     try:
+    #         if response.strip() != r"{}" and "error" not in str(response).lower():
+    #             # print response
+    #             for channel_name, value in ast.literal_eval(response).items():
+    #
+    #                 device.get_channel_by_name(channel_name).set_value(value)
+    #
+    #             return True
+    #
+    #         else:
+    #             # print "got an error"
+    #             pass
+    #             # self._status_bar.push(2, "Error: " + str(response))
+    #             return False
+    #
+    #     except Exception as e:
+    #
+    #         self._status_bar.push(2, str(e))
+    #         return False
+    #     '''
+    #     return True
+    #
+    # '''
+    # def get_channel_values(self, device):
+    #
+    #     arduino_id = device.get_arduino_id()
+    #     channel_names = [name for name, ch in device.channels().items() if ch.mode() == 'read']
+    #     precisions = [4] * len(channel_names)  # For sensor box, precision = 5 needs messages longer than 128 bytes.
+    #
+    #     # print "Trying to get channel values for ", arduino_id
+    #     response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
+    #
+    #     print "the server response is", response
+    #
+    #     try:
+    #         if response.strip() != r"{}" and "error" not in str(response).lower():
+    #             # print response
+    #             for channel_name, value in ast.literal_eval(response).items():
+    #
+    #                 device.get_channel_by_name(channel_name).set_value(value)
+    #
+    #             return True
+    #
+    #         else:
+    #             # print "got an error"
+    #             pass
+    #             # self._status_bar.push(2, "Error: " + str(response))
+    #             return False
+    #
+    #     except Exception as e:
+    #
+    #         self._status_bar.push(2, str(e))
+    #         return False
+    #
+    #     return False
+    # '''
 
     def update_channel_values_to_arduino(self, channel):
 
@@ -602,8 +602,8 @@ class MIST1ControlSystem:
 
             # Add to "values".
             # Initialize with current time and 0.0 this will eventually flush out of the deque
-            self._x_values[(device.name(), channel_name)] = deque(np.linspace(timeit.default_timer() - 5.0,
-                                                                              timeit.default_timer(),
+            self._x_values[(device.name(), channel_name)] = deque(np.linspace(time.time() - 5.0,
+                                                                              time.time(),
                                                                               self._retain_last_n_values),
                                                                   maxlen=self._retain_last_n_values)
             self._y_values[(device.name(), channel_name)] = deque(np.zeros(self._retain_last_n_values),
@@ -665,7 +665,7 @@ class MIST1ControlSystem:
 
     def update_stored_values(self, device_name, channel_name):
 
-        self._x_values[(device_name, channel_name)].append(timeit.default_timer())
+        self._x_values[(device_name, channel_name)].append(time.time())
         self._y_values[(device_name, channel_name)].append(
             self._devices[device_name].channels()[channel_name].get_value())
 
@@ -683,12 +683,6 @@ class MIST1ControlSystem:
             thread_start_time = timeit.default_timer()
 
             devices = self._devices
-
-            # if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
-            #   self.check_for_alive_devices(devices)
-            #   self.listen_for_reconnected_devices(devices)
-
-            # GLib.idle_add(self.dummy_update)
 
             if self._communication_thread_mode == "read":
 
@@ -727,29 +721,27 @@ class MIST1ControlSystem:
                                     channel = device.get_channel_by_name(channel_name)
                                     channel.set_value(value)
 
-                                    if channel.mode() == "read" or channel.mode() == "both":
+                                    try:
+                                        self.log_data(channel)
 
-                                        try:
-                                            self.log_data(channel)
+                                    except Exception as e:
+                                        if self.debug:
+                                            print("Exception '{}' caught while trying to log data.".format(e))
 
-                                        except Exception as e:
-                                            if self.debug:
-                                                print("Exception '{}' caught while trying to log data.".format(e))
+                                    try:
+                                        self.update_stored_values(device_name, channel_name)
+                                        # GLib.idle_add(self.update_stored_values, device.name(), channel_name)
 
-                                        try:
-                                            self.update_stored_values(device_name, channel_name)
-                                            # GLib.idle_add(self.update_stored_values, device.name(), channel_name)
+                                    except Exception as e:
+                                        if self.debug:
+                                            print("Exception '{}' caught while updating stored values.".format(e))
 
-                                        except Exception as e:
-                                            if self.debug:
-                                                print("Exception '{}' caught while updating stored values.".format(e))
+                                    try:
+                                        GLib.idle_add(self.update_gui, channel)
 
-                                        try:
-                                            GLib.idle_add(self.update_gui, channel)
-
-                                        except Exception as e:
-                                            if self.debug:
-                                                print("Exception '{}' caught while updating GUI.".format(e))
+                                    except Exception as e:
+                                        if self.debug:
+                                            print("Exception '{}' caught while updating GUI.".format(e))
 
             elif self._communication_thread_mode == "write" and self._set_value_for_widget is not None:
 
