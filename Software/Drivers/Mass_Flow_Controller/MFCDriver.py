@@ -129,21 +129,21 @@ class MFCDriver:
     
         return drivers_response_to_server
     
-    def translate_driver_to_gui(self, response_string):
+    def translate_driver_to_gui(self, response):
     
         drivers_response_to_server=[]
-        response=response_string['response']
-        precision=response_string['precision']
+#        response=response_string['response']
+#        precision=response_string['precision']
         num_of_mesg=len(response)
     
         for i in range(0,num_of_mesg):
             x = parse_message(response[i])  
             if x['acknowledged']==True:
-                concat_value = '{0:.{1}f}'.format(float(x['value']
-    ),precision[i])
-                drivers_response_to_server.append(concat_value)
+#                concat_value = '{0:.{1}f}'.format(float(x['value']),precision[i])
+#                drivers_response_to_server.append(concat_value)
+                drivers_response_to_server.append(x['value'])
             if x['acknowledged']==False:
-                drivers_response_to_server.append("Error"+x['value'])
+                drivers_response_to_server.append("Error: "+get_error(x['value']))
             
         return drivers_response_to_server
     
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     message_to_driver={"channel_ids": ["wink", "wink", "wink","wink"], "device_driver": "mfc", "set": False, "precisions": [1, 2, 3, 4], "device_id": "254"}
  
 
-    response_from_driver = {'response': ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000NAK34;FF"], 'precision': [1,2,3,4]}
+    response_from_driver = ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000NAK13;FF"]
     
     x=MFCDriver()
     print x.translate_gui_to_driver(message_to_driver)
