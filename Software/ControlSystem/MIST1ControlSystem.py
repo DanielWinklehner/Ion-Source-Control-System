@@ -19,9 +19,65 @@ from DataLogging import DataLogging
 import Dialogs as MIST1Dialogs
 from MIST1Plot import MIST1Plot
 import numpy as np
+from multiprocessing import Process, Pipe
+
 
 __author__ = "Aashish Tripathee and Daniel Winklehner"
 __doc__ = """GUI for a simple Ion Source Control System"""
+
+
+def communicate(com_pipe, server_url, debug=False):
+    """
+    Process that handles communication with the RasPi server
+    :return:
+    """
+    _keep_communicating = True
+    _com_period = 5.0
+    _device_dict_list = None
+    _server_url = server_url
+    _debug = debug
+
+    while _keep_communicating:
+
+        # Do the timing of this process:
+        _thread_start_time = timeit.default_timer()
+
+        if com_pipe.poll():
+            _in_message = com_pipe.recv()
+            if _in_message[0] == "com_period":
+                _com_period = _in_message[1]
+            elif _in_message[0] == "device_or_channel_changed":
+                _device_dict_list = _in_message[1]
+
+        if _device_dict_list is not None:
+
+            _url = _server_url + "arduino/query"
+            _data = {'data': json.dumps(_device_dict_list)}
+
+            try:
+                _r = requests.post(_url, data=_data)
+                _response_code = _r.status_code
+
+                if _response_code == 200:
+                    if _debug:
+                        print(_r.text)
+
+                else:
+                    if _debug:
+                        print(r"{}")
+
+            except Exception as e:
+                if _debug:
+                    print("Exception '{}' caught while trying to log data.".format(e))
+
+        # Do the timing of this process:
+        _sleepy_time = _com_period - timeit.default_timer() + _thread_start_time
+
+        if _debug:
+            print("Sleeping for {} s".format(_sleepy_time))
+
+        if _sleepy_time > 0.0:
+            time.sleep(_sleepy_time)
 
 
 class MIST1ControlSystem:
@@ -34,9 +90,6 @@ class MIST1ControlSystem:
         Initialize the control system GUI
         """
         self.debug = debug
-
-        # TODO: make this a user-adjustable parameter
-        self._com_period = 0.025  # Period between calls to the communicate function (s) 0.025 s --> 40 Hz
 
         self._server_ip = server_ip
         self._server_port = server_port
@@ -103,6 +156,14 @@ class MIST1ControlSystem:
         self._communication_thread_mode = None
         self._communication_thread_poll_count = None
         self._communication_thread_start_time = timeit.default_timer()
+
+        # TODO: make this a user-adjustable parameter
+        self._com_period = 1.0  # Period between calls to the communicate function (s) 0.025 s --> 40 Hz
+
+        self._pipe_gui, pipe_com_proc = Pipe()
+        self._com_proc = Process(target=communicate, args=(pipe_com_proc, self._server_url, True,))
+        self._com_proc.daemon = True
+
         self._arduino_status_bars = {}
 
         self._set_value_for_widget = None
@@ -671,9 +732,28 @@ class MIST1ControlSystem:
 
         return False
 
-    def communicate(self):
+    def device_or_channel_changed(self):
         """
 
+        :return:
+        """
+
+        device_dict_list = [{'device_driver': device.get_driver(),
+                             'device_id': device.get_arduino_id(),
+                             'channel_ids': [name for name, mych in device.channels().items() if
+                                             mych.mode() == 'read' or mych.mode() == 'both'],
+                             'precisions': [mych.get_precision() for name, mych in device.channels().items() if
+                                            mych.mode() == 'read' or mych.mode() == 'both']}
+                            for device_name, device in self._devices.items() if not device.locked()]
+
+        pipe_message = ["device_or_channel_changed", device_dict_list]
+        self._pipe_gui.send(pipe_message)
+
+        return 0
+
+    def communicate_old(self):
+        """
+        Process that handles communication with the RasPi server
         :return:
         """
 
@@ -690,7 +770,7 @@ class MIST1ControlSystem:
                                      'device_id': device.get_arduino_id(),
                                      'channel_ids': [name for name, mych in device.channels().items() if
                                                      mych.mode() == 'read' or mych.mode() == 'both'],
-                                     'precisions': [4 for name, mych in device.channels().items() if
+                                     'precisions': [mych.get_precision() for name, mych in device.channels().items() if
                                                     mych.mode() == 'read' or mych.mode() == 'both']}
                                     for device_name, device in devices.items() if not device.locked()]
 
@@ -806,7 +886,7 @@ class MIST1ControlSystem:
             print("Emergency stop was called from {}".format(widget))
 
         self._status_bar.push(1, "Emergency stop button was pushed!")
-        self.shut_down_communication_threads()
+        # self.shut_down_communication_process()
 
         return 0
 
@@ -890,15 +970,24 @@ class MIST1ControlSystem:
         """
         # for arduino_id, serial_com in self._serial_comms.items():
 
-        communication_thread = threading.Thread(target=self.communicate)
-        self._communication_thread = communication_thread
-        self._communication_thread_mode = 'read'
-        self._communication_thread_poll_count = 0
-        self._communication_thread_start_time = time.time()
+        # communication_thread = threading.Thread(target=self.communicate)
+        # self._communication_thread = communication_thread
+        # self._communication_thread_mode = 'read'
+        # self._communication_thread_poll_count = 0
+        # self._communication_thread_start_time = time.time()
+        #
+        # self._keep_communicating = True
+        #
+        # self._communication_thread.start()
 
-        self._keep_communicating = True
+        # Start the communication process
 
-        self._communication_thread.start()
+        pipe_message = ["com_period", self._com_period]
+        self._pipe_gui.send(pipe_message)
+
+        self.device_or_channel_changed()
+
+        self._com_proc.start()
 
         return 0
 
@@ -1701,7 +1790,7 @@ class MIST1ControlSystem:
 
         self._main_window.destroy()
 
-        self.shut_down_communication_threads()
+        self.shut_down_communication_process()
         self.shut_down_procedure_threads()
 
         Gtk.main_quit()
@@ -1712,11 +1801,13 @@ class MIST1ControlSystem:
         self._keep_critical_procedure_threads_running = False
         self._keep_procedure_thread_running = False
 
-    def shut_down_communication_threads(self):
+    def shut_down_communication_process(self):
         """
         :return:
         """
         self._keep_communicating = False
+        self._com_proc.terminate()
+        self._com_proc.join()
 
         return 0
 
