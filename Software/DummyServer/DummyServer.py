@@ -6,12 +6,11 @@ from DummySerial import DummySerial
 # import sys
 # import subprocess
 import json
-import cPickle
 # import urllib2
 # import copy
 import time
 import Messages
-# import threading
+import threading
 from multiprocessing.dummy import Pool as ThreadPool
 # from multiprocessing.managers import BaseManager
 import logging
@@ -21,9 +20,9 @@ app = Flask(__name__)
 # Opening a pool of threads to re-use.
 # TODO: Think about proper termination! (Use 127.0.0.1:5000/kill)
 # TODO: Also, what happens if another query comes along while these are still working?
-p = ThreadPool(10)
+p = ThreadPool()
 
-app.debug = True
+app.debug = False
 
 LOGGER = logging.getLogger('gunicorn.error')
 
@@ -252,6 +251,9 @@ def query_arduinos2():
 
             # Use existing global pool of 10 worker threads
             # TODO: Let the user decide how many threads to use?
+            # But first let's see if they are all alive
+            print("Currently we have {} threads alive!".format(threading.active_count()))
+
             all_responses = p.map(mp_worker, message_data)
 
             # TODO: This has to be moved into the Driver class as well

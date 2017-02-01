@@ -492,10 +492,11 @@ class MIST1ControlSystem:
         device_dict_list = [{'device_driver': device.get_driver(),
                              'device_id': device.get_arduino_id(),
                              'channel_ids': [name for name, mych in device.channels().items() if
-                                             mych.mode() == 'read'],
+                                             mych.mode() == 'read' or mych.mode() == 'both'],
                              'precisions': [4 for name, mych in device.channels().items() if
                                             mych.mode() == 'read']}
-                            for device_name, device in devices.items()]
+                            for device_name, device in devices.items()
+                            if not device.locked()]
 
         response = self.send_message_to_server2(purpose='query_values',
                                                 data=device_dict_list)
