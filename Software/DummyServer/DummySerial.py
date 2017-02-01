@@ -37,7 +37,8 @@ class DummySerial:
 
         # Take the query message (stored in self._last_message) and decode it to get everything we need.
 
-        if self._last_message[0] == "q":
+
+        if len(self._last_message) > 0 and self._last_message[0] == "q":
             # This is a query message.
             result = Messages.decode_query_message(self._last_message)
 
