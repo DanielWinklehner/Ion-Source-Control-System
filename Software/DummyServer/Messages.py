@@ -167,37 +167,7 @@ def split_query_message(channel_names, precisions):
         return split_channels, split_precisions
 
 
-def build_query_message(channel_names, precisions, safe_messages=[]):
-    if len(channel_names) != len(precisions):
-        raise Exception("Number of channel names to query does not match the number of precisions requested.",
-                        len(channel_names), len(precisions))
 
-    # Here, make sure that we don't send a message that gives us an output that's more than 128 characters long.
-    # If the message seems to be that way, split it into smaller messages.
-
-    # First, calculate the expected length of the output message.
-    total_length = calculate_expected_output_message_length(precisions)
-
-    if total_length > 127:
-        # We need to split our message into smaller chunks.
-
-        split_channels, split_precisions = split_query_message(channel_names, precisions)
-
-        all_messages = []
-        for split_channel, split_precision in zip(split_channels, split_precisions):
-            # return build_query_message(split_channel, split_precision, safe_messages=[])
-            all_messages.append(build_query_message(split_channel, split_precision))
-
-        return [msg[0] for msg in all_messages]
-
-    else:
-        msg = "q"
-        msg += "{0:0>2}".format(len(channel_names))
-
-        for channel_name, precision in zip(channel_names, precisions):
-            msg += "{}{}".format(channel_name, precision)
-
-        return [msg]
 
 
 def decode_query_message(message):
