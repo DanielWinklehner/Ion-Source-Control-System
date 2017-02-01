@@ -8,6 +8,7 @@ from gi.repository import Gdk
 
 import json
 import time
+import timeit
 import threading
 import requests
 from collections import deque
@@ -101,7 +102,7 @@ class MIST1ControlSystem:
         # supposed to happen. It's from POV of the GUI i.e. the direction is GUI -> Arduino.
         self._communication_thread_mode = None
         self._communication_thread_poll_count = None
-        self._communication_thread_start_time = time.time()
+        self._communication_thread_start_time = timeit.default_timer()
         self._arduino_status_bars = {}
 
         self._set_value_for_widget = None
@@ -109,7 +110,7 @@ class MIST1ControlSystem:
         # HDF5 logging.
         self._data_logger = None
 
-        self._last_checked_for_devices_alive = time.time()
+        self._last_checked_for_devices_alive = timeit.default_timer()
         self._alive_device_names = set()
         self._check_for_alive_interval = 5  # In seconds.
 
@@ -354,6 +355,57 @@ class MIST1ControlSystem:
         else:
             self._procedures[procedure.get_name()] = procedure
 
+    # def send_message_to_server(self, purpose=None, **kwargs):
+    #
+    #     url = self._server_url
+    #     data = {}
+    #
+    #     if purpose == "register_device":
+    #
+    #         url += "arduino/connect"
+    #         data['arduino_id'] = kwargs[0]
+    #
+    #     elif purpose == "query_values":
+    #
+    #         url += "arduino/query"
+    #         data['arduino_id'] = json.dumps(kwargs["arduino_ids"])
+    #         data['channel_names'] = json.dumps(kwargs["channel_names"])
+    #         data['precisions'] = json.dumps(kwargs["precisions"])
+    #
+    #     elif purpose == "set_values":
+    #
+    #         url += "arduino/set"
+    #         data['arduino_id'] = kwargs["arduino_id"]
+    #         data['channel_name'] = kwargs["channel_name"]
+    #         data['value_to_set'] = kwargs["value_to_set"]
+    #
+    #     try:
+    #
+    #         if self.debug:
+    #
+    #             print(url)
+    #             print(data)
+    #             print(purpose)
+    #
+    #         # start = time.time()
+    #         r = requests.post(url, data=data)
+    #         response_code = r.status_code
+    #         # response = r.reason
+    #         # end = time.time()
+    #         # print "The request part took {} seconds.".format(end - start)
+    #
+    #         # print r.text
+    #         if response_code == 200:
+    #             return r.text
+    #         else:
+    #             return r"{}"
+    #
+    #     except Exception as e:
+    #
+    #         print(e)
+    #
+    #     return r"{}"
+
     def send_message_to_server(self, purpose=None, **kwargs):
 
         url = self._server_url
@@ -367,63 +419,8 @@ class MIST1ControlSystem:
         elif purpose == "query_values":
 
             url += "arduino/query"
-            data['arduino_id'] = json.dumps(kwargs["arduino_ids"])
-            data['channel_names'] = json.dumps(kwargs["channel_names"])
-            data['precisions'] = json.dumps(kwargs["precisions"])
-
-        elif purpose == "set_values":
-
-            url += "arduino/set"
-            data['arduino_id'] = kwargs["arduino_id"]
-            data['channel_name'] = kwargs["channel_name"]
-            data['value_to_set'] = kwargs["value_to_set"]
-
-        try:
-
-            if self.debug:
-
-                print(url)
-                print(data)
-                print(purpose)
-
-            # start = time.time()
-            r = requests.post(url, data=data)
-            response_code = r.status_code
-            # response = r.reason
-            # end = time.time()
-            # print "The request part took {} seconds.".format(end - start)
-
-            # print r.text
-            if response_code == 200:
-                return r.text
-            else:
-                return r"{}"
-
-        except Exception as e:
-
-            print(e)
-
-        return r"{}"
-
-    def send_message_to_server2(self, purpose=None, **kwargs):
-
-        url = self._server_url
-        data = {}
-
-        if purpose == "register_device":
-
-            url += "arduino/connect"
-            data['arduino_id'] = kwargs[0]
-
-        elif purpose == "query_values":
-
-            url += "arduino/query2"
             data['data'] = json.dumps(kwargs["data"])
 
-            # data['arduino_id'] = json.dumps(kwargs["arduino_ids"])
-            # data['channel_names'] = json.dumps(kwargs["channel_names"])
-            # data['precisions'] = json.dumps(kwargs["precisions"])
-
         elif purpose == "set_values":
 
             url += "arduino/set"
@@ -448,8 +445,11 @@ class MIST1ControlSystem:
 
             # print r.text
             if response_code == 200:
+
                 return r.text
+
             else:
+
                 return r"{}"
 
         except Exception as e:
@@ -462,125 +462,88 @@ class MIST1ControlSystem:
         # return self.send_message_to_server("register_device", [device.get_arduino_id()])
         pass
 
-    def get_all_channel_values(self, devices):
-
-        # start_time = 1.0e3 * time.time()
-        #
-        # time.clock()
-        #
-        # arduino_ids = [device.get_arduino_id() for device_name, device in devices.items()]
-        #
-        # channel_names = [[name for name, mych in device.channels().items() if mych.mode() == 'read'] for
-        #                  device_name, device in devices.items()]
-        #
-        # precisions = [[4 for name, mych in device.channels().items() if mych.mode() == 'read'] for
-        #               device_name, device in devices.items()]
-        #
-        # # print "Trying to get channel values for ", arduino_id
-        #
-        # response = self.send_message_to_server(purpose='query_values',
-        #                                        arduino_ids=arduino_ids,
-        #                                        channel_names=channel_names,
-        #                                        precisions=precisions)
-        #
-        # duration = 1.0e3 * time.time() - start_time
-        #
-        # print("Old method took {} ms".format(duration))
-        #
-        # start_time = 1.0e3 * time.time()
-
-        device_dict_list = [{'device_driver': device.get_driver(),
-                             'device_id': device.get_arduino_id(),
-                             'channel_ids': [name for name, mych in device.channels().items() if
-                                             mych.mode() == 'read' or mych.mode() == 'both'],
-                             'precisions': [4 for name, mych in device.channels().items() if
-                                            mych.mode() == 'read']}
-                            for device_name, device in devices.items()
-                            if not device.locked()]
-
-        response = self.send_message_to_server2(purpose='query_values',
-                                                data=device_dict_list)
-
-        # duration = 1.0e3 * time.time() - start_time
-        #
-        # print("New method took {} ms".format(duration))
-
-        if self.debug:
-
-            print("Got the following response: {}".format(response))
-
-        if response.strip() != r"{}" and "error" not in str(response).lower():
-            parsed_response = json.loads(response)
-
-            for arduino_id in parsed_response:
-                device_name = self._device_name_arduino_id_map[arduino_id]
-                device = self._devices[device_name]
-
-                if "ERR" in parsed_response[arduino_id]:
-                    # self._status_bar.push(2, "Error: " + str(parsed_response[arduino_id]))
-                    pass
-                else:
-                    for channel_name, value in parsed_response[arduino_id].items():
-                        # print channel_name, value
-                        device.get_channel_by_name(channel_name).set_value(value)
-
-        '''
-        try:
-            if response.strip() != r"{}" and "error" not in str(response).lower():
-                # print response
-                for channel_name, value in ast.literal_eval(response).items():
-
-                    device.get_channel_by_name(channel_name).set_value(value)
-
-                return True
-
-            else:
-                # print "got an error"
-                pass
-                # self._status_bar.push(2, "Error: " + str(response))
-                return False
-
-        except Exception as e:
-
-            self._status_bar.push(2, str(e))
-            return False
-        '''
-        return True
-
-    '''
-    def get_channel_values(self, device):
-
-        arduino_id = device.get_arduino_id()
-        channel_names = [name for name, ch in device.channels().items() if ch.mode() == 'read']
-        precisions = [4] * len(channel_names)  # For sensor box, precision = 5 needs messages longer than 128 bytes.
-
-        # print "Trying to get channel values for ", arduino_id
-        response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
-
-        print "the server response is", response
-
-        try:
-            if response.strip() != r"{}" and "error" not in str(response).lower():
-                # print response
-                for channel_name, value in ast.literal_eval(response).items():
-
-                    device.get_channel_by_name(channel_name).set_value(value)
-
-                return True
-
-            else:
-                # print "got an error"
-                pass
-                # self._status_bar.push(2, "Error: " + str(response))
-                return False
-
-        except Exception as e:
-
-            self._status_bar.push(2, str(e))
-            return False
-
-        return False
-    '''
+    # def get_all_channel_values(self, devices):
+    #
+    #     # duration = 1.0e3 * time.time() - start_time
+    #     #
+    #     # print("New method took {} ms".format(duration))
+    #
+    #     if self.debug:
+    #
+    #         print("Got the following response: {}".format(response))
+    #
+    #     if response.strip() != r"{}" and "error" not in str(response).lower():
+    #         parsed_response = json.loads(response)
+    #
+    #         for arduino_id in parsed_response:
+    #             device_name = self._device_name_arduino_id_map[arduino_id]
+    #             device = self._devices[device_name]
+    #
+    #             if "ERR" in parsed_response[arduino_id]:
+    #                 # self._status_bar.push(2, "Error: " + str(parsed_response[arduino_id]))
+    #                 pass
+    #             else:
+    #                 for channel_name, value in parsed_response[arduino_id].items():
+    #                     # print channel_name, value
+    #                     device.get_channel_by_name(channel_name).set_value(value)
+    #
+    #     '''
+    #     try:
+    #         if response.strip() != r"{}" and "error" not in str(response).lower():
+    #             # print response
+    #             for channel_name, value in ast.literal_eval(response).items():
+    #
+    #                 device.get_channel_by_name(channel_name).set_value(value)
+    #
+    #             return True
+    #
+    #         else:
+    #             # print "got an error"
+    #             pass
+    #             # self._status_bar.push(2, "Error: " + str(response))
+    #             return False
+    #
+    #     except Exception as e:
+    #
+    #         self._status_bar.push(2, str(e))
+    #         return False
+    #     '''
+    #     return True
+    #
+    # '''
+    # def get_channel_values(self, device):
+    #
+    #     arduino_id = device.get_arduino_id()
+    #     channel_names = [name for name, ch in device.channels().items() if ch.mode() == 'read']
+    #     precisions = [4] * len(channel_names)  # For sensor box, precision = 5 needs messages longer than 128 bytes.
+    #
+    #     # print "Trying to get channel values for ", arduino_id
+    #     response = self.send_message_to_server(purpose='query_values', args=[arduino_id, channel_names, precisions])
+    #
+    #     print "the server response is", response
+    #
+    #     try:
+    #         if response.strip() != r"{}" and "error" not in str(response).lower():
+    #             # print response
+    #             for channel_name, value in ast.literal_eval(response).items():
+    #
+    #                 device.get_channel_by_name(channel_name).set_value(value)
+    #
+    #             return True
+    #
+    #         else:
+    #             # print "got an error"
+    #             pass
+    #             # self._status_bar.push(2, "Error: " + str(response))
+    #             return False
+    #
+    #     except Exception as e:
+    #
+    #         self._status_bar.push(2, str(e))
+    #         return False
+    #
+    #     return False
+    # '''
 
     def update_channel_values_to_arduino(self, channel):
 
@@ -639,7 +602,8 @@ class MIST1ControlSystem:
 
             # Add to "values".
             # Initialize with current time and 0.0 this will eventually flush out of the deque
-            self._x_values[(device.name(), channel_name)] = deque(np.linspace(time.time() - 5, time.time(),
+            self._x_values[(device.name(), channel_name)] = deque(np.linspace(time.time() - 5.0,
+                                                                              time.time(),
                                                                               self._retain_last_n_values),
                                                                   maxlen=self._retain_last_n_values)
             self._y_values[(device.name(), channel_name)] = deque(np.zeros(self._retain_last_n_values),
@@ -716,61 +680,68 @@ class MIST1ControlSystem:
         while self._keep_communicating:
 
             # Do the timing of this thread:
-            thread_start_time = time.time()
+            thread_start_time = timeit.default_timer()
 
             devices = self._devices
 
-            # if (time.time() - self._last_checked_for_devices_alive) > self._check_for_alive_interval:
-            #   self.check_for_alive_devices(devices)
-            #   self.listen_for_reconnected_devices(devices)
-
-            # GLib.idle_add(self.dummy_update)
-
             if self._communication_thread_mode == "read":
 
-                # CAVE: This is where all the communication happens now!
-                # TODO: I think this nested loop can be deconvoluted, because get_all_channel_values also implicitly
-                # TODO: loops over all devices and channels. Maybe we could move that out here or the rest in there?
-                if self.get_all_channel_values(devices):  # Returns true only if successfully got a value.
+                device_dict_list = [{'device_driver': device.get_driver(),
+                                     'device_id': device.get_arduino_id(),
+                                     'channel_ids': [name for name, mych in device.channels().items() if
+                                                     mych.mode() == 'read' or mych.mode() == 'both'],
+                                     'precisions': [4 for name, mych in device.channels().items() if
+                                                    mych.mode() == 'read' or mych.mode() == 'both']}
+                                    for device_name, device in devices.items() if not device.locked()]
+
+                response = self.send_message_to_server(purpose='query_values', data=device_dict_list)
+
+                if response.strip() != r"{}" and "error" not in str(response).lower():
+                    parsed_response = json.loads(response)
 
                     for device_name, device in devices.items():
 
                         if not device.locked():
 
-                            # arduino_id = device.get_arduino_id()
+                            arduino_id = device.get_arduino_id()
 
                             # TODO: This is to be treated as a temporary fix. With the RasPi Server and Arduinos,
                             # TODO: we will have to implement a master polling rate (GUI <--> RasPi) and have the
                             # TODO: RasPi report back the individual polling rates with the Devices (RasPi <--> Arduino)
                             device.add_one_to_poll_count()
 
-                            for channel_name, channel in device.channels().items():
+                            if "ERR" in parsed_response[arduino_id]:
+                                # self._status_bar.push(2, "Error: " + str(parsed_response[arduino_id]))
+                                pass
 
-                                # if channel.initialized() and (channel.mode() == "read" or channel.mode() == "both"):
-                                if channel.mode() == "read" or channel.mode() == "both":
+                            else:
+
+                                for channel_name, value in parsed_response[arduino_id].items():
+
+                                    channel = device.get_channel_by_name(channel_name)
+                                    channel.set_value(value)
 
                                     try:
+                                        self.log_data(channel)
 
-                                        try:
-                                            # Log data.
-                                            self.log_data(channel)
-
-                                        except Exception as e:
+                                    except Exception as e:
+                                        if self.debug:
                                             print("Exception '{}' caught while trying to log data.".format(e))
-                                            pass
 
-                                        try:
-                                            GLib.idle_add(self.update_stored_values, device.name(), channel_name)
+                                    try:
+                                        self.update_stored_values(device_name, channel_name)
+                                        # GLib.idle_add(self.update_stored_values, device.name(), channel_name)
 
-                                        except Exception as e:
+                                    except Exception as e:
+                                        if self.debug:
                                             print("Exception '{}' caught while updating stored values.".format(e))
-                                            pass
 
+                                    try:
                                         GLib.idle_add(self.update_gui, channel)
 
                                     except Exception as e:
-
-                                        print("Exception '{}' caught.".format(e))
+                                        if self.debug:
+                                            print("Exception '{}' caught while updating GUI.".format(e))
 
             elif self._communication_thread_mode == "write" and self._set_value_for_widget is not None:
 
@@ -809,14 +780,14 @@ class MIST1ControlSystem:
                 self._communication_thread_mode = "read"
                 self._set_value_for_widget = None
 
-            sleepy_time = self._com_period - time.time() + thread_start_time
+            sleepy_time = self._com_period - timeit.default_timer() + thread_start_time
 
             # print("Sleeping for {} s".format(sleepy_time))
 
             if sleepy_time > 0.0:
                 time.sleep(sleepy_time)
 
-        self.main_quit(self)
+        # self.main_quit(self)
 
         if self.debug:
             print("Closing communication thread.")

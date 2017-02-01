@@ -114,35 +114,37 @@ def build_message(msg_type, device_address="254", for_what="wink", data_variable
 def tests():
     assert calculate_checksum("@001UT!TEST;") == "16"
 
-def translate_gui_to_driver(server_to_driver):
+class Translate:
 
-    num_of_mesg = len(server_to_driver['channel_ids'])
-    assert num_of_mesg == len(server_to_driver['precisions'])
-    assert server_to_driver['device_driver']=="mfc"
+    def translate_gui_to_driver(self, server_to_driver):
     
-    drivers_response_to_server=[]
-
-    for i in range(0,num_of_mesg):
-        drivers_response_to_server.append(build_message(msg_type=server_to_driver['set'], device_address=server_to_driver['device_id'], for_what=server_to_driver['channel_ids'][i]))
-
-    return drivers_response_to_server
-
-def translate_driver_to_gui(response,precision):
-
-    drivers_response_to_server=[]
-    num_of_mesg=len(response)
-
-    for i in range(0,num_of_mesg):
-        x = parse_message(response[i])  
-        if x['acknowledged']==True:
-            concat_value = '{0:.{1}f}'.format(float(x['value']
-),precision[i])
-            drivers_response_to_server.append(concat_value)
-        if x['acknowledged']==False:
-            drivers_response_to_server.append("Error"+x['value'])
+        num_of_mesg = len(server_to_driver['channel_ids'])
+        assert num_of_mesg == len(server_to_driver['precisions'])
+        assert server_to_driver['device_driver']=="mfc"
         
-    return drivers_response_to_server
-
+        drivers_response_to_server=[]
+    
+        for i in range(0,num_of_mesg):
+            drivers_response_to_server.append(build_message(msg_type=server_to_driver['set'], device_address=server_to_driver['device_id'], for_what=server_to_driver['channel_ids'][i]))
+    
+        return drivers_response_to_server
+    
+    def translate_driver_to_gui(self, response,precision):
+    
+        drivers_response_to_server=[]
+        num_of_mesg=len(response)
+    
+        for i in range(0,num_of_mesg):
+            x = parse_message(response[i])  
+            if x['acknowledged']==True:
+                concat_value = '{0:.{1}f}'.format(float(x['value']
+    ),precision[i])
+                drivers_response_to_server.append(concat_value)
+            if x['acknowledged']==False:
+                drivers_response_to_server.append("Error"+x['value'])
+            
+        return drivers_response_to_server
+    
 if __name__ == '__main__':
     tests()
 
