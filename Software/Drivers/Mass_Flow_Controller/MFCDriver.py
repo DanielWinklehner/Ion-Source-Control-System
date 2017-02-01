@@ -16,33 +16,45 @@ def get_error(error_code):
     return error_dict[str(error_code)]
 
 
-def get_command(category, for_what):
-    setup_dict = {"baud_rate": 'CC', "address": 'CA', "user_tag": 'UT', "operating_mode": 'OM',
+#def get_command(category, for_what):
+#    setup_dict = {"baud_rate": 'CC', "address": 'CA', "user_tag": 'UT', "operating_mode": 'OM',
+#                  "programmed_gas_table_size": 'GTS', "programmed_gas_table_search": 'GL',
+#                  "activate_programmed_gas": 'PG', "flow_units": 'U', "full_scale_range": 'FS', "wink": 'WK',
+#                  "run_hours_meter": 'RH'}
+#    flow_sensor_dict = {"auto_zero": "AZ", "high_trip_point": "H", "high_high_trip_point": "HH", "low_trip_point": "L",
+#                        "low_low_trip_point": "LL", "indicated_flow_rate_percent": "F",
+#                        "indicated_flow_rate_units": "FX", "flow_totalizer": "FT"}
+#    informational_dict = {"status": "T", "status_reset": "SR", "gas_name_or_number_search": "GN",
+#                          "gas_code_number": "SGN", "device_type": "DT", "valve_type": "VT",
+#                          "valve_power_off_state": "VPO", "manafacturer": "MF", "model_designation": "MD",
+#                          "serial_number": "SN", "internal_temperature": "TA", "standard_temperature": "ST",
+#                          "standard_pressure": "SP"}
+#    control_dict = {"control_mode": "CM", "set_point_percent": "S", "set_point_units": "SX", "freeze_mode": "FM",
+#                    "softstart_rate": "SS", "valve_override": "VO", "valve_drive_level": "VD"}
+#
+#    if category == "info":
+#        return informational_dict[for_what]
+#    elif category == "flow_sensor":
+#        return flow_sensor_dict[for_what]
+#    elif category == "control":
+#        return control_dict[for_what]
+#    elif category == "setup":
+#        return setup_dict[for_what]
+#
+    # return error_dict[for_what]
+def get_command(what):
+    command_dict = {"baud_rate": 'CC', "address": 'CA', "user_tag": 'UT', "operating_mode": 'OM',
                   "programmed_gas_table_size": 'GTS', "programmed_gas_table_search": 'GL',
                   "activate_programmed_gas": 'PG', "flow_units": 'U', "full_scale_range": 'FS', "wink": 'WK',
-                  "run_hours_meter": 'RH'}
-    flow_sensor_dict = {"auto_zero": "AZ", "high_trip_point": "H", "high_high_trip_point": "HH", "low_trip_point": "L",
-                        "low_low_trip_point": "LL", "indicated_flow_rate_percent": "F",
-                        "indicated_flow_rate_units": "FX", "flow_totalizer": "FT"}
-    informational_dict = {"status": "T", "status_reset": "SR", "gas_name_or_number_search": "GN",
-                          "gas_code_number": "SGN", "device_type": "DT", "valve_type": "VT",
-                          "valve_power_off_state": "VPO", "manafacturer": "MF", "model_designation": "MD",
-                          "serial_number": "SN", "internal_temperature": "TA", "standard_temperature": "ST",
-                          "standard_pressure": "SP"}
-    control_dict = {"control_mode": "CM", "set_point_percent": "S", "set_point_units": "SX", "freeze_mode": "FM",
-                    "softstart_rate": "SS", "valve_override": "VO", "valve_drive_level": "VD"}
-
-    if category == "info":
-        return informational_dict[for_what]
-    elif category == "flow_sensor":
-        return flow_sensor_dict[for_what]
-    elif category == "control":
-        return control_dict[for_what]
-    elif category == "setup":
-        return setup_dict[for_what]
-
-    # return error_dict[for_what]
-
+                  "run_hours_meter": 'RH', "auto_zero": "AZ", "high_trip_point": "H", "high_high_trip_point": "HH",
+                  "low_trip_point": "L", "low_low_trip_point": "LL", "indicated_flow_rate_percent": "F", 
+                  "indicated_flow_rate_units": "FX", "flow_totalizer": "FT", "status": "T", "status_reset": "SR", 
+                  "gas_name_or_number_search": "GN","gas_code_number": "SGN", "device_type": "DT", "valve_type": "VT",
+                   "valve_power_off_state": "VPO", "manafacturer": "MF", "model_designation": "MD",
+                   "serial_number": "SN", "internal_temperature": "TA", "standard_temperature": "ST",
+                    "standard_pressure": "SP", "control_mode": "CM", "set_point_percent": "S", "set_point_units": "SX", 
+                    "freeze_mode": "FM", "softstart_rate": "SS", "valve_override": "VO", "valve_drive_level": "VD"}
+    return command_dict[what]
 
 def parse_message(message):
     assert message[0:3] == "@" * 3
@@ -61,7 +73,7 @@ def parse_message(message):
         return {'acknowledged': False, 'value': response_value}
 
 
-def build_message(msg_type, device_address="254", category="setup", for_what="wink", data_variable=None):
+def build_message(msg_type, device_address="254", for_what="wink", data_variable=None):
     """Summary
 
     Args:
@@ -77,7 +89,7 @@ def build_message(msg_type, device_address="254", category="setup", for_what="wi
 
     assert (len(str(device_address)) == 3)
 
-    msg += get_command(category, for_what)
+    msg += get_command(for_what)
 
     if msg_type == False:
         msg += "?"
@@ -102,18 +114,23 @@ def build_message(msg_type, device_address="254", category="setup", for_what="wi
 def tests():
     assert calculate_checksum("@001UT!TEST;") == "16"
 
-def server_to_driver_command(server_to_driver, num_of_mesg):
+def translate_gui_to_driver(server_to_driver):
+
+    num_of_mesg = len(server_to_driver['channel_ids'])
+    assert num_of_mesg == len(server_to_driver['precisions'])
+    assert server_to_driver['device_driver']=="mfc"
     
     drivers_response_to_server=[]
 
     for i in range(0,num_of_mesg):
-        drivers_response_to_server.append(build_message(msg_type=server_to_driver['set'], device_address=server_to_driver['device_id'], category="setup", for_what=server_to_driver['channel_ids'][i]))
+        drivers_response_to_server.append(build_message(msg_type=server_to_driver['set'], device_address=server_to_driver['device_id'], for_what=server_to_driver['channel_ids'][i]))
 
     return drivers_response_to_server
 
-def server_to_driver_response(response,precision):
+def translate_driver_to_gui(response,precision):
 
     drivers_response_to_server=[]
+    num_of_mesg=len(response)
 
     for i in range(0,num_of_mesg):
         x = parse_message(response[i])  
@@ -121,26 +138,25 @@ def server_to_driver_response(response,precision):
             concat_value = '{0:.{1}f}'.format(float(x['value']
 ),precision[i])
             drivers_response_to_server.append(concat_value)
+        if x['acknowledged']==False:
+            drivers_response_to_server.append("Error"+x['value'])
         
     return drivers_response_to_server
 
 if __name__ == '__main__':
     tests()
 
-    message_to_driver_string='{"channel_ids": ["wink", "wink", "wink"], "device_driver": "mfc", "set": false, "precisions": [1, 2, 3], "device_id": "254"}'
+#    message_to_driver_string='{"channel_ids": ["wink", "wink", "wink","wink"], "device_driver": "mfc", "set": false, "precisions": [1, 2, 3, 4], "device_id": "254"}'
 
-    message_to_driver=json.loads(message_to_driver_string)
+#    message_to_driver=json.loads(message_to_driver_string)
 
-    num_of_mesg = len(message_to_driver['channel_ids'])
-    assert num_of_mesg == len(message_to_driver['precisions'])
-    assert message_to_driver['device_driver']=="mfc"
+    message_to_driver={"channel_ids": ["wink", "wink", "wink","wink"], "device_driver": "mfc", "set": False, "precisions": [1, 2, 3, 4], "device_id": "254"}
  
-    print server_to_driver_command(message_to_driver, num_of_mesg)
+    print translate_gui_to_driver(message_to_driver)
 
-    response_from_driver = ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF"] 
-    assert len(response_from_driver)==num_of_mesg
+    response_from_driver = {'response': ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000NAK34;FF"], 'precision': [1,2,3,4]}
     
-    print server_to_driver_response(response_from_driver, message_to_driver['precisions'])
+    print translate_driver_to_gui(response_from_driver['response'], response_from_driver['precision'])
 
     #print parse_message("@@@000ACKCR,H,HH;FF")
     # print parse_message(message="@@@000ACK9600;A9")
