@@ -20,6 +20,7 @@ class Device:
             self._channels = channels
 
         self._arduino_id = arduino_id
+        self._driver = 'arduino'
         # self._front_page_widgets = {}  # This is a dictionary
         # of FrontPageDisplay widgets. key = channel_name, value = FrontPageDisplay.
         self._on_overview_page = on_overview_page
@@ -34,6 +35,12 @@ class Device:
 
     def get_arduino_id(self):
         return self._arduino_id
+
+    def get_driver(self):
+        return self._driver
+
+    def set_driver(self, driver):
+        self._driver = driver
 
     def get_overview_frame(self):
         return self._overview_frame

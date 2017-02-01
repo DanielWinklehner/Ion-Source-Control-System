@@ -35,7 +35,7 @@ class MIST1ControlSystem:
         self.debug = debug
 
         # TODO: make this a user-adjustable parameter
-        self._com_period = 0.05  # Period between calls to the communicate function (s) 0.1 s --> 10 Hz
+        self._com_period = 0.025  # Period between calls to the communicate function (s) 0.025 s --> 40 Hz
 
         self._server_ip = server_ip
         self._server_port = server_port
@@ -405,28 +405,104 @@ class MIST1ControlSystem:
 
         return r"{}"
 
+    def send_message_to_server2(self, purpose=None, **kwargs):
+
+        url = self._server_url
+        data = {}
+
+        if purpose == "register_device":
+
+            url += "arduino/connect"
+            data['arduino_id'] = kwargs[0]
+
+        elif purpose == "query_values":
+
+            url += "arduino/query2"
+            data['data'] = json.dumps(kwargs["data"])
+
+            # data['arduino_id'] = json.dumps(kwargs["arduino_ids"])
+            # data['channel_names'] = json.dumps(kwargs["channel_names"])
+            # data['precisions'] = json.dumps(kwargs["precisions"])
+
+        elif purpose == "set_values":
+
+            url += "arduino/set"
+            data['arduino_id'] = kwargs["arduino_id"]
+            data['channel_name'] = kwargs["channel_name"]
+            data['value_to_set'] = kwargs["value_to_set"]
+
+        try:
+
+            if self.debug:
+
+                print(url)
+                print(data)
+                print(purpose)
+
+            # start = time.time()
+            r = requests.post(url, data=data)
+            response_code = r.status_code
+            # response = r.reason
+            # end = time.time()
+            # print "The request part took {} seconds.".format(end - start)
+
+            # print r.text
+            if response_code == 200:
+                return r.text
+            else:
+                return r"{}"
+
+        except Exception as e:
+
+            print(e)
+
+        return r"{}"
+
     def register_device_with_server(self, device):
         # return self.send_message_to_server("register_device", [device.get_arduino_id()])
         pass
 
     def get_all_channel_values(self, devices):
 
-        arduino_ids = [device.get_arduino_id() for device_name, device in devices.items()]
-        channel_names = [[name for name, mych in device.channels().items() if mych.mode() == 'read'] for
-                         device_name, device in devices.items()]
-        # precisions = [[4] * len(device.channels()) for device_name, device in devices.items()]
-        precisions = [[4 for name, mych in device.channels().items() if mych.mode() == 'read'] for
-                      device_name, device in devices.items()]
+        # start_time = 1.0e3 * time.time()
+        #
+        # time.clock()
+        #
+        # arduino_ids = [device.get_arduino_id() for device_name, device in devices.items()]
+        #
+        # channel_names = [[name for name, mych in device.channels().items() if mych.mode() == 'read'] for
+        #                  device_name, device in devices.items()]
+        #
+        # precisions = [[4 for name, mych in device.channels().items() if mych.mode() == 'read'] for
+        #               device_name, device in devices.items()]
+        #
+        # # print "Trying to get channel values for ", arduino_id
+        #
+        # response = self.send_message_to_server(purpose='query_values',
+        #                                        arduino_ids=arduino_ids,
+        #                                        channel_names=channel_names,
+        #                                        precisions=precisions)
+        #
+        # duration = 1.0e3 * time.time() - start_time
+        #
+        # print("Old method took {} ms".format(duration))
+        #
+        # start_time = 1.0e3 * time.time()
 
-        # print "Trying to get channel values for ", arduino_id
-        # start = time.time()
-        response = self.send_message_to_server(purpose='query_values',
-                                               arduino_ids=arduino_ids,
-                                               channel_names=channel_names,
-                                               precisions=precisions)
-        # end = time.time()
+        device_dict_list = [{'device_driver': device.get_driver(),
+                             'device_id': device.get_arduino_id(),
+                             'channel_ids': [name for name, mych in device.channels().items() if
+                                             mych.mode() == 'read'],
+                             'precisions': [4 for name, mych in device.channels().items() if
+                                            mych.mode() == 'read']}
+                            for device_name, device in devices.items()]
 
-        # print "It took", (end - start), "seconds to get a response."
+        response = self.send_message_to_server2(purpose='query_values',
+                                                data=device_dict_list)
+
+        # duration = 1.0e3 * time.time() - start_time
+        #
+        # print("New method took {} ms".format(duration))
 
         if self.debug:
 
@@ -738,6 +814,8 @@ class MIST1ControlSystem:
 
             if sleepy_time > 0.0:
                 time.sleep(sleepy_time)
+
+        self.main_quit(self)
 
         if self.debug:
             print("Closing communication thread.")
@@ -1773,7 +1851,7 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
-    mydebug = True
+    mydebug = False
 
     # 95432313837351E00271
     # control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=80)
