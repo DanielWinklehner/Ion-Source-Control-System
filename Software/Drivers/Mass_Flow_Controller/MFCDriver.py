@@ -114,7 +114,7 @@ def build_message(msg_type, device_address="254", for_what="wink", data_variable
 def tests():
     assert calculate_checksum("@001UT!TEST;") == "16"
 
-class Translate:
+class MFCDriver:
 
     def translate_gui_to_driver(self, server_to_driver):
     
@@ -129,9 +129,11 @@ class Translate:
     
         return drivers_response_to_server
     
-    def translate_driver_to_gui(self, response,precision):
+    def translate_driver_to_gui(self, response_string):
     
         drivers_response_to_server=[]
+        response=response_string['response']
+        precision=response_string['precision']
         num_of_mesg=len(response)
     
         for i in range(0,num_of_mesg):
@@ -145,6 +147,9 @@ class Translate:
             
         return drivers_response_to_server
     
+
+message_to_driver={"channel_ids": ["wink", "wink", "wink","wink"], "device_driver": "mfc", "set": False, "precisions": [1, 2, 3, 4], "device_id": "254"}
+response_from_driver = {'response': ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000NAK34;FF"], 'precision': [1,2,3,4]}
 if __name__ == '__main__':
     tests()
 
@@ -154,12 +159,12 @@ if __name__ == '__main__':
 
     message_to_driver={"channel_ids": ["wink", "wink", "wink","wink"], "device_driver": "mfc", "set": False, "precisions": [1, 2, 3, 4], "device_id": "254"}
  
-    print translate_gui_to_driver(message_to_driver)
 
     response_from_driver = {'response': ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000NAK34;FF"], 'precision': [1,2,3,4]}
     
-    print translate_driver_to_gui(response_from_driver['response'], response_from_driver['precision'])
-
+    x=MFCDriver()
+    print x.translate_gui_to_driver(message_to_driver)
+    print x.translate_driver_to_gui(response_from_driver)
     #print parse_message("@@@000ACKCR,H,HH;FF")
     # print parse_message(message="@@@000ACK9600;A9")
     # print parse_message(message="@@@000ACK10;FF")
