@@ -235,12 +235,14 @@ def find_port(arduino_id):
 	# raise Exception("Couldn't find an Arduino with the given device id.")
 
 
-def find_arudinos_connected():
-	all_arduino_ports = get_all_arduino_ports()
+def find_devices_connected():
+	all_device_ports = get_all_arduino_ports()
 	
-	all_arduinos = []
-	for arduino_port in all_arduino_ports:
-		name = arduino_port.split("/")[2]
+	port_by_id = {}
+	id_by_port = {}
+
+	for port in all_device_ports:
+		name = port.split("/")[2]
 		
 		try:		
 			sys_path = os.path.realpath("/sys/class/tty/{}/".format(name))
@@ -250,7 +252,8 @@ def find_arudinos_connected():
 			if "serial" in all_files:
 				with open(os.path.abspath(os.curdir) + "/serial") as serial_number_file:
 					serial_number = serial_number_file.readline().strip(" \r\n")
-					all_arduinos.append( (serial_number, arduino_port))
+					port_by_id[serial_number] = port
+					id_by_port[port] = serial_number
 		except OSError as e:
 			print "OSError occured", str(e)
 			pass
@@ -258,7 +261,7 @@ def find_arudinos_connected():
 			print "Exception occured", str(e2)
 			pass
 
-	return all_arduinos
+	return (port_by_id, id_by_port)
 
 '''
 def find_arudinos_connected():
