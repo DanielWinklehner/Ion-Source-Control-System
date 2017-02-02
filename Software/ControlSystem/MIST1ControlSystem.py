@@ -60,7 +60,7 @@ def communicate(com_pipe, shared_x_values, shared_y_values, server_url, debug=Fa
 
             poll_count += 1
 
-            _url = _server_url + "arduino/query"
+            _url = _server_url + "device/query"
             _data = {'data': json.dumps(_device_dict_list)}
 
             try:
@@ -139,12 +139,12 @@ class MIST1ControlSystem:
         self._server_port = server_port
         self._server_url = "http://{}:{}/".format(server_ip, server_port)
 
-        r = requests.post(self._server_url + "arduino/all")
+        r = requests.post(self._server_url + "device/all")
 
         if self.debug:
             print("{}: {}".format(r.status_code, r.text))
 
-        r = requests.post(self._server_url + "arduino/active")
+        r = requests.post(self._server_url + "device/active")
 
         if self.debug:
             print("{}: {}".format(r.status_code, r.text))
@@ -533,19 +533,19 @@ class MIST1ControlSystem:
     #
     #     if purpose == "register_device":
     #
-    #         url += "arduino/connect"
+    #         url += "device/connect"
     #         data['arduino_id'] = kwargs[0]
     #
     #     elif purpose == "query_values":
     #
-    #         url += "arduino/query"
+    #         url += "device/query"
     #         data['arduino_id'] = json.dumps(kwargs["arduino_ids"])
     #         data['channel_names'] = json.dumps(kwargs["channel_names"])
     #         data['precisions'] = json.dumps(kwargs["precisions"])
     #
     #     elif purpose == "set_values":
     #
-    #         url += "arduino/set"
+    #         url += "device/set"
     #         data['arduino_id'] = kwargs["arduino_id"]
     #         data['channel_name'] = kwargs["channel_name"]
     #         data['value_to_set'] = kwargs["value_to_set"]
@@ -584,17 +584,17 @@ class MIST1ControlSystem:
 
         if purpose == "register_device":
 
-            url += "arduino/connect"
+            url += "device/connect"
             data['arduino_id'] = kwargs[0]
 
         elif purpose == "query_values":
 
-            url += "arduino/query"
+            url += "device/query"
             data['data'] = json.dumps(kwargs["data"])
 
         elif purpose == "set_values":
 
-            url += "arduino/set"
+            url += "device/set"
             data['arduino_id'] = kwargs["arduino_id"]
             data['channel_name'] = kwargs["channel_name"]
             data['value_to_set'] = kwargs["value_to_set"]
