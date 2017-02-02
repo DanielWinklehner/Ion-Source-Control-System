@@ -51,7 +51,7 @@ def communicate(com_pipe, server_url, debug=False):
 
         if _device_dict_list is not None:
 
-            _url = _server_url + "arduino/query"
+            _url = _server_url + "device/query"
             _data = {'data': json.dumps(_device_dict_list)}
 
             try:
@@ -474,18 +474,18 @@ class MIST1ControlSystem:
 
         if purpose == "register_device":
 
-            url += "arduino/connect"
-            data['arduino_id'] = kwargs[0]
+            url += "device/connect"
+            data['device_id'] = kwargs[0]
 
         elif purpose == "query_values":
 
-            url += "arduino/query"
+            url += "device/query"
             data['data'] = json.dumps(kwargs["data"])
 
         elif purpose == "set_values":
 
-            url += "arduino/set"
-            data['arduino_id'] = kwargs["arduino_id"]
+            url += "device/set"
+            data['device_id'] = kwargs["device_id"]
             data['channel_name'] = kwargs["channel_name"]
             data['value_to_set'] = kwargs["value_to_set"]
 
@@ -608,13 +608,13 @@ class MIST1ControlSystem:
 
     def update_channel_values_to_arduino(self, channel):
 
-        arduino_id = channel.get_parent_device().get_arduino_id()
+        device_id = channel.get_parent_device().get_arduino_id()
 
         channel_name = channel.name()
         value_to_set = channel.read_value()
 
         response = self.send_message_to_server(purpose='set_values',
-                                               arduino_id=arduino_id,
+                                               device_id=device_id,
                                                channel_name=channel_name,
                                                value_to_set=value_to_set)
 
@@ -1914,7 +1914,7 @@ class MIST1ControlSystem:
 
 if __name__ == "__main__":
 
-    mydebug = False
+    mydebug = True
 
     # 95432313837351E00271
     # control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=80)
