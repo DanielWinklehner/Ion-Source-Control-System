@@ -10,7 +10,7 @@ from flask import request
 from DummySerial import DummySerial
 from multiprocessing.dummy import Pool as ThreadPool
 
-sys.path.append('../')
+sys.path.append('../Drivers/')
 
 from MIST1DeviceDriver import MIST1DeviceDriver
 
@@ -141,6 +141,9 @@ def query_device():
         data = json.loads(request.form['data'])
     elif request.method == 'GET':
         data = json.loads(request.args.get('data'))
+
+
+    print data
 
     port_by_id, id_by_port = find_arduinos_connected()
 
