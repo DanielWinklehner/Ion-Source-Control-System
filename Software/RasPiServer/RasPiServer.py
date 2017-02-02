@@ -43,104 +43,72 @@ app.debug = True
     
 
 
-channel_values = {}             # key = arduino id; value = dictionary (key = channel name; value = float/int/bool).
-device_channel_names = defaultdict(list)    # key = arduino id; value = list( channel names ).
-
-all_active_arduinos = []
-all_active_managers = []
 
 
+all_active_device_ids = []    # Key => device_id; value => (device_id, port_name)
+all_active_managers = {}    # Key => device_id; value => Manager(SerialCOM())
 
-def update_arduinos_connected():
-    global all_active_arduinos
+
+def update_devices_connected():
+    global all_active_device_ids
     global all_active_managers
+
+
+
+    port_by_id, id_by_port = find_devices_connected()
 
     # print "I am updating arduinos connected."
 
     # while True:
     # for count_abc in range(2):
 
-    all_arduinos = find_arudinos_connected()
-
-    #all_active_arduinos = all_arduinos
-    #all_active_managers = [Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1]) for arduino in all_active_arduinos]
+ 
+    #all_active_devices = all_arduinos
+    #all_active_managers = [Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1]) for arduino in all_active_devices]
     
 
-    for i, arduino in enumerate(all_arduinos):
+    for device_id, port in port_by_id.items():
 
         arduinos_to_remove = []
         
-        for j, arduino_already_added in enumerate(all_active_arduinos):
+        for already_added_device_id in all_active_device_ids:
+            already_added_port = port_by_id[already_added_device_id]
 
-            #print arduino, arduino_already_added
-
-            if arduino_already_added[0] == arduino[0] and arduino_already_added[1] == arduino[1]:
+            if already_added_device_id == device_id and already_added_port == port:
                 # Both arduino id and port name matches. Do nothing.
-                #print "Case I"
                 pass
-            elif arduino_already_added[0] == arduino[0] and arduino_already_added[1] != arduino[1]:
+            elif already_added_device_id == device_id and already_added_port != port:
                 # Arduino id matches but port name does not. Replace them with new entries.
-                #print "Case 2"
-                all_active_arduinos[j] = arduino
-                all_active_managers[j] = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
+                all_active_managers[device_id] = Manager().SerialCOM(arduino_id=device_id, port_name=port)
                 time.sleep(1)
-                all_active_managers[j].send_message("i")
+                all_active_managers[device_id].send_message("i")
             else:
                 pass
 
-            if arduino_already_added not in all_arduinos:
-                arduinos_to_remove.append(arduino_already_added)
+            if already_added_device_id not in port_by_id.keys() or already_added_port not in id_by_port.keys():
+                arduinos_to_remove.append(already_added_device_id)
 
-        for arduino_to_remove in arduinos_to_remove:
-            print arduino_to_remove, "no longer there so removing it."
+        for arduino_id_to_remove in arduinos_to_remove:
             try:
-                all_active_arduinos.remove(arduino_to_remove)
+                all_active_device_ids.remove(arduino_id_to_remove)
+                del all_active_managers[already_added_device_id]
             except ValueError:
                 pass
 
         # Next, "brand new" arduinos that we've never added before.
-        if arduino in all_active_arduinos:
+        if device_id in all_active_device_ids:
             #print "arduino already added"
             pass
         else:
-            #print "nope! Not there!"
 
+            new_manager = Manager().SerialCOM(arduino_id=device_id, port_name=port)
 
-            new_manager = Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1])
+            all_active_device_ids.append(device_id)
+            all_active_managers[device_id] = new_manager
 
-            all_active_arduinos.append(arduino)
-            all_active_managers.append(new_manager)
-            channel_values[arduino[0]] = {}
+            print device_id, all_active_device_ids
 
-            all_channels = Messages.decode_channel_names( new_manager.send_message("i") )
-
-            for channel in all_channels:
-                device_channel_names[arduino[0]].append(channel)
-
-        
-    threading.Timer(1., update_arduinos_connected).start()
-
-        # time.sleep(0.1)
-
-
-def build_arduino_port_map(arduino_ids):
-    
-    arduinos_map = []
-
-    found = True
-    for arduino_id in arduino_ids:
-        for arduino in all_arduinos_info:
-            if arduino_id == arduino[0]:
-                arduinos_map.append(  [arduino_id, arduino[1]] )
-                found = True
-                break
-
-        if not found:
-            arduinos_map.append( [arduino_id, None] )
-
-        found = False
-
-    return arduinos_map
+    threading.Timer(1., update_devices_connected).start()
 
 class QueryMachine:
     def __init__(self, serial_com, queries):
@@ -156,12 +124,27 @@ class QueryMachine:
     def __str__(self):
         return str(self._serial_com) + "; " + str(self._queries)
 
-def mp_worker(machine):
-# def mp_worker(args):
+def mp_worker(args):
+    port, messages = args
 
-    start = time.time()
+    all_responses = []
+    for msg in messages:
 
-    # print machine
+        try:
+            ser = DummySerial(port, 115200)
+            ser.write(msg)
+            all_responses.append(ser.readline())
+        except Exception as e:
+            print("Something went wrong! Exception: {}".format(e))
+            all_responses.append(None)
+
+    return port, all_responses
+
+
+def mp_worker(arg):
+
+    port, messages = args
+
     serial_com = machine.serial_com()
     messages = machine.queries()
 
@@ -181,79 +164,10 @@ def mp_worker(machine):
             print "Something went wrong! I'm sorry!", e
             all_responses.append(None)
     
-
-
-    end = time.time()
-
-    # print "it took", (end - start), "to get a message from the arduino"
-    
     return serial_com.get_arduino_id(), all_responses
-    # return None
-
-
-def pool_query_arduinos(arduino_ids, queries):
-
-    # First, find correct SerialCOM objects to use.
-    # update_arduinos_connected()
-
-    serial_coms_to_use = []
-    queries_to_use = []
-
-    machines = []
-
-    for arduino_id, query in zip(arduino_ids, queries):
-
-        print arduino_id
-
-        for i in range(len(all_active_managers)):
-            
-            print i, " manager = ", all_active_managers[i].get_arduino_id()
-
-            if all_active_managers[i].get_arduino_id() == arduino_id:
-
-                machines.append(QueryMachine(all_active_managers[i], query))
 
 
 
-    parsed_response = dict()
-
-    print "Machines length is", len(machines)
-
-    if len(machines) > 0:
-        start = time.time()
-
-        # print "Pooling all arduinos"
-
-        try:
-
-            # p = multiprocessing.Pool(len(machines))
-            p = ThreadPool()
-
-            start2 = time.time()
-
-            all_responses = p.map(mp_worker, machines)
-
-            end2 = time.time()
-
-        finally:
-            # p.close()
-            # p.join()
-            pass
-
-        end = time.time()
-
-        #print "It took", (end - start), "seconds to collect all the responses."
-
-        if len(all_responses) == 0 or len(all_responses[0]) == 0:
-            return None
-        else:
-            for arduino_id, raw_output_message in all_responses:
-                try:
-                    parsed_response[arduino_id] = Messages.parse_arduino_output_message(raw_output_message)
-                except Exception as e:
-                    parsed_response[arduino_id] = str(e[0]) + ": " + str(e[1])
-        
-    return parsed_response
 
 def set_channel_value_to_arduino(arduino_id, channel_name, value):
     global all_active_managers
@@ -277,6 +191,19 @@ def set_channel_value_to_arduino(arduino_id, channel_name, value):
 def hello():
     return "Hey there!"
 
+@app.route('/kill', methods=['GET', 'POST'])
+def kill():
+
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    
+    p.terminate()
+    p.join()
+    
+    func()
+    
+    return "Shutting down..."
 
 @app.route("/display")
 def display():
@@ -302,77 +229,97 @@ def set_arduino_values():
     return json.dumps(response)
 
 
-
-@app.route("/arduino/all")
-def all_arduinos():
-    return json.dumps(find_arudinos_connected())
-
-@app.route("/arduino/active")
-def active_arduinos():
-    return json.dumps(all_active_arduinos)
-
-@app.route("/arduino/query", methods=['GET', 'POST'])
-def query_arduinos():
+@app.route("/device/all")
+def all_devices():
+    return json.dumps(find_devices_connected()[1])
 
 
-    # print "I've been queried at:", time.strftime("%H:%M:%S:%m")
-
-
-    start = time.time()
-
+@app.route("/device/set", methods=['GET', 'POST'])
+def set_device_values():
     if request.method == 'POST':
-        all_arduino_ids = json.loads(request.form['arduino_id'])
-        all_channel_names = json.loads(request.form['channel_names'])
-        all_precisions = json.loads(request.form['precisions'])
-        
+        device_driver = request.form['device_driver']
+        device_id = request.form['device_id']
+        channel_name = request.form['channel_name']
+        value_to_set = request.form['value_to_set']
     elif request.method == 'GET':
-        all_arduino_ids = json.loads(request.args.get('arduino_id'))
-        all_channel_names = json.loads(request.args.get('channel_names'))
-        all_precisions = json.loads(request.args.get('precisions'))
+        device_driver = request.args.get('device_driver')
+        device_id = request.args.get('device_id')
+        channel_name = request.args.get('channel_name')
+        value_to_set = request.args.get('value_to_set')
+    
+    response = set_channel_value_to_device(device_driver, device_id, channel_name, value_to_set)
+
+    return json.dumps(response)
+
+
+@app.route("/device/query", methods=['GET', 'POST'])
+def query_device():
+    # print "We are querying devices"
+    # LOGGER.info("We are querying devices")
+
+    # print request.args
+    # start = time.time()
+
+    # Load the data stream
+    if request.method == 'POST':
+        data = json.loads(request.form['data'])
+    elif request.method == 'GET':
+        data = json.loads(request.args.get('data'))
+
+
+    print data
+
+    port_by_id, id_by_port = find_devices_connected()
+
+    my_drivers = dict()
+    message_data = []
+    for device_data in data:
         
+        my_driver = MIST1DeviceDriver(device_data['device_driver']) 
 
-    all_queries = [(arduino_id, channel_names, precisions) for (arduino_id, channel_names, precisions) in zip(all_arduino_ids, all_channel_names, all_precisions)]
-    
-    all_query_messages = [Messages.build_query_message(channel_names, precisions) for (arduino_id, channel_names, precisions) in all_queries]
+        my_driver.load_driver()
 
-    # print "all query messages:"
-    # print all_query_messages
+        device_data['set'] = False
+
+        device_message = my_driver.translate_gui_to_device(device_data)
+
+        if len(device_message) == 0:
+            raise Exception("Error building message for: ", str(device_data))
+        else:
+            message_data.append((port_by_id[device_data["device_id"]], device_message))
+        
+        my_drivers[device_data['device_id']] = my_driver
 
 
-    start2 = time.time()
+    devices_responses = dict()
 
-    arduinos_response = pool_query_arduinos(all_arduino_ids, all_query_messages)
+    try:
 
-    end2 = time.time()
+        # Use existing global pool of 10 worker threads
+        # TODO: Let the user decide how many threads to use?
+        # But first let's see if they are all alive
+        print("Currently we have {} threads alive!".format(threading.active_count()))
 
-    print arduinos_response
+        all_responses = p.map(mp_worker, message_data)
 
-    end = time.time()
+        if len(all_responses) == 0 or len(all_responses[0]) == 0:
+            return None
+        else:
+            for port, raw_output_message in all_responses:
+                
+                device_id = id_by_port[port]
+                
+                try:
+                    devices_responses[device_id] = my_drivers[device_id].translate_device_to_gui(raw_output_message)
+                except Exception as e:
 
-    print "\n"*2
+                    devices_responses[device_id] = "ERROR: " + str(e)
 
-    print "The function query_arduinos() took", (end - start), "seconds."
 
-    print "Out of that:",
+    except Exception as e:
+        print("Something went wrong! Exception: {}".format(e))
 
-    print "It took {} to collect responses [pool_query_arduinos()].".format(end2 - start2)
-
-    print "\n"*2
-
-    # print "I sent a response at:", time.strftime("%H:%M:%S:%m")
-
-    return json.dumps(arduinos_response)
-    
-def shutdown_server():
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func is None:
-        raise RuntimeError('Not running with the Werkzeug Server')
-    func()
-
-@app.route('/shutdown', methods=['GET', 'POST'])
-def shutdown():
-    shutdown_server()
-    return 'Server shutting down...'
+    return json.dumps(devices_responses)
 
 
 
@@ -381,8 +328,11 @@ def shutdown():
 
 if __name__ == "__main__":
     
+    # update_devices_connected()
+
+
     # connected_arduinos_thread = threading.Thread(target=update_arduinos_connected)
-    threading.Timer(0.1, update_arduinos_connected).start()
+    threading.Timer(0.1, update_devices_connected).start()
 
     # update_arduinos_connected()
 
