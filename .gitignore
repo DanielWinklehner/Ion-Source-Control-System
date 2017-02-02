@@ -1,3 +1,4 @@
 *.h5
 *.pyc
 .idea/
+Software/ControlSystem/log/

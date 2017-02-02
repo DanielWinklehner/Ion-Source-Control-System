@@ -54,11 +54,9 @@ class Device:
     def reset_poll_count(self):
         self._poll_count = 0
 
-    @property
     def poll_count(self):
         return self._poll_count
 
-    @property
     def poll_start_time(self):
         return self._poll_start_time
 

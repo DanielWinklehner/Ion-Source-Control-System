@@ -34,7 +34,7 @@ class DataLogging:
                                                                 dtype=data_type, compression="gzip")
             self._data_set[dset.name] = dset
 
-    def log_value(self, channel):
+    def log_value(self, channel, timestamp):
 
         device_name = channel.get_parent_device().name()
         channel_name = channel.name()
@@ -46,7 +46,7 @@ class DataLogging:
 
             dset.resize((len(dset) + 1, 2))
 
-            a = (time.time(), value)
+            a = (timestamp, value)
             dset[len(dset) - 1] = a
 
             self._file_object.flush()
