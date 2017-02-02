@@ -2040,15 +2040,15 @@ if __name__ == "__main__":
 
     # Set up a dummy device and channels
 
-    # ps_controller = Device("ps_controller",
-    #                        arduino_id="95432313837351706152",
-    #                        label="Power Supply Controller 1",
-    #                        debug=mydebug)
-
     ps_controller = Device("ps_controller",
-                           arduino_id="R2D2",
+                           arduino_id="95432313837351706152",
                            label="Power Supply Controller 1",
                            debug=mydebug)
+
+    # ps_controller = Device("ps_controller",
+    #                        arduino_id="R2D2",
+    #                        label="Power Supply Controller 1",
+    #                        debug=mydebug)
 
     ps_controller.set_overview_page_presence(True)
 
@@ -2095,15 +2095,15 @@ if __name__ == "__main__":
 
     # Set up a dummy device and channels
 
-    # ps_controller_2 = Device("ps_controller_2",
-    #                          arduino_id="95432313837351E00271",
-    #                          label="Power Supply Controller 2",
-    #                          debug=mydebug)
-
     ps_controller_2 = Device("ps_controller_2",
-                             arduino_id="C3PO",
+                             arduino_id="95432313837351E00271",
                              label="Power Supply Controller 2",
                              debug=mydebug)
+
+    # ps_controller_2 = Device("ps_controller_2",
+    #                          arduino_id="C3PO",
+    #                          label="Power Supply Controller 2",
+    #                          debug=mydebug)
 
     ps_controller_2.set_overview_page_presence(True)
 

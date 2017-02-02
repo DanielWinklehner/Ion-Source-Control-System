@@ -1,24 +1,24 @@
-from flask import Flask, redirect
-from flask import request
-
-from SerialCOM import *
 import Messages
-
-from collections import defaultdict
-
 import subprocess
 import json
 import urllib2
 import copy
 import time
-
 import threading
-
 import multiprocessing
+
+
+from collections import defaultdict
+from flask import Flask, redirect
+from flask import request
+from SerialCOM import *
 from multiprocessing.managers import BaseManager
 from multiprocessing.dummy import Pool as ThreadPool
-
 from functools import partial
+
+sys.path.append('../Drivers/')
+
+from MIST1DeviceDriver import MIST1DeviceDriver
 
 
 
@@ -40,6 +40,7 @@ app = Flask(__name__)
 
 app.debug = True
 
+p = ThreadPool()
     
 
 
@@ -125,29 +126,13 @@ class QueryMachine:
         return str(self._serial_com) + "; " + str(self._queries)
 
 def mp_worker(args):
-    port, messages = args
-
-    all_responses = []
-    for msg in messages:
-
-        try:
-            ser = DummySerial(port, 115200)
-            ser.write(msg)
-            all_responses.append(ser.readline())
-        except Exception as e:
-            print("Something went wrong! Exception: {}".format(e))
-            all_responses.append(None)
-
-    return port, all_responses
-
-
-def mp_worker(arg):
 
     port, messages = args
+    by_id, by_port = find_devices_connected()
 
-    serial_com = machine.serial_com()
-    messages = machine.queries()
+    serial_com = all_active_managers[by_port[port]]
 
+    print messages
 
     all_responses = []
     for msg in messages:
@@ -302,13 +287,15 @@ def query_device():
 
         all_responses = p.map(mp_worker, message_data)
 
+        print "This is the response I got", all_responses
+
         if len(all_responses) == 0 or len(all_responses[0]) == 0:
             return None
         else:
-            for port, raw_output_message in all_responses:
+            for device_id, raw_output_message in all_responses:
                 
-                device_id = id_by_port[port]
-                
+                print "hey buddy", device_id, raw_output_message
+
                 try:
                     devices_responses[device_id] = my_drivers[device_id].translate_device_to_gui(raw_output_message)
                 except Exception as e:
