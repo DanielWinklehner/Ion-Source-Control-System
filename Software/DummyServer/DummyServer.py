@@ -1,7 +1,6 @@
 import sys
 import json
 import time
-import Messages
 import threading
 import logging
 
@@ -10,7 +9,7 @@ from flask import request
 from DummySerial import DummySerial
 from multiprocessing.dummy import Pool as ThreadPool
 
-sys.path.append('../')
+sys.path.append('../Drivers/')
 
 from MIST1DeviceDriver import MIST1DeviceDriver
 
@@ -130,8 +129,8 @@ def set_device_values():
 
 @app.route("/device/query", methods=['GET', 'POST'])
 def query_device():
-    # print "We are querying arduinos"
-    # LOGGER.info("We are querying arduinos")
+    # print "We are querying devices"
+    # LOGGER.info("We are querying devices")
 
     # print request.args
     # start = time.time()
@@ -142,7 +141,10 @@ def query_device():
     elif request.method == 'GET':
         data = json.loads(request.args.get('data'))
 
-    port_by_id, id_by_port = find_arduinos_connected()
+
+    print data
+
+    port_by_id, id_by_port = find_devices_connected()
 
     my_drivers = dict()
     message_data = []
@@ -196,7 +198,7 @@ def query_device():
 
 
 if __name__ == "__main__":
-    # connected_arduinos_thread = threading.Thread(target=update_arduinos_connected)
-    # connected_arduinos_thread.start()
+    # connected_devices_thread = threading.Thread(target=update_devices_connected)
+    # connected_devices_thread.start()
     # app.run(host='0.0.0.0', port=80)
     app.run(host='0.0.0.0', port=5000)
