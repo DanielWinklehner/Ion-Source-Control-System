@@ -283,16 +283,12 @@ class Channel:
 
         properties['name'] = self._name
         properties['label'] = self._label
-
-        
         properties['upper_limit'] = self._upper_limit
         properties['lower_limit'] = self._lower_limit
         properties['data_type'] = str(self._data_type)
         properties['unit'] = self._unit
         properties['scaling'] = self._scaling
         properties['mode'] = self._mode
-        
-
         properties['displayformat'] = self._displayformat
         properties['display_order'] = self._display_order
 
@@ -309,8 +305,6 @@ class Channel:
 
         return Channel(**properties)
 
-
-    
     def read_value(self):
         """Summary
         
@@ -386,7 +380,6 @@ class Channel:
             return None
 
         self._value = value_to_set
-
 
         # if self._mode == "read":
         #   raise ValueError("ERROR: You are trying to write values to a read-only channel!")

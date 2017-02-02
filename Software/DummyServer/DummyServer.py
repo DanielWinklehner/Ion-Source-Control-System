@@ -13,10 +13,6 @@ sys.path.append('../Drivers/')
 
 from MIST1DeviceDriver import MIST1DeviceDriver
 
-
-
-
-
 app = Flask(__name__)
 
 # Opening a pool of threads to re-use.
@@ -38,7 +34,7 @@ def stopwatch(msg=''):
     if _tm == 0:
         _tm = tm
         return
-    print("%s: %.2f ms" % (msg, 1000.0 * (tm-_tm)))
+    print("%s: %.2f ms" % (msg, 1000.0 * (tm - _tm)))
     _tm = tm
 # ------------------------------------------------------------------------- #
 
@@ -67,16 +63,14 @@ def mp_worker(args):
     return port, all_responses
 
 
-
 def set_channel_value_to_device(device_driver, device_id, channel_name, value):
     by_device_id, by_port = find_devices_connected()
 
     port = by_device_id[device_id]
 
     ser = DummySerial(port, baudrate=115200)
-    
-    my_driver = MIST1DeviceDriver(device_driver) 
 
+    my_driver = MIST1DeviceDriver(device_driver)
 
     data = dict(set=True, device_id=device_id, channel_name=channel_name, value=value)
     set_message = my_driver.translate_gui_to_device(data)
@@ -91,16 +85,15 @@ def hello():
 
 @app.route('/kill', methods=['GET', 'POST'])
 def kill():
-
     func = request.environ.get('werkzeug.server.shutdown')
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
-    
+
     p.terminate()
     p.join()
-    
+
     func()
-    
+
     return "Shutting down..."
 
 
@@ -121,7 +114,7 @@ def set_device_values():
         device_id = request.args.get('device_id')
         channel_name = request.args.get('channel_name')
         value_to_set = request.args.get('value_to_set')
-    
+
     response = set_channel_value_to_device(device_driver, device_id, channel_name, value_to_set)
 
     return json.dumps(response)
@@ -141,7 +134,6 @@ def query_device():
     elif request.method == 'GET':
         data = json.loads(request.args.get('data'))
 
-
     print data
 
     port_by_id, id_by_port = find_devices_connected()
@@ -149,8 +141,8 @@ def query_device():
     my_drivers = dict()
     message_data = []
     for device_data in data:
-        
-        my_driver = MIST1DeviceDriver(device_data['device_driver']) 
+
+        my_driver = MIST1DeviceDriver(device_data['device_driver'])
 
         my_driver.load_driver()
 
@@ -162,9 +154,8 @@ def query_device():
             raise Exception("Error building message for: ", str(device_data))
         else:
             message_data.append((port_by_id[device_data["device_id"]], device_message))
-        
-        my_drivers[device_data['device_id']] = my_driver
 
+        my_drivers[device_data['device_id']] = my_driver
 
     devices_responses = dict()
 
@@ -181,15 +172,14 @@ def query_device():
             return None
         else:
             for port, raw_output_message in all_responses:
-                
+
                 device_id = id_by_port[port]
-                
+
                 try:
                     devices_responses[device_id] = my_drivers[device_id].translate_device_to_gui(raw_output_message)
                 except Exception as e:
 
                     devices_responses[device_id] = "ERROR: " + str(e)
-
 
     except Exception as e:
         print("Something went wrong! Exception: {}".format(e))

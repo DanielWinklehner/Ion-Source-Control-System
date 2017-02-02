@@ -3,7 +3,7 @@ from __future__ import division
 import gi
 gi.require_version('Gtk', '3.0')  # nopep8
 gi.require_version('Gdk', '3.0')  # nopep8
-from gi.repository import Gdk
+from gi.repository import Gdk, GLib
 # from gi.repository import Gtk, GLib, GObject, Gdk
 
 import json
@@ -295,7 +295,6 @@ class MIST1ControlSystem:
 
                                     try:
                                         self.update_stored_values(device_name, channel_name, timestamp)
-                                    #     # GLib.idle_add(self.update_stored_values, device.name(), channel_name)
 
                                     except Exception as e:
                                         if self.debug:
@@ -427,27 +426,27 @@ class MIST1ControlSystem:
 
         return 0
 
-    def set_widget_connections(self):
-
-        for device_name, device in self._devices.items():
-
-            for channel_name, channel in device.channels().items():
-
-                if channel.mode() == "both" or channel.mode() == "write":  # TODO: Find a better way to do this.
-
-                    widget = channel.get_overview_page_display()
-
-                    # According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-
-                    # and-type-in-python, better to use try-except than check type / instanceof.
-                    try:
-
-                        widget.get_radio_buttons()[0].connect("toggled", self.set_value_callback, widget)
-
-                    except Exception as e:
-
-                        print("Exception {} happened".format(e))
-
-                        pass
+    # def set_widget_connections(self):
+    #
+    #     for device_name, device in self._devices.items():
+    #
+    #         for channel_name, channel in device.channels().items():
+    #
+    #             if channel.mode() == "both" or channel.mode() == "write":  # TODO: Find a better way to do this.
+    #
+    #                 widget = channel.get_overview_page_display()
+    #
+    #                 # According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-
+    #                 # and-type-in-python, better to use try-except than check type / instanceof.
+    #                 try:
+    #
+    #                     widget.get_radio_buttons()[0].connect("toggled", self.set_value_callback, widget)
+    #
+    #                 except Exception as e:
+    #
+    #                     print("Exception {} happened".format(e))
+    #
+    #                     pass
 
     def add_arduino_status_bar(self, arduino_id, status_bar):
 
@@ -470,6 +469,7 @@ class MIST1ControlSystem:
             # Add channel to settings page tree.
             # First, find the position of device in the iterator.
             device_iter = None
+
             for j in range(len(self._settings_page_tree_store)):
 
                 if device.name() == self._settings_page_tree_store[j][-1]:
@@ -498,6 +498,8 @@ class MIST1ControlSystem:
                                                    device.name()])
 
             self._settings_tree_view.show_all()
+
+
 
         return 0
 
@@ -565,12 +567,12 @@ class MIST1ControlSystem:
         # return self.send_message_to_server("register_device", [device.get_arduino_id()])
         pass
 
-    def update_channel_values_to_arduino(self, channel):
-
-        arduino_id = channel.get_parent_device().get_arduino_id()
-
-        channel_name = channel.name()
-        value_to_set = channel.read_value()
+    # def update_channel_values_to_arduino(self, channel):
+    #
+    #     arduino_id = channel.get_parent_device().get_arduino_id()
+    #
+    #     channel_name = channel.name()
+    #     value_to_set = channel.read_value()
 
         # response = self.send_message_to_server(purpose='set_values',
         #                                        arduino_id=arduino_id,
@@ -637,15 +639,15 @@ class MIST1ControlSystem:
 
         return 0
 
-    def set_value_callback(self, button, widget):
-
-        if self.debug:
-            print("Set callback called by {}, button {}".format(widget.get_name(),
-                                                                button))
-        # parent_channel = widget.get_parent_channel()
-
-        self._set_value_for_widget = widget
-        self._communication_thread_mode = "write"
+    # def set_value_callback(self, button, widget):
+    #
+    #     if self.debug:
+    #         print("Set callback called by {}, button {}".format(widget.get_name(),
+    #                                                             button))
+    #     # parent_channel = widget.get_parent_channel()
+    #
+    #     self._set_value_for_widget = widget
+    #     self._communication_thread_mode = "write"
 
     def listen_for_reconnected_devices(self, devices):
 
@@ -837,60 +839,40 @@ class MIST1ControlSystem:
     #
     #     return 0
 
-    def send_command_to_server(self):
-
-        while self._keep_communicating:
-
-            url = self._server_url
-            data = {}
-
-            if purpose == "register_device":
-
-                url += "device/connect"
-                data['arduino_id'] = kwargs[0]
-
-            elif purpose == "query_values":
-
-                url += "device/query"
-                data['data'] = json.dumps(kwargs["data"])
-
-            elif purpose == "set_values":
-
-                url += "device/set"
-                data['arduino_id'] = kwargs["arduino_id"]
-                data['channel_name'] = kwargs["channel_name"]
-                data['value_to_set'] = kwargs["value_to_set"]
-
-            try:
-
-                if self.debug:
-                    print(url)
-                    print(data)
-                    print(purpose)
-
-                # start = time.time()
-                r = requests.post(url, data=data)
-                response_code = r.status_code
-                # response = r.reason
-                # end = time.time()
-                # print "The request part took {} seconds.".format(end - start)
-
-                # print r.text
-                if response_code == 200:
-
-                    return r.text
-
-                else:
-
-                    return r"{}"
-
-            except Exception as e:
-
-                print(e)
-
-            return r"{}"
-
-        pass
+    # def set_channel_activate_callback(self, widget, *other_data):
+    #
+    #     return 0
+    #
+    # def send_command_to_server(self):
+    #
+    #     url = self._server_url + "device/set"
+    #
+    #     data = {'arduino_id': kwargs["arduino_id"],
+    #             'channel_name': kwargs["channel_name"],
+    #             'value_to_set': kwargs["value_to_set"]}
+    #
+    #     try:
+    #
+    #         if self.debug:
+    #             print(url)
+    #             print(data)
+    #
+    #         r = requests.post(url, data=data)
+    #         response_code = r.status_code
+    #
+    #         if response_code == 200:
+    #
+    #             return r.text
+    #
+    #         else:
+    #
+    #             return r"{}"
+    #
+    #     except Exception as e:
+    #
+    #         print(e)
+    #
+    #     return r"{}"
 
     def emergency_stop(self, widget):
         """
@@ -904,7 +886,6 @@ class MIST1ControlSystem:
             print("Emergency stop was called from {}".format(widget))
 
         self._status_bar.push(1, "Emergency stop button was pushed!")
-        # self.shut_down_communication_process()
 
         return 0
 
@@ -1153,6 +1134,16 @@ class MIST1ControlSystem:
     def get_overview_grid(self):
         return self._overview_grid
 
+    @staticmethod
+    def dummy_set_callback(emitter, data_type, value):
+
+        channel = emitter.get_parent_channel()
+
+        print("The dummy set callback was called with widget {}, type {}, and value {}.".format(channel,
+                                                                                                data_type,
+                                                                                                value))
+        return 0
+
     def initialize(self):
         """
         :return:
@@ -1161,8 +1152,14 @@ class MIST1ControlSystem:
         for device_name, device in self._devices.items():
             device.initialize()
 
+            for channel_name, channel in device.channels().items():
+                if channel.mode() in ["write", "both"]:
+                    print("Attempting to connect set_signal for channel {}".format(channel_name))
+                    channel.get_overview_page_display().connect_set_signal()
+                    channel.get_overview_page_display().connect('set_signal', self.dummy_set_callback)
+
         # Setup connections for widgets (for radio buttons for example).
-        self.set_widget_connections()
+        # self.set_widget_connections()
 
         # Any and all remaining initializations go here
         self.setup_communication_threads()
@@ -1792,7 +1789,7 @@ class MIST1ControlSystem:
             if not device.initialized():
                 device.initialize()
 
-        self.set_widget_connections()
+        # self.set_widget_connections()
 
         self.setup_communication_threads()
 
@@ -1841,9 +1838,6 @@ class MIST1ControlSystem:
         # --- Show the GUI --- #
         self._main_window.maximize()
         self._main_window.show_all()
-
-        # GLib.timeout_add(1000, self.update_plots)
-        # GLib.idle_add(self.update_plots)
 
         Gtk.main()
 
@@ -1947,15 +1941,15 @@ if __name__ == "__main__":
 
     # Set up a dummy device and channels
 
-    ps_controller = Device("ps_controller",
-                           arduino_id="95432313837351706152",
-                           label="Power Supply Controller 1",
-                           debug=mydebug)
-
     # ps_controller = Device("ps_controller",
-    #                        arduino_id="R2D2",
+    #                        arduino_id="95432313837351706152",
     #                        label="Power Supply Controller 1",
     #                        debug=mydebug)
+
+    ps_controller = Device("ps_controller",
+                           arduino_id="R2D2",
+                           label="Power Supply Controller 1",
+                           debug=mydebug)
 
     ps_controller.set_overview_page_presence(True)
 
@@ -2002,15 +1996,15 @@ if __name__ == "__main__":
 
     # Set up a dummy device and channels
 
-    ps_controller_2 = Device("ps_controller_2",
-                             arduino_id="95432313837351E00271",
-                             label="Power Supply Controller 2",
-                             debug=mydebug)
-
     # ps_controller_2 = Device("ps_controller_2",
-    #                          arduino_id="C3PO",
+    #                          arduino_id="95432313837351E00271",
     #                          label="Power Supply Controller 2",
     #                          debug=mydebug)
+
+    ps_controller_2 = Device("ps_controller_2",
+                             arduino_id="C3PO",
+                             label="Power Supply Controller 2",
+                             debug=mydebug)
 
     ps_controller_2.set_overview_page_presence(True)
 
@@ -2031,7 +2025,7 @@ if __name__ == "__main__":
                      upper_limit=1,
                      lower_limit=0,
                      data_type=float,
-                     mode="read")
+                     mode="write")
 
         ps_controller_2.add_channel(ch)
 
