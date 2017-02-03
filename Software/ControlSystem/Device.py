@@ -209,9 +209,12 @@ class Device:
         # Add infobar to the arduino_vbox on the side of the GUI
         vbox = self._parent.get_arduino_vbox()
 
+        # TODO: Temporarily changing this to "N/A" until we get a arduino polling rate back from server
         infobar = GUIWidgets.FrontPageDisplayValue(name="{}. Polling rate =".format(self._label),
-                                                   displayformat=".1f",
+                                                   displayformat="",  # displayformat=".1f",
                                                    unit="Hz")
+
+        infobar.set_value("N/A")
 
         vbox.pack_start(infobar, False, False, 4)
         self._parent.add_arduino_status_bar(self._arduino_id, infobar)

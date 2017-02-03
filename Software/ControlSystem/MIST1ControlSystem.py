@@ -18,6 +18,7 @@ from GUIWidgets import *
 from DataLogging import DataLogging
 import Dialogs as MIST1Dialogs
 from MIST1Plot import MIST1Plot
+import GUIWidgets
 import numpy as np
 from multiprocessing import Process, Pipe
 
@@ -36,8 +37,8 @@ def query_server(com_pipe, server_url, debug=False):
     _device_dict_list = None
     _server_url = server_url
     _debug = debug
-    # poll_count = 0
-    # poll_time = time.clock()
+    poll_count = 0
+    poll_time = time.clock()
 
     while _keep_communicating:
 
@@ -58,12 +59,13 @@ def query_server(com_pipe, server_url, debug=False):
 
         if _device_dict_list is not None:
 
-            # poll_count += 1
+            poll_count += 1
 
             _url = _server_url + "device/query"
             _data = {'data': json.dumps(_device_dict_list)}
 
             try:
+
                 _r = requests.post(_url, data=_data)
                 timestamp = time.time()
                 _response_code = _r.status_code
@@ -97,11 +99,17 @@ def query_server(com_pipe, server_url, debug=False):
 
                 com_pipe.send(pipe_message)
 
-        # if poll_count == 20:
-        #     duration = time.clock() - poll_time
-        #     poll_time = time.clock()
-        #     poll_count = 0
-        #     print("Polling rate = {}".format(20.0 / duration))
+        if poll_count == 20:
+            duration = time.clock() - poll_time
+            poll_time = time.clock()
+            poll_count = 0
+            polling_rate = 20.0 / duration
+
+            pipe_message = ["polling_rate", polling_rate]
+            com_pipe.send(pipe_message)
+
+            if _debug:
+                print("Polling rate = {}".format(polling_rate))
 
         # Do the timing of this process:
         _sleepy_time = _com_period - timeit.default_timer() + _thread_start_time
@@ -127,6 +135,7 @@ class MIST1ControlSystem:
         self._server_ip = server_ip
         self._server_port = server_port
         self._server_url = "http://{}:{}/".format(server_ip, server_port)
+        self._server_infobar = None
 
         r = requests.post(self._server_url + "device/all")
 
@@ -258,7 +267,12 @@ class MIST1ControlSystem:
 
                 gui_message = self._pipe_gui.recv()
 
-                if gui_message[0] == "query_response":
+                if gui_message[0] == "polling_rate":
+                    # To be thread safe, anything that changes the GUI display from within a thread
+                    # should be added through GLib.idle_add().
+                    GLib.idle_add(self._server_infobar.set_value, gui_message[1])
+
+                elif gui_message[0] == "query_response":
 
                     parsed_response = gui_message[1]
                     timestamp = parsed_response["timestamp"]
@@ -301,6 +315,8 @@ class MIST1ControlSystem:
                                             print("Exception '{}' caught while updating stored values.".format(e))
 
                                     try:
+                                        # To be thread safe, anything that changes the GUI display from within a thread
+                                        # should be added through GLib.idle_add().
                                         GLib.idle_add(self.update_gui, channel)
 
                                     except Exception as e:
@@ -898,6 +914,15 @@ class MIST1ControlSystem:
         """
         :return:
         """
+        # Initialize the status bar for server polling:
+        vbox = self.get_arduino_vbox()
+
+        self._server_infobar = GUIWidgets.FrontPageDisplayValue(name="Server polling rate =",
+                                                                displayformat=".1f",
+                                                                unit="Hz")
+
+        vbox.pack_start(self._server_infobar, False, False, 4)
+
         # Initialize the ankered devices first
         for device_name, device in self._devices.items():
             device.initialize()
@@ -1647,31 +1672,29 @@ class MIST1ControlSystem:
 
         return 0
 
-    def update_gui(self, channel):
+    @staticmethod
+    def update_gui(channel):
         """
         Updates the GUI. This is called from the communication threads through idle_add()
         :return:
         """
         # Update the polling rate (frequency) for this arduino:
-        arduino_id = channel.get_arduino_id()
-        device = channel.get_parent_device()
-        count = device.poll_count()
+        # arduino_id = channel.get_arduino_id()
+        # device = channel.get_parent_device()
+        # count = device.poll_count()
 
-        # print arduino_id
-
-        if count >= 10:
-            elapsed = time.time() - device.poll_start_time()
-            frequency = count / elapsed
-
-            device.reset_poll_start_time()
-            device.reset_poll_count()
-
-            self._arduino_status_bars[arduino_id].set_value(frequency)
+        # if count >= 10:
+        #     elapsed = time.time() - device.poll_start_time()
+        #     frequency = count / elapsed
+        #
+        #     device.reset_poll_start_time()
+        #     device.reset_poll_count()
+        #
+        #     self._arduino_status_bars[arduino_id].set_value(frequency)
 
         # If display on overview page is desired, update:
         if channel.get_parent_device().is_on_overview_page():
-            # if count == 9:
-            #   print "Updating", channel.name(), channel.get_value()
+
             channel.get_overview_page_display().set_value(channel.get_value())
 
         return False

@@ -64,17 +64,14 @@ class FrontPageDisplayValue(Gtk.Frame):
             if self._parent_channel.lower_limit() <= _value <= self._parent_channel.upper_limit()\
                     and not _value == self._old_value:
 
-                self._old_value = _value
-                self._parent_channel.set_value(_value)
-                self.emit('set_signal', 'float', _value)
-
-            else:
-
-                self.value_entry.set_text(str(self._old_value))
+                    self._old_value = _value
+                    self._parent_channel.set_value(_value)
+                    self.emit('set_signal', 'float', _value)
 
         except ValueError:
+            pass
 
-                self.value_entry.set_text(str(self._old_value))
+        self.set_value(self._old_value)
 
     def connect_set_signal(self):
         self._sig_id = self.value_entry.connect('activate', self.emit_signal)

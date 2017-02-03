@@ -8,7 +8,7 @@ class MIST1Plot:
 
     def __init__(self, variable_name="", x_s=np.ones(1)*time.time(), y_s=np.zeros(1)):
 
-        print "Initializing a new MIST1Plot object."
+        # print "Initializing a new MIST1Plot object."
 
         self._variable_name = variable_name
         self._number_of_data_points = len(x_s)
