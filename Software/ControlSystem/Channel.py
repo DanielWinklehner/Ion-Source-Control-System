@@ -10,7 +10,7 @@ import GUIWidgets
 class Channel:
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
                  scaling=1., mode="both", display_order=0, displayformat=".2f",
-                 precision=2):
+                 precision=2, default_value=0.0):
 
         """Summary
         
@@ -36,7 +36,7 @@ class Channel:
         self._data_type = data_type
         self._unit = unit
         self._scaling = scaling
-        self._value = -1
+        self._value = default_value
         self._mode = mode
         self._arduino_id = None
         self._parent_device = None  # The device this channel belongs to will be set during add_channel().
@@ -83,8 +83,6 @@ class Channel:
                                                                                parent_channel=self)
 
             parent_device.get_overview_frame().pack_start(self._overview_page_display, False, False, 4)
-            
-        # TODO: Adding the device to its main page and to the settings page
 
         return 0
 

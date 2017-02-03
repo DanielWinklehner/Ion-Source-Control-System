@@ -40,15 +40,41 @@ class FrontPageDisplayValue(Gtk.Frame):
         hbox.pack_start(self.value_entry, True, True, 0)
         hbox.pack_start(self.unit_label, True, True, 0)
 
-        if not self.set_flag:
+        self._parent_channel = parent_channel
+
+        self._old_value = 0.0
+
+        if self.set_flag:
+
+            self._old_value = self._parent_channel.get_value()
+            self.value_entry.set_text(str(self._old_value))
+
+        else:
+
             self.value_entry.set_sensitive(False)
 
-        self._parent_channel = parent_channel
         self._locked = False
 
     def emit_signal(self, entry):
-        # TODO: Check for valid float entry!
-        self.emit('set_signal', 'float', float(entry.get_text()))
+        # Check for a valid entry (number, within limits) and emit signal
+        # only when valid, otherwise put back old value
+        try:
+            _value = float(entry.get_text())
+
+            if self._parent_channel.lower_limit() <= _value <= self._parent_channel.upper_limit()\
+                    and not _value == self._old_value:
+
+                self._old_value = _value
+                self._parent_channel.set_value(_value)
+                self.emit('set_signal', 'float', _value)
+
+            else:
+
+                self.value_entry.set_text(str(self._old_value))
+
+        except ValueError:
+
+                self.value_entry.set_text(str(self._old_value))
 
     def connect_set_signal(self):
         self._sig_id = self.value_entry.connect('activate', self.emit_signal)
