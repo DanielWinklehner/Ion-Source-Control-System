@@ -104,12 +104,16 @@ def all_devices():
 
 @app.route("/device/set", methods=['GET', 'POST'])
 def set_device_values():
+
     if request.method == 'POST':
+
         device_driver = request.form['device_driver']
         device_id = request.form['device_id']
         channel_name = request.form['channel_name']
         value_to_set = request.form['value_to_set']
+
     elif request.method == 'GET':
+
         device_driver = request.args.get('device_driver')
         device_id = request.args.get('device_id')
         channel_name = request.args.get('channel_name')

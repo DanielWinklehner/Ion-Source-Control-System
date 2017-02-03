@@ -6,7 +6,13 @@ from Channel import Channel
 
 
 class Device:
-    def __init__(self, name, arduino_id, label="", channels=None, on_overview_page=False, debug=False):
+    def __init__(self, name,
+                 arduino_id,
+                 label="",
+                 channels=None,
+                 on_overview_page=False,
+                 debug=False,
+                 driver='arduino'):
 
         self.debug = debug
 
@@ -20,7 +26,8 @@ class Device:
             self._channels = channels
 
         self._arduino_id = arduino_id
-        self._driver = 'arduino'
+        self._driver = driver
+
         # self._front_page_widgets = {}  # This is a dictionary
         # of FrontPageDisplay widgets. key = channel_name, value = FrontPageDisplay.
         self._on_overview_page = on_overview_page

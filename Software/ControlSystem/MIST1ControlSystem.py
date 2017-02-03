@@ -189,7 +189,7 @@ class MIST1ControlSystem:
         # This will be used for the main GUI <--> Server polling rate
         self._communication_thread_poll_count = None
         self._communication_thread_start_time = timeit.default_timer()
-        self._polling_rate = 40.0  # (Hz) # TODO: make this a user-adjustable parameter
+        self._polling_rate = 20.0  # (Hz) # TODO: make this a user-adjustable parameter
         self._com_period = 1.0 / self._polling_rate  # Period between calls to the communicate function (s)
 
         # Dictionaries of last self._retain_last_n_values. These will be initialized with
@@ -426,28 +426,6 @@ class MIST1ControlSystem:
 
         return 0
 
-    # def set_widget_connections(self):
-    #
-    #     for device_name, device in self._devices.items():
-    #
-    #         for channel_name, channel in device.channels().items():
-    #
-    #             if channel.mode() == "both" or channel.mode() == "write":  # TODO: Find a better way to do this.
-    #
-    #                 widget = channel.get_overview_page_display()
-    #
-    #                 # According to http://stackoverflow.com/questions/1549801/differences-between-isinstance-
-    #                 # and-type-in-python, better to use try-except than check type / instanceof.
-    #                 try:
-    #
-    #                     widget.get_radio_buttons()[0].connect("toggled", self.set_value_callback, widget)
-    #
-    #                 except Exception as e:
-    #
-    #                     print("Exception {} happened".format(e))
-    #
-    #                     pass
-
     def add_arduino_status_bar(self, arduino_id, status_bar):
 
         self._arduino_status_bars[arduino_id] = status_bar
@@ -499,8 +477,6 @@ class MIST1ControlSystem:
 
             self._settings_tree_view.show_all()
 
-
-
         return 0
 
     def add_procedure(self, procedure):
@@ -512,76 +488,9 @@ class MIST1ControlSystem:
         else:
             self._procedures[procedure.get_name()] = procedure
 
-    # def send_message_to_server(self, purpose=None, **kwargs):
-    #
-    #     url = self._server_url
-    #     data = {}
-    #
-    #     if purpose == "register_device":
-    #
-    #         url += "device/connect"
-    #         data['arduino_id'] = kwargs[0]
-    #
-    #     elif purpose == "query_values":
-    #
-    #         url += "device/query"
-    #         data['arduino_id'] = json.dumps(kwargs["arduino_ids"])
-    #         data['channel_names'] = json.dumps(kwargs["channel_names"])
-    #         data['precisions'] = json.dumps(kwargs["precisions"])
-    #
-    #     elif purpose == "set_values":
-    #
-    #         url += "device/set"
-    #         data['arduino_id'] = kwargs["arduino_id"]
-    #         data['channel_name'] = kwargs["channel_name"]
-    #         data['value_to_set'] = kwargs["value_to_set"]
-    #
-    #     try:
-    #
-    #         if self.debug:
-    #
-    #             print(url)
-    #             print(data)
-    #             print(purpose)
-    #
-    #         # start = time.time()
-    #         r = requests.post(url, data=data)
-    #         response_code = r.status_code
-    #         # response = r.reason
-    #         # end = time.time()
-    #         # print "The request part took {} seconds.".format(end - start)
-    #
-    #         # print r.text
-    #         if response_code == 200:
-    #             return r.text
-    #         else:
-    #             return r"{}"
-    #
-    #     except Exception as e:
-    #
-    #         print(e)
-    #
-    #     return r"{}"
-
     def register_device_with_server(self, device):
         # return self.send_message_to_server("register_device", [device.get_arduino_id()])
         pass
-
-    # def update_channel_values_to_arduino(self, channel):
-    #
-    #     arduino_id = channel.get_parent_device().get_arduino_id()
-    #
-    #     channel_name = channel.name()
-    #     value_to_set = channel.read_value()
-
-        # response = self.send_message_to_server(purpose='set_values',
-        #                                        arduino_id=arduino_id,
-        #                                        channel_name=channel_name,
-        #                                        value_to_set=value_to_set)
-
-        # if self.debug:
-        #
-        #     print(response)
 
     def add_device(self, device):
         """
@@ -639,16 +548,6 @@ class MIST1ControlSystem:
 
         return 0
 
-    # def set_value_callback(self, button, widget):
-    #
-    #     if self.debug:
-    #         print("Set callback called by {}, button {}".format(widget.get_name(),
-    #                                                             button))
-    #     # parent_channel = widget.get_parent_channel()
-    #
-    #     self._set_value_for_widget = widget
-    #     self._communication_thread_mode = "write"
-
     def listen_for_reconnected_devices(self, devices):
 
         for device in devices:
@@ -660,30 +559,6 @@ class MIST1ControlSystem:
                     print("Reinitializing device {}".format(device.name()))
 
                 device.reinitialize()
-
-    # def check_for_alive_devices(self, devices):
-    #     # Check which Arduinos are still alive.
-    #
-    #     '''
-    #     for device in devices:
-    #         if device.is_alive():
-    #
-    #             self._alive_device_names.add(device.name())
-    #
-    #             if device.locked():
-    #                 device.unlock()
-    #         else:
-    #             print "Device = {} not alive.".format(device.name())
-    #             print "Locking device", device.name()
-    #             device.lock()
-    #             self._alive_device_names.discard(device.name())
-    #
-    #     self._last_checked_for_devices_alive = time.time()
-    #
-    #     print "The set of all alive devices = ", self._alive_device_names
-    #     '''
-    #
-    #     pass
 
     def update_stored_values(self, device_name, channel_name, timestamp):
 
@@ -713,166 +588,31 @@ class MIST1ControlSystem:
 
         return 0
 
-    # def communicate_old(self):
-    #     """
-    #     Thread that handles communication with the RasPi server
-    #     :return:
-    #     """
-    #
-    #     while self._keep_communicating:
-    #
-    #         # Do the timing of this thread:
-    #         thread_start_time = timeit.default_timer()
-    #
-    #         devices = self._devices
-    #
-    #         if self._communication_thread_mode == "read":
-    #
-    #             device_dict_list = [{'device_driver': device.get_driver(),
-    #                                  'device_id': device.get_arduino_id(),
-    #                                  'channel_ids': [name for
-    #                                                  name, mych in device.channels().items() if
-    #                                                  mych.mode() == 'read' or mych.mode() == 'both'],
-    #                                  'precisions': [mych.get_precision() for
-    #                                                 name, mych in device.channels().items() if
-    #                                                 mych.mode() == 'read' or mych.mode() == 'both']}
-    #                                 for device_name, device in devices.items() if not device.locked()]
-    #
-    #             response = self.send_message_to_server(purpose='query_values', data=device_dict_list)
-    #
-    #             if response.strip() != r"{}" and "error" not in str(response).lower():
-    #                 parsed_response = json.loads(response)
-    #
-    #                 for device_name, device in devices.items():
-    #
-    #                     if not device.locked():
-    #
-    #                         arduino_id = device.get_arduino_id()
-    #
-    #                         # TODO: This is to be treated as a temporary fix. With the RasPi Server and Arduinos,
-    #                         # TODO: we will have to implement a master polling rate (GUI <--> RasPi) and have the
-    #                         # TODO: RasPi report back the individual polling rates with the Devices
-    #                         # TODO: (RasPi <--> Arduino)
-    #                         device.add_one_to_poll_count()
-    #
-    #                         if "ERR" in parsed_response[arduino_id]:
-    #                             # self._status_bar.push(2, "Error: " + str(parsed_response[arduino_id]))
-    #                             pass
-    #
-    #                         else:
-    #
-    #                             for channel_name, value in parsed_response[arduino_id].items():
-    #
-    #                                 channel = device.get_channel_by_name(channel_name)
-    #                                 channel.set_value(value)
-    #
-    #                                 try:
-    #                                     self.log_data(channel)
-    #
-    #                                 except Exception as e:
-    #                                     if self.debug:
-    #                                         print("Exception '{}' caught while trying to log data.".format(e))
-    #
-    #                                 try:
-    #                                     self.update_stored_values(device_name, channel_name)
-    #                                     # GLib.idle_add(self.update_stored_values, device.name(), channel_name)
-    #
-    #                                 except Exception as e:
-    #                                     if self.debug:
-    #                                         print("Exception '{}' caught while updating stored values.".format(e))
-    #
-    #                                 try:
-    #                                     GLib.idle_add(self.update_gui, channel)
-    #
-    #                                 except Exception as e:
-    #                                     if self.debug:
-    #                                         print("Exception '{}' caught while updating GUI.".format(e))
-    #
-    #         elif self._communication_thread_mode == "write" and self._set_value_for_widget is not None:
-    #
-    #             if self.debug:
-    #                 print("Setting value.")
-    #
-    #             widget_to_set_value_for = self._set_value_for_widget
-    #             channel_to_set_value_for = self._set_value_for_widget.get_parent_channel()
-    #
-    #             if self.debug:
-    #                 print("Communicating updated value for widget {}".format(widget_to_set_value_for.get_name()))
-    #
-    #             # Check if the channel is actually a writable channel (channel.mode() ?= "write" or "both").
-    #
-    #             if channel_to_set_value_for.mode() == "write" or channel_to_set_value_for.mode() == "both":
-    #
-    #                 try:
-    #                     value_to_update = widget_to_set_value_for.get_value()
-    #                 except ValueError:
-    #                     value_to_update = -1
-    #
-    #                 if self.debug:
-    #                     print("Setting value = {}".format(value_to_update))
-    #
-    #                 try:
-    #                     channel_to_set_value_for.set_value(value_to_update)
-    #
-    #                 except Exception as e:
-    #
-    #                     # Setting value failed. There was some exception.
-    #                     # Write the error message to the status bar.
-    #                     self._status_bar.push(2, str(e))
-    #
-    #             self.update_channel_values_to_arduino(channel_to_set_value_for)
-    #
-    #             self._communication_thread_mode = "read"
-    #             self._set_value_for_widget = None
-    #
-    #         sleepy_time = self._com_period - timeit.default_timer() + thread_start_time
-    #
-    #         # print("Sleeping for {} s".format(sleepy_time))
-    #
-    #         if sleepy_time > 0.0:
-    #             time.sleep(sleepy_time)
-    #
-    #     # self.main_quit(self)
-    #
-    #     if self.debug:
-    #         print("Closing communication thread.")
-    #
-    #     return 0
+    def send_command_to_server(self, _data):
 
-    # def set_channel_activate_callback(self, widget, *other_data):
-    #
-    #     return 0
-    #
-    # def send_command_to_server(self):
-    #
-    #     url = self._server_url + "device/set"
-    #
-    #     data = {'arduino_id': kwargs["arduino_id"],
-    #             'channel_name': kwargs["channel_name"],
-    #             'value_to_set': kwargs["value_to_set"]}
-    #
-    #     try:
-    #
-    #         if self.debug:
-    #             print(url)
-    #             print(data)
-    #
-    #         r = requests.post(url, data=data)
-    #         response_code = r.status_code
-    #
-    #         if response_code == 200:
-    #
-    #             return r.text
-    #
-    #         else:
-    #
-    #             return r"{}"
-    #
-    #     except Exception as e:
-    #
-    #         print(e)
-    #
-    #     return r"{}"
+        _url = self._server_url + "device/set"
+
+        try:
+
+            if self.debug:
+                print(_url)
+                print(_data)
+
+            _r = requests.post(_url, data=_data)
+
+            if _r.status_code == 200:
+
+                print("Sending set command to server successful, response was: {}".format(_r.text))
+
+            else:
+
+                print("Sending set command to server unsuccessful, response-code was: {}".format(_r.status_code))
+
+        except Exception as e:
+            if self.debug:
+                print("Exception '{}' caught while communicating with RasPi server.".format(e))
+
+        return False
 
     def emergency_stop(self, widget):
         """
@@ -1134,14 +874,24 @@ class MIST1ControlSystem:
     def get_overview_grid(self):
         return self._overview_grid
 
-    @staticmethod
-    def dummy_set_callback(emitter, data_type, value):
+    def set_value_callback(self, emitter, data_type, value):
 
         channel = emitter.get_parent_channel()
 
-        print("The dummy set callback was called with widget {}, type {}, and value {}.".format(channel,
+        if self.debug:
+            print("Set value callback was called with widget {}, type {}, and value {}.".format(channel,
                                                                                                 data_type,
                                                                                                 value))
+        _data = {'device_driver': channel.get_parent_device().get_driver(),
+                 'device_id': channel.get_parent_device().get_arduino_id(),
+                 'channel_name': channel.name(),
+                 'value_to_set': value}
+
+        # Create a new thread that sends the set command to the server and
+        # waits for an answer.
+        new_set_thread = threading.Thread(target=self.send_command_to_server, args=(_data,))
+        new_set_thread.start()
+
         return 0
 
     def initialize(self):
@@ -1156,7 +906,7 @@ class MIST1ControlSystem:
                 if channel.mode() in ["write", "both"]:
                     print("Attempting to connect set_signal for channel {}".format(channel_name))
                     channel.get_overview_page_display().connect_set_signal()
-                    channel.get_overview_page_display().connect('set_signal', self.dummy_set_callback)
+                    channel.get_overview_page_display().connect('set_signal', self.set_value_callback)
 
         # Setup connections for widgets (for radio buttons for example).
         # self.set_widget_connections()
@@ -1949,7 +1699,8 @@ if __name__ == "__main__":
     ps_controller = Device("ps_controller",
                            arduino_id="R2D2",
                            label="Power Supply Controller 1",
-                           debug=mydebug)
+                           debug=mydebug,
+                           driver='arduino')
 
     ps_controller.set_overview_page_presence(True)
 
@@ -2004,7 +1755,8 @@ if __name__ == "__main__":
     ps_controller_2 = Device("ps_controller_2",
                              arduino_id="C3PO",
                              label="Power Supply Controller 2",
-                             debug=mydebug)
+                             debug=mydebug,
+                             driver='arduino')
 
     ps_controller_2.set_overview_page_presence(True)
 
