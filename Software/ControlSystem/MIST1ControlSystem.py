@@ -38,7 +38,7 @@ def query_server(com_pipe, server_url, debug=False):
     _server_url = server_url
     _debug = debug
     poll_count = 0
-    poll_time = time.clock()
+    poll_time = timeit.default_timer()
 
     while _keep_communicating:
 
@@ -100,8 +100,8 @@ def query_server(com_pipe, server_url, debug=False):
                 com_pipe.send(pipe_message)
 
         if poll_count == 20:
-            duration = time.clock() - poll_time
-            poll_time = time.clock()
+            duration = timeit.default_timer() - poll_time
+            poll_time = timeit.default_timer()
             poll_count = 0
             polling_rate = 20.0 / duration
 
@@ -928,8 +928,9 @@ class MIST1ControlSystem:
             device.initialize()
 
             for channel_name, channel in device.channels().items():
+
                 if channel.mode() in ["write", "both"]:
-                    print("Attempting to connect set_signal for channel {}".format(channel_name))
+
                     channel.get_overview_page_display().connect_set_signal()
                     channel.get_overview_page_display().connect('set_signal', self.set_value_callback)
 
@@ -1705,8 +1706,8 @@ if __name__ == "__main__":
     mydebug = False
 
     # 95432313837351E00271
-    # control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=80)
-    control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=mydebug)
+    control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=5000)
+    # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=mydebug)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
