@@ -1,6 +1,10 @@
 #include <Channel.h>
 #include <Communication.h>
 
+// Set up serial communication
+char inputMessage[128];
+mist1::Communication com = mist1::Communication("TestPSController1");
+
 // Define pins for error state LED, communication LED
 #define LED_ERR 39
 #define LED_COM 33
@@ -31,10 +35,6 @@
 //Define interlock open/closed
 #define CLOSED 1
 #define OPEN 0
-
-// Set up serial communication
-char inputMessage[128];
-mist1::Communication com = mist1::Communication("TestPSController1");
 
 // Set up interlock switch debounce time
 long debouncing_time = 150; //Debouncing Time in Milliseconds
@@ -121,13 +121,13 @@ float get_ext_ilk(){
 }
 
 void dummyFunc(float set_value){
-  Serial.println("Called the dummy function!");
+  //Serial.println("Called the dummy function!");
 }
 
 void setup() {
   Serial.begin(115200);
 
-  delay(10);
+  //delay(10);
 
   // Set up analog reference
   analogReference(EXTERNAL);

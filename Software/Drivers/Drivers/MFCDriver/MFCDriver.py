@@ -115,8 +115,14 @@ def tests():
     assert calculate_checksum("@001UT!TEST;") == "16"
 
 class MFCDriver:
+    def __init__(self):
+        pass
 
-    def translate_gui_to_driver(self, server_to_driver):
+    @staticmethod
+    def get_driver_name():
+        return "mfc"
+
+    def translate_gui_to_device(self, server_to_driver):
     
         num_of_mesg = len(server_to_driver['channel_ids'])
         assert num_of_mesg == len(server_to_driver['precisions'])
@@ -129,7 +135,7 @@ class MFCDriver:
     
         return drivers_response_to_server
     
-    def translate_driver_to_gui(self, response):
+    def translate_device_to_gui(self, response):
     
         drivers_response_to_server=[]
 #        response=response_string['response']
