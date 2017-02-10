@@ -31,9 +31,6 @@ def Manager():
 
 MyManager.register('SerialCOM', SerialCOM)
 
-
-
-
 app = Flask(__name__)
 
 
@@ -43,9 +40,6 @@ app.debug = True
 p = ThreadPool()
     
 
-
-
-
 all_active_device_ids = []    # Key => device_id; value => (device_id, port_name)
 all_active_managers = {}    # Key => device_id; value => Manager(SerialCOM())
 
@@ -54,8 +48,6 @@ def update_devices_connected():
     global all_active_device_ids
     global all_active_managers
 
-
-
     port_by_id, id_by_port = find_devices_connected()
 
     # print "I am updating arduinos connected."
@@ -63,10 +55,8 @@ def update_devices_connected():
     # while True:
     # for count_abc in range(2):
 
- 
     #all_active_devices = all_arduinos
     #all_active_managers = [Manager().SerialCOM(arduino_id=arduino[0], port_name=arduino[1]) for arduino in all_active_devices]
-    
 
     for device_id, port in port_by_id.items():
 

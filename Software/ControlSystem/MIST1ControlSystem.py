@@ -1713,6 +1713,30 @@ if __name__ == "__main__":
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
     control_system.register_data_logging_file(filename="log/{}.h5".format(current_time))
 
+    # Set up ion gauge
+    ion_gauge_controller = Device("ig_controller",
+                                  arduino_id="954313534383514071A0",
+                                  label="Ion Gauge Controller",
+                                  debug=mydebug)
+
+    ch = Channel(name="p1", label="APG Pressure",
+                 upper_limit=1000.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 mode="read")
+
+    ion_gauge_controller.add_channel(ch)
+
+    ch = Channel(name="p2", label="AIM Pressure",
+                 upper_limit=1000.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 mode="read")
+
+    ion_gauge_controller.add_channel(ch)
+    ion_gauge_controller.set_overview_page_presence(True)
+    control_system.add_device(ion_gauge_controller)
+
     # Set up a dummy device and channels
 
     # ps_controller = Device("ps_controller",
@@ -1720,54 +1744,54 @@ if __name__ == "__main__":
     #                        label="Power Supply Controller 1",
     #                        debug=mydebug)
 
-    ps_controller = Device("ps_controller",
-                           arduino_id="R2D2",
-                           label="Power Supply Controller 1",
-                           debug=mydebug,
-                           driver='arduino')
-
-    ps_controller.set_overview_page_presence(True)
-
-    for i in range(2):
-
-        ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="write")
-
-        ps_controller.add_channel(ch)
-
-    for i in range(2):
-
-        ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
-
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=float,
-                     mode="read")
-
-        ps_controller.add_channel(ch)
-
-    for i in range(2):
-
-        ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=float,
-                     mode="read")
-
-        ps_controller.add_channel(ch)
-
-    ch = Channel(name="x1", label="EXT_ILK",
-                 upper_limit=1,
-                 lower_limit=0,
-                 data_type=bool,
-                 mode="read")
-
-    ps_controller.add_channel(ch)
-
-    control_system.add_device(ps_controller)
+    # ps_controller = Device("ps_controller",
+    #                        arduino_id="R2D2",
+    #                        label="Power Supply Controller 1",
+    #                        debug=mydebug,
+    #                        driver='arduino')
+    #
+    # ps_controller.set_overview_page_presence(True)
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=bool,
+    #                  mode="write")
+    #
+    #     ps_controller.add_channel(ch)
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
+    #
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=float,
+    #                  mode="read")
+    #
+    #     ps_controller.add_channel(ch)
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=float,
+    #                  mode="read")
+    #
+    #     ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="x1", label="EXT_ILK",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              mode="read")
+    #
+    # ps_controller.add_channel(ch)
+    #
+    # control_system.add_device(ps_controller)
 
     # Set up a dummy device and channels
 
@@ -1776,54 +1800,54 @@ if __name__ == "__main__":
     #                          label="Power Supply Controller 2",
     #                          debug=mydebug)
 
-    ps_controller_2 = Device("ps_controller_2",
-                             arduino_id="C3PO",
-                             label="Power Supply Controller 2",
-                             debug=mydebug,
-                             driver='arduino')
-
-    ps_controller_2.set_overview_page_presence(True)
-
-    for i in range(2):
-
-        ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=bool,
-                     mode="write")
-
-        ps_controller_2.add_channel(ch)
-
-    for i in range(2):
-
-        ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
-
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=float,
-                     mode="write")
-
-        ps_controller_2.add_channel(ch)
-
-    for i in range(2):
-
-        ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=float,
-                     mode="read")
-
-        ps_controller_2.add_channel(ch)
-
-    ch = Channel(name="x1", label="EXT_ILK",
-                 upper_limit=1,
-                 lower_limit=0,
-                 data_type=bool,
-                 mode="read")
-
-    ps_controller_2.add_channel(ch)
-
-    control_system.add_device(ps_controller_2)
+    # ps_controller_2 = Device("ps_controller_2",
+    #                          arduino_id="C3PO",
+    #                          label="Power Supply Controller 2",
+    #                          debug=mydebug,
+    #                          driver='arduino')
+    #
+    # ps_controller_2.set_overview_page_presence(True)
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=bool,
+    #                  mode="write")
+    #
+    #     ps_controller_2.add_channel(ch)
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
+    #
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=float,
+    #                  mode="write")
+    #
+    #     ps_controller_2.add_channel(ch)
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=float,
+    #                  mode="read")
+    #
+    #     ps_controller_2.add_channel(ch)
+    #
+    # ch = Channel(name="x1", label="EXT_ILK",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              mode="read")
+    #
+    # ps_controller_2.add_channel(ch)
+    #
+    # control_system.add_device(ps_controller_2)
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
