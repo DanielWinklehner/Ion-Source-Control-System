@@ -132,21 +132,6 @@ class MIST1ControlSystem:
         """
         self.debug = debug
 
-        self._server_ip = server_ip
-        self._server_port = server_port
-        self._server_url = "http://{}:{}/".format(server_ip, server_port)
-        self._server_infobar = None
-
-        r = requests.post(self._server_url + "device/all")
-
-        if self.debug:
-            print("{}: {}".format(r.status_code, r.text))
-
-        r = requests.post(self._server_url + "device/active")
-
-        if self.debug:
-            print("{}: {}".format(r.status_code, r.text))
-
         # --- Load the GUI from XML file and initialize connections --- #
         self._builder = Gtk.Builder()
         self._builder.add_from_file("MIST1ControlSystem.glade")
@@ -182,6 +167,49 @@ class MIST1ControlSystem:
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
 
+        # --- INitialize the server connection --- #
+        self._server_ip = server_ip
+        self._server_port = server_port
+        self._server_url = "http://{}:{}/".format(server_ip, server_port)
+        self._server_infobar = None
+
+        try:
+            # Send the initialize command to the server
+            r = requests.get(self._server_url + "initialize/")
+
+            if r.status_code != 200:
+
+                print("Couldn't initialize server!")
+                print("Response was {}: {}".format(r.status_code, r.text))
+                exit()
+
+            else:
+                self._status_bar.push(0, r.text)
+
+        except Exception as e:
+
+            print("Could not connect to the server at {}. Shutting down.".format(self._server_url))
+            print("Exception was: {}".format(e))
+
+            exit()
+
+        r = requests.get(self._server_url + "device/active/")
+
+        if r.status_code == 200:
+
+            devices = json.loads(r.text)
+
+            for device_id, port in devices.items():
+
+                self._status_bar.push(0, "Found device {} connected to port {} of the server.".format(device_id,
+                                                                                                      port))
+
+        else:
+
+            if self.debug:
+                print("{}: {}".format(r.status_code, r.text))
+        # ---------------------------- #
+
         # --- The main device dict --- #
         self._devices = {}
         self._device_name_arduino_id_map = {}
@@ -198,7 +226,7 @@ class MIST1ControlSystem:
         # This will be used for the main GUI <--> Server polling rate
         self._communication_thread_poll_count = None
         self._communication_thread_start_time = timeit.default_timer()
-        self._polling_rate = 20.0  # (Hz) # TODO: make this a user-adjustable parameter
+        self._polling_rate = 25.0  # (Hz) # TODO: make this a user-adjustable parameter
         self._com_period = 1.0 / self._polling_rate  # Period between calls to the communicate function (s)
 
         # Dictionaries of last self._retain_last_n_values. These will be initialized with
@@ -251,6 +279,8 @@ class MIST1ControlSystem:
 
         # TODO: Make this adjustable by user during runtime (MIST1Plot should be set up for this already) -DW
         self._retain_last_n_values = 500
+
+        self._status_bar.push(0, "Initialization Complete.")
 
     def register_data_logging_file(self, filename):
         self._data_logger = DataLogging(log_filename=filename)
@@ -1705,52 +1735,95 @@ if __name__ == "__main__":
 
     mydebug = False
 
-    # 95432313837351E00271
-    control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=5000)
+    # # 95432313837351E00271
+    control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=5000, debug=mydebug)
     # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=mydebug)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
     control_system.register_data_logging_file(filename="log/{}.h5".format(current_time))
 
-    # Set up ion gauge
-    ion_gauge_controller = Device("ig_controller",
-                                  arduino_id="954313534383514071A0",
-                                  label="Ion Gauge Controller",
-                                  debug=mydebug)
-
-    ch = Channel(name="p1", label="APG Pressure",
-                 upper_limit=1000.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 mode="read")
-
-    ion_gauge_controller.add_channel(ch)
-
-    ch = Channel(name="p2", label="AIM Pressure",
-                 upper_limit=1000.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 mode="read")
-
-    ion_gauge_controller.add_channel(ch)
-    ion_gauge_controller.set_overview_page_presence(True)
-    control_system.add_device(ion_gauge_controller)
-
-    # Set up a dummy device and channels
-
-    # ps_controller = Device("ps_controller",
-    #                        arduino_id="95432313837351706152",
-    #                        label="Power Supply Controller 1",
-    #                        debug=mydebug)
-
-    # ps_controller = Device("ps_controller",
-    #                        arduino_id="R2D2",
-    #                        label="Power Supply Controller 1",
-    #                        debug=mydebug,
-    #                        driver='arduino')
+    # # Set up ion gauge
+    # ion_gauge_controller = Device("ig_controller",
+    #                               arduino_id="R2D2",
+    #                               # arduino_id="954313534383514071A0",
+    #                               label="Ion Gauge Controller",
+    #                               debug=mydebug)
     #
-    # ps_controller.set_overview_page_presence(True)
+    # ch = Channel(name="p1", label="APG Pressure",
+    #              upper_limit=1000.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              mode="read")
+    #
+    # ion_gauge_controller.add_channel(ch)
+    #
+    # ch = Channel(name="p2", label="AIM Pressure",
+    #              upper_limit=1000.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              mode="read")
+    #
+    # ion_gauge_controller.add_channel(ch)
+    # ion_gauge_controller.set_overview_page_presence(True)
+    # control_system.add_device(ion_gauge_controller)
+
+    # Set up the Dummy PS Controller 1
+    ps_controller1 = Device("ps_controller1",
+                            arduino_id="95433343933351B012C2",
+                            label="Power Supply Controller 1",
+                            debug=mydebug,
+                            driver='arduino')
+
+    for i in range(2):
+
+        ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=bool,
+                     mode="write")
+
+        ps_controller1.add_channel(ch)
+
+    for i in range(2):
+
+        ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
+
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=float,
+                     precision=3,
+                     mode="read")
+
+        ps_controller1.add_channel(ch)
+
+    for i in range(2):
+
+        ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=float,
+                     precision=3,
+                     mode="read")
+
+        ps_controller1.add_channel(ch)
+
+    ch = Channel(name="x1", label="EXT_ILK",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="read")
+
+    ps_controller1.add_channel(ch)
+    ps_controller1.set_overview_page_presence(True)
+    control_system.add_device(ps_controller1)
+
+    # Set up the Dummy PS Controller 2
+    # ps_controller2 = Device("ps_controller2",
+    #                         arduino_id="95432313837351706152",
+    #                         label="Power Supply Controller 2",
+    #                         debug=mydebug,
+    #                         driver='arduino')
     #
     # for i in range(2):
     #
@@ -1760,7 +1833,7 @@ if __name__ == "__main__":
     #                  data_type=bool,
     #                  mode="write")
     #
-    #     ps_controller.add_channel(ch)
+    #     ps_controller2.add_channel(ch)
     #
     # for i in range(2):
     #
@@ -1771,7 +1844,7 @@ if __name__ == "__main__":
     #                  data_type=float,
     #                  mode="read")
     #
-    #     ps_controller.add_channel(ch)
+    #     ps_controller2.add_channel(ch)
     #
     # for i in range(2):
     #
@@ -1781,7 +1854,7 @@ if __name__ == "__main__":
     #                  data_type=float,
     #                  mode="read")
     #
-    #     ps_controller.add_channel(ch)
+    #     ps_controller2.add_channel(ch)
     #
     # ch = Channel(name="x1", label="EXT_ILK",
     #              upper_limit=1,
@@ -1789,9 +1862,37 @@ if __name__ == "__main__":
     #              data_type=bool,
     #              mode="read")
     #
-    # ps_controller.add_channel(ch)
-    #
-    # control_system.add_device(ps_controller)
+    # ps_controller2.add_channel(ch)
+    # ps_controller2.set_overview_page_presence(True)
+    # control_system.add_device(ps_controller2)
+
+    # Set up the Dummy Sensor Box
+    sensor_box = Device("sensor_box",
+                        arduino_id="95432313837351E00271",
+                        label="Dummy Sensor Box",
+                        debug=mydebug,
+                        driver='arduino')
+
+    for i in range(5):
+        ch = Channel(name="f{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+                     upper_limit=10.0,
+                     lower_limit=0.0,
+                     data_type=float,
+                     mode="read")
+
+        sensor_box.add_channel(ch)
+
+    for i in range(7):
+        ch = Channel(name="t{}".format(i + 1), label="Temperature {}".format(i + 1),
+                     upper_limit=100.0,
+                     lower_limit=0.0,
+                     data_type=float,
+                     mode="read")
+
+        sensor_box.add_channel(ch)
+
+    sensor_box.set_overview_page_presence(True)
+    control_system.add_device(sensor_box)
 
     # Set up a dummy device and channels
 
