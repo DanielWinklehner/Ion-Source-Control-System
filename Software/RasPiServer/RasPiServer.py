@@ -144,19 +144,20 @@ def mp_worker(args):
 
 
 
-def set_channel_value_to_arduino(arduino_id, channel_name, value):
-    global all_active_managers
-    
-    print "Setting value = {} for channel_name = {} for arduino_id = {}".format(value, channel_name, arduino_id)
+def set_channel_value_to_device(device_driver, device_id, channel_name, value):
+    by_device_id, by_port = find_devices_connected()
 
-    manager = filter(lambda x: x.get_arduino_id() == arduino_id, all_active_managers)[0]
-    set_message = Messages.build_set_message([channel_name], [value])
-    
-    print "My set message is", set_message
+    port = by_device_id[device_id]
 
-    arduino_response = manager.send_message(set_message)
+    ser = all_active_managers[by_port[port]]
 
-    return arduino_response
+    my_driver = MIST1DeviceDriver(device_driver)
+
+    data = dict(set=True, device_id=device_id, channel_name=channel_name, value=value)
+    set_message = my_driver.translate_gui_to_device(data)
+    ser.send_message(set_message)
+
+    return ser.readline()
 
 
 
@@ -186,22 +187,6 @@ def display():
     process = subprocess.call("sudo python /var/www/html/Ion-Source-Control-System/Python/server/display_plain.py &", shell=True)
 
     return "Started display code."
-
-
-@app.route("/arduino/set", methods=['GET', 'POST'])
-def set_arduino_values():
-    if request.method == 'POST':
-        arduino_id = request.form['arduino_id']
-        channel_name = request.form['channel_name']
-        value_to_set = request.form['value_to_set']
-    elif request.method == 'GET':
-        arduino_id = request.args.get('arduino_id')
-        channel_name = request.args.get('channel_name')
-        value_to_set = request.args.get('value_to_set')
-    
-    response = set_channel_value_to_arduino(arduino_id, channel_name, value_to_set)
-
-    return json.dumps(response)
 
 
 @app.route("/device/all")
