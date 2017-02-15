@@ -27,14 +27,13 @@ void mist1::Communication::add_channel(Channel ch) {
 void mist1::Communication::get_serial_data(char message[128]) {
 
   memset (message, '\0', 128);
-  
+
   int i = 0;
-  while(Serial.available()) {
+  while(Serial.available() > 0) {
       message[i] = Serial.read();
       i++;
-      delay(5);
+      delayMicroseconds(100);
   }
-  
 }
 
 

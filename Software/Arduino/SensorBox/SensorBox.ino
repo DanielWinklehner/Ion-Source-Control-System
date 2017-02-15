@@ -1,4 +1,3 @@
-
 #include <Channel.h>
 #include <Communication.h>
 
@@ -57,6 +56,7 @@ MAX31856 *temperature7;
 //MAX31856 *temperature8;
 
 float t[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
 
 float get_t1(){
   return t[0];
@@ -212,13 +212,6 @@ void flow_interrupt4() {
 }
 
 void loop() {
-
-  // Example query message.
-  // q01f18 => This means the user wants 01 channels with the names f1 upto a precision of 8.
-  
-  memset (inputMessage, '\0', 128);
-  //Serial.print("Did a main loop");
-
   // Get the current time in milliseconds
   currentTime = millis();
   
@@ -234,7 +227,6 @@ void loop() {
       flowSensorFreqsWrite[i] = (float)flowSensorFreqs[i] * 0.06; //(1000 pulses per l, 60 s in a min, measuring for 0.5 s)
       flowSensorFreqs[i] = 0; // Reset counter.
     }
-    
     // Temperature sensors (read out every half second for now)
     t[0] = temperature1->readThermocouple(CELSIUS);
     t[1] = temperature2->readThermocouple(CELSIUS);
@@ -249,13 +241,13 @@ void loop() {
   // GUI Communication.
   digitalWrite(LED_COM, LOW);
 
-  if (Serial.available()) {
+  if (Serial.available() > 0) {
     
     digitalWrite(LED_COM, HIGH);
     
     com.respond_to_input_message();
 
-  } 
+  }   
 }
 
 
