@@ -8,10 +8,10 @@ mist1::Communication com = mist1::Communication("Sensor Box");
 volatile int com_flag = 0;
 
 // Solenoid Valve Variables (Relays). x2.
-const int solenoidValvePins[] = {26, 24}; // (relay 1 and 4 are unused on board.)
+const int solenoidValvePins[] = {26, 24}; //
 bool solenoidValveValues[] = {HIGH, HIGH}; // Relays are closed when pulled to ground. Default should be open (HIGH).
 
-const int interlockOutPins[] = {28, 22}; // (relay 1 and 4 are unused on board.)
+const int interlockOutPins[] = {28, 22}; //
 bool interlockOutValues[] = {HIGH, HIGH}; // Relays are closed when pulled to ground. Default should be open (HIGH).
 
 // Micro Switches for interlocks. x2.
