@@ -99,6 +99,9 @@ def serial_watchdog(com_pipe, debug):
                 else:
                     del _current_ports_by_ids[serial_number]
 
+            else:
+                print(line)
+
         # Now, let's check if there are any devices still left in the current dict
         if len(_current_ports_by_ids) > 0:
             _device_removed = True
