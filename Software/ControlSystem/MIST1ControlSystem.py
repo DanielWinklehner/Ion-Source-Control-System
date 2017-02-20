@@ -226,7 +226,7 @@ class MIST1ControlSystem:
         # This will be used for the main GUI <--> Server polling rate
         self._communication_thread_poll_count = None
         self._communication_thread_start_time = timeit.default_timer()
-        self._polling_rate = 25.0  # (Hz) # TODO: make this a user-adjustable parameter
+        self._polling_rate = 16  # (Hz) # TODO: make this a user-adjustable parameter
         self._com_period = 1.0 / self._polling_rate  # Period between calls to the communicate function (s)
 
         # Dictionaries of last self._retain_last_n_values. These will be initialized with
@@ -310,14 +310,9 @@ class MIST1ControlSystem:
 
                     for device_name, device in devices.items():
 
-                        if not device.locked():
+                        arduino_id = device.get_arduino_id()
 
-                            arduino_id = device.get_arduino_id()
-
-                            # TODO: This is to be treated as a temporary fix. With the RasPi Server and Arduinos,
-                            # TODO: we will have to implement a master polling rate (GUI <--> RasPi) and have the
-                            # TODO: RasPi report back the individual polling rates with the Devices (RasPi <--> Arduino)
-                            device.add_one_to_poll_count()
+                        if not device.locked() and arduino_id in parsed_response.keys():
 
                             if "ERR" in parsed_response[arduino_id]:
                                 # self._status_bar.push(2, "Error: " + str(parsed_response[arduino_id]))
@@ -627,7 +622,10 @@ class MIST1ControlSystem:
                              'precisions': [mych.get_precision() for name, mych in device.channels().items() if
                                             mych.mode() == 'read' or mych.mode() == 'both'],
                              'locked_by_server': False}
-                            for device_name, device in self._devices.items() if not device.locked()]
+                            for device_name, device in self._devices.items()
+                            if not (device.locked() or
+                                    len([name for name, mych in device.channels().items() if
+                                         mych.mode() == 'read' or mych.mode() == 'both']) == 0)]
 
         pipe_message = ["device_or_channel_changed", device_dict_list]
         self._pipe_gui.send(pipe_message)
@@ -1736,88 +1734,262 @@ if __name__ == "__main__":
     mydebug = False
 
     # # 95432313837351E00271
-    control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=5000, debug=mydebug)
+    control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=5000, debug=mydebug)
     # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=mydebug)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
     control_system.register_data_logging_file(filename="log/{}.h5".format(current_time))
 
-    # # Set up ion gauge
-    # ion_gauge_controller = Device("ig_controller",
-    #                               arduino_id="R2D2",
-    #                               # arduino_id="954313534383514071A0",
-    #                               label="Ion Gauge Controller",
-    #                               debug=mydebug)
-    #
-    # ch = Channel(name="p1", label="APG Pressure",
-    #              upper_limit=1000.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              mode="read")
-    #
-    # ion_gauge_controller.add_channel(ch)
-    #
-    # ch = Channel(name="p2", label="AIM Pressure",
-    #              upper_limit=1000.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              mode="read")
-    #
-    # ion_gauge_controller.add_channel(ch)
-    # ion_gauge_controller.set_overview_page_presence(True)
-    # control_system.add_device(ion_gauge_controller)
+    # ************************************** Actual Running Devices: ************************************************* #
+    # --- Set up ion gauge --- #
+    ion_gauge_controller = Device("ig_controller",
+                                  arduino_id="954313534383514071A0",
+                                  label="Ion Gauge Controller",
+                                  driver='arduino',
+                                  debug=mydebug)
 
-    # Set up the Dummy PS Controller 1
-    ps_controller1 = Device("ps_controller1",
-                            arduino_id="95433343933351B012C2",
-                            label="Power Supply Controller 1",
-                            debug=mydebug,
-                            driver='arduino')
+    ch = Channel(name="p1", label="APG Pressure",
+                 upper_limit=1000.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 mode="read")
+
+    ion_gauge_controller.add_channel(ch)
+
+    ch = Channel(name="p2", label="AIM Pressure",
+                 upper_limit=1000.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 mode="read")
+
+    ion_gauge_controller.add_channel(ch)
+    ion_gauge_controller.set_overview_page_presence(True)
+    control_system.add_device(ion_gauge_controller)
+
+    # --- Set up the Sensor Box --- #
+    sensor_box = Device("sensor_box",
+                        arduino_id="954323138373513060D0",
+                        label="Sensor Box",
+                        debug=mydebug,
+                        driver='arduino')
+
+    for i in range(5):
+        ch = Channel(name="f{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+                     upper_limit=10.0,
+                     lower_limit=0.0,
+                     data_type=float,
+                     mode="read")
+
+        sensor_box.add_channel(ch)
+
+    for i in range(7):
+        ch = Channel(name="t{}".format(i + 1), label="Temperature {}".format(i + 1),
+                     upper_limit=100.0,
+                     lower_limit=0.0,
+                     data_type=float,
+                     mode="read")
+
+        sensor_box.add_channel(ch)
+
+    sensor_box.set_overview_page_presence(True)
+    control_system.add_device(sensor_box)
+
+    # --- Set up the Sensor Box --- #
+    interlock_box = Device("interlock_box",
+                           arduino_id="954323138373519002A2",
+                           label="Interlock Box",
+                           debug=mydebug,
+                           driver='arduino')
 
     for i in range(2):
-
-        ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
+        ch = Channel(name="i{}".format(i + 1), label="Interlock {}".format(i + 1),
                      upper_limit=1,
                      lower_limit=0,
                      data_type=bool,
-                     mode="write")
+                     mode="read",
+                     display_order=-(i + 1))
 
-        ps_controller1.add_channel(ch)
+        interlock_box.add_channel(ch)
 
-    for i in range(2):
-
-        ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
-
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=float,
-                     precision=3,
-                     mode="read")
-
-        ps_controller1.add_channel(ch)
-
-    for i in range(2):
-
-        ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
-                     upper_limit=1,
-                     lower_limit=0,
-                     data_type=float,
-                     precision=3,
-                     mode="read")
-
-        ps_controller1.add_channel(ch)
-
-    ch = Channel(name="x1", label="EXT_ILK",
+    ch = Channel(name="s1", label="Foreline Valve",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
-                 mode="read")
+                 mode="write",
+                 display_order=-3)
 
-    ps_controller1.add_channel(ch)
-    ps_controller1.set_overview_page_presence(True)
-    control_system.add_device(ps_controller1)
+    interlock_box.add_channel(ch)
 
+    ch = Channel(name="s2", label="Turbo Vent Valve",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="write",
+                 display_order=-4)
+
+    interlock_box.add_channel(ch)
+    interlock_box.set_overview_page_presence(True)
+    control_system.add_device(interlock_box)
+
+    # --- Controller for PS's on HV platform
+    # filament_ps_controller = Device("Filament Power Supplies",
+    #                                 arduino_id="954313534383514011F0",
+    #                                 label="Filament Heating",
+    #                                 debug=mydebug,
+    #                                 driver='arduino')
+    #
+    # ch = Channel(name="o1", label="Filament Heating ON",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              mode="write",
+    #              display_order=-4)
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="v1", label="Filament Heating Voltage",
+    #              upper_limit=5.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              unit="V",
+    #              mode="write",
+    #              display_order=-5)
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="i1", label="Filament Heating Current",
+    #              upper_limit=0.1,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=3,
+    #              unit="V",
+    #              mode="write",
+    #              display_order=-6)
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="o2", label="Filament Discharge ON",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              mode="write",
+    #              display_order=-1)
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="v2", label="Filament Discharge Voltage",
+    #              upper_limit=10.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              unit="V",
+    #              mode="write",
+    #              display_order=-2)
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="i2", label="Filament Discharge Current",
+    #              upper_limit=10.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              unit="V",
+    #              mode="write",
+    #              display_order=-3)
+    #
+    # filament_ps_controller.add_channel(ch)
+    # filament_ps_controller.set_overview_page_presence(True)
+    # control_system.add_device(filament_ps_controller)
+
+    # Set up HV Power Supplies
+    hv_ps_controller = Device("HV Power Supplies",
+                              arduino_id="95433343733351507011",
+                              label="Source and Einzel Lens HV",
+                              debug=mydebug,
+                              driver='arduino')
+
+    ch = Channel(name="o1", label="Einzel Lens ON",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="write",
+                 display_order=-4)
+
+    hv_ps_controller.add_channel(ch)
+
+    ch = Channel(name="v1", label="Einzel Lens Voltage",
+                 upper_limit=10.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 unit="V",
+                 mode="write",
+                 display_order=-5)
+
+    hv_ps_controller.add_channel(ch)
+
+    ch = Channel(name="i1", label="Einzel Lens Current",
+                 upper_limit=10.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 unit="V",
+                 mode="write",
+                 display_order=-6)
+
+    hv_ps_controller.add_channel(ch)
+    hv_ps_controller.set_overview_page_presence(True)
+    control_system.add_device(hv_ps_controller)
+    # **************************************************************************************************************** #
+
+    # ************************************* Dummy Devices in Daniel's Office ***************************************** #
+    # --- Set up the Dummy PS Controller 1 --- #
+    # ps_controller1 = Device("ps_controller1",
+    #                         arduino_id="95433343933351B012C2",
+    #                         label="Power Supply Controller 1",
+    #                         debug=mydebug,
+    #                         driver='arduino')
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="o{}".format(i + 1), label="PS{}_ON".format(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=bool,
+    #                  mode="write")
+    #
+    #     ps_controller1.add_channel(ch)
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="v{}".format(i + 1), label="PS{}_V".format(i + 1),
+    #
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=float,
+    #                  precision=3,
+    #                  mode="read")
+    #
+    #     ps_controller1.add_channel(ch)
+    #
+    # for i in range(2):
+    #
+    #     ch = Channel(name="i{}".format(i + 1), label="PS{}_I".format(i + 1),
+    #                  upper_limit=1,
+    #                  lower_limit=0,
+    #                  data_type=float,
+    #                  precision=3,
+    #                  mode="read")
+    #
+    #     ps_controller1.add_channel(ch)
+    #
+    # ch = Channel(name="x1", label="EXT_ILK",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              mode="read")
+    #
+    # ps_controller1.add_channel(ch)
+    # ps_controller1.set_overview_page_presence(True)
+    # control_system.add_device(ps_controller1)
+    #
     # Set up the Dummy PS Controller 2
     # ps_controller2 = Device("ps_controller2",
     #                         arduino_id="95432313837351706152",
@@ -1865,37 +2037,37 @@ if __name__ == "__main__":
     # ps_controller2.add_channel(ch)
     # ps_controller2.set_overview_page_presence(True)
     # control_system.add_device(ps_controller2)
-
+    #
     # Set up the Dummy Sensor Box
-    sensor_box = Device("sensor_box",
-                        arduino_id="95432313837351E00271",
-                        label="Dummy Sensor Box",
-                        debug=mydebug,
-                        driver='arduino')
-
-    for i in range(5):
-        ch = Channel(name="f{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-                     upper_limit=10.0,
-                     lower_limit=0.0,
-                     data_type=float,
-                     mode="read")
-
-        sensor_box.add_channel(ch)
-
-    for i in range(7):
-        ch = Channel(name="t{}".format(i + 1), label="Temperature {}".format(i + 1),
-                     upper_limit=100.0,
-                     lower_limit=0.0,
-                     data_type=float,
-                     mode="read")
-
-        sensor_box.add_channel(ch)
-
-    sensor_box.set_overview_page_presence(True)
-    control_system.add_device(sensor_box)
-
+    # sensor_box = Device("sensor_box",
+    #                     arduino_id="95432313837351E00271",
+    #                     label="Dummy Sensor Box",
+    #                     debug=mydebug,
+    #                     driver='arduino')
+    #
+    # for i in range(5):
+    #     ch = Channel(name="f{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+    #                  upper_limit=10.0,
+    #                  lower_limit=0.0,
+    #                  data_type=float,
+    #                  mode="read")
+    #
+    #     sensor_box.add_channel(ch)
+    #
+    # for i in range(7):
+    #     ch = Channel(name="t{}".format(i + 1), label="Temperature {}".format(i + 1),
+    #                  upper_limit=100.0,
+    #                  lower_limit=0.0,
+    #                  data_type=float,
+    #                  mode="read")
+    #
+    #     sensor_box.add_channel(ch)
+    #
+    # sensor_box.set_overview_page_presence(True)
+    # control_system.add_device(sensor_box)
+    #
     # Set up a dummy device and channels
-
+    #
     # ps_controller_2 = Device("ps_controller_2",
     #                          arduino_id="95432313837351E00271",
     #                          label="Power Supply Controller 2",
@@ -1949,6 +2121,7 @@ if __name__ == "__main__":
     # ps_controller_2.add_channel(ch)
     #
     # control_system.add_device(ps_controller_2)
+    # **************************************************************************************************************** #
 
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
