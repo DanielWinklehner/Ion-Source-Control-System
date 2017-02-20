@@ -86,7 +86,7 @@ def serial_watchdog(com_pipe, debug):
         # Loop through all found devices and add them to a new list, remove them from the current list
         for line in output.split("\n"):
 
-            if "Arduino" in line:
+            if "Arduino" in line or "RS485" in line:
 
                 port, raw_info = line.split(" - ")
                 serial_number = raw_info.split("_")[-1]
@@ -98,9 +98,9 @@ def serial_watchdog(com_pipe, debug):
                     _added_ports_by_ids[serial_number] = port
                 else:
                     del _current_ports_by_ids[serial_number]
-
-            else:
-                print(line)
+            #
+            # else:
+            #     print(line)
 
         # Now, let's check if there are any devices still left in the current dict
         if len(_current_ports_by_ids) > 0:
@@ -261,6 +261,13 @@ def set_value_on_device():
     channel_name = request.form['channel_name']
     value = request.form['value_to_set']
 
+    device_id_parts = device_id.split("_")
+    device_port_id = device_id_parts[0]
+    device_id = device_id_parts[0]
+
+    if len(device_id_parts) > 1:
+        device_id = device_id_parts[1]
+
     if _mydebug:
         print("Setting value = {} for channel_name = {} for device {} with id = {}.".format(value,
                                                                                             channel_name,
@@ -285,13 +292,13 @@ def set_value_on_device():
 
     try:
 
-        arduino_response = _serial_comms[device_id].send_message(msg)
+        device_response = _serial_comms[device_port_id].send_message(msg)
 
     except Exception as e:
 
-        arduino_response = "Error, exception happened: {}".format(e)
+        device_response = "Error, exception happened: {}".format(e)
 
-    return json.dumps(arduino_response)
+    return json.dumps(device_response)
 
 
 @app.route("/device/query", methods=['GET', 'POST'])
