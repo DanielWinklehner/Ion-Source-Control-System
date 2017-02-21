@@ -112,16 +112,16 @@ def serial_watchdog(com_pipe, debug):
 
         if _debug:
             if _device_removed:
-                print("Arduino(s) were removed")
+                print("Device(s) were removed")
             if _device_added:
-                print("Arduino(s) were added")
+                print("Device(s) were added")
 
         if _device_added or _device_removed:
             # If something has changed:
             if _debug:
                 print("Updated List:")
                 for _key, item in _current_ports_by_ids.items():
-                    print ("Arduino {} at port {}".format(_key, item))
+                    print ("Device {} at port {}".format(_key, item))
 
             # Reverse ports_by_ids:
             _current_ids_by_ports = {}
@@ -256,43 +256,48 @@ def initialize():
 def set_value_on_device():
 
     # Load the data stream
-    device_driver_name = request.form['device_driver']
-    device_id = request.form['device_id']
-    channel_name = request.form['channel_name']
-    value = request.form['value_to_set']
+    device_data = json.loads(request.form['data'])
+    device_data["set"] = True
 
-    device_id_parts = device_id.split("_")
-    device_port_id = device_id_parts[0]
+    # For reference: This is the message from the GUI:
+    # device_data = {'device_driver': device_driver_name,
+    #                'device_id': device_id,
+    #                'locked_by_server': False,
+    #                'channel_ids': [channel_ids],
+    #                'precisions': [precisions],
+    #                'values': [values],
+    #                'data_types': [types]}
+
+    old_device_id = device_data['device_id']
+    device_id_parts = old_device_id.split("_")
+    port_id = device_id_parts[0]
     device_id = device_id_parts[0]
 
     if len(device_id_parts) > 1:
         device_id = device_id_parts[1]
 
     if _mydebug:
-        print("Setting value = {} for channel_name = {} for device {} with id = {}.".format(value,
-                                                                                            channel_name,
-                                                                                            device_driver_name,
-                                                                                            device_id))
+        print("Device {} with port id = {}, device id = {}:".format(device_data['device_driver'],
+                                                                    port_id,
+                                                                    device_id))
+        for i in range(len(device_data['values'])):
+            print("Setting value = {} for channel_name = {} ".format(device_data['values'][i],
+                                                                     device_data['channel_ids'][i]))
 
-    # TODO: Later data will come in this format directly from the GUI
-    device_data = {
-        'device_driver': device_driver_name,
-        'device_id': device_id,
-        'value': value,
-        'set': True,
-        'channel_name': channel_name
-    }
+    driver = _my_drivers[device_data['device_driver']]
 
-    driver = _my_drivers[device_driver_name]
-
+    device_data['device_id'] = device_id
     msg = driver.translate_gui_to_device(device_data)
+    device_data['device_id'] = old_device_id
 
     if _mydebug:
-        print("The message to the arduino is: {}".format(msg))
+        print("The message to the device is: {}".format(msg))
 
     try:
+        # print(port_id)
+        # print(_serial_comms[port_id])
 
-        device_response = _serial_comms[device_port_id].send_message(msg)
+        device_response = _serial_comms[port_id].send_message(msg[0])
 
     except Exception as e:
 
@@ -315,19 +320,29 @@ def query_device():
 
     for device_data in data:
 
+        old_device_id = device_data['device_id']
+        device_id_parts = old_device_id.split("_")
+        port_id = device_id_parts[0]
+        device_id = device_id_parts[0]
+
+        if len(device_id_parts) > 1:
+            device_id = device_id_parts[1]
+
         device_data['set'] = False
 
-        device_message = _my_drivers[device_data["device_driver"]].translate_gui_to_device(device_data)
+        device_data['device_id'] = device_id
+        device_messages = _my_drivers[device_data["device_driver"]].translate_gui_to_device(device_data)
+        device_data['device_id'] = old_device_id
 
-        if len(device_message) == 0:
+        if len(device_messages) == 0:
 
             raise Exception("Error building message for: ", str(device_data))
 
         else:
 
-            message_data.append((_ports_by_ids[device_data["device_id"]], device_message))
+            message_data.append((_ports_by_ids[port_id], device_messages))
 
-        my_driver_names[device_data['device_id']] = device_data["device_driver"]
+        my_driver_names[port_id] = device_data["device_driver"]
 
     devices_responses = dict()
 
@@ -345,15 +360,20 @@ def query_device():
             return None
 
         else:
+            # responses and device_data are in the same order.
+            for response, device_data in zip(all_responses, data):
 
-            for device_id, raw_output_message in all_responses:
+                device_id, raw_output_message = response
+
+                # TODO: THIS HAS TO BE CHANGED IN THE FUTURE!
 
                 try:
-                    devices_responses[device_id] = _my_drivers[my_driver_names[device_id]].translate_device_to_gui(
-                        raw_output_message)
+                    devices_responses[device_data['device_id']] = _my_drivers[
+                        my_driver_names[device_id]].translate_device_to_gui(
+                        raw_output_message, device_data)
 
                 except Exception as e:
-                    devices_responses[device_id] = "ERROR: " + str(e)
+                    devices_responses[device_data['device_id']] = "ERROR: " + str(e)
 
     except Exception as e:
         print("Something went wrong! Exception: {}".format(e))
@@ -370,21 +390,21 @@ def mp_worker(args):
     myid = _ids_by_ports[port]
 
     if _mydebug:
-        print("Arduino {} requires {} query messages.".format(myid, len(messages)))
+        print("Device {} requires {} query messages.".format(myid, len(messages)))
 
     all_responses = []
 
     for msg in messages:
 
         if _mydebug:
-            print("The message to the arduino is: {}".format(msg))
+            print("The message to the device is: {}".format(msg))
 
         try:
             arduino_response = _serial_comms[myid].send_message(msg)
             all_responses.append(arduino_response)
 
             if _mydebug:
-                print("The response from the arduino was: {}".format(arduino_response))
+                print("The response from the device was: {}".format(arduino_response))
 
         except Exception as e:
             print("Something went wrong! I'm sorry! {}".format(e))
@@ -415,7 +435,11 @@ def _listen_to_pipe():
             for _key in _obsolete.keys():
                 del _serial_comms[_key]
             for _key, _port in _added.items():
-                _serial_comms[_key] = manager().SerialCOM(arduino_id=_key, port_name=_port)
+                # TODO: This HAS to be handled better in the future! -DW
+                if _key == "FTJRNRWQ":
+                    _serial_comms[_key] = manager().SerialCOM(arduino_id=_key, port_name=_port, baud_rate=9600)
+                else:
+                    _serial_comms[_key] = manager().SerialCOM(arduino_id=_key, port_name=_port)
                 # _serial_comms[_key] = SerialCOM(arduino_id=_key, port_name=_port)
 
     if _keep_communicating:

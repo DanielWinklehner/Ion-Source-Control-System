@@ -28,5 +28,5 @@ class MIST1DeviceDriver:
     def translate_gui_to_device(self, data):
         return self._driver.translate_gui_to_device(data)
 
-    def translate_device_to_gui(self, data):
-        return self._driver.translate_device_to_gui(data)
+    def translate_device_to_gui(self, data, original_message):
+        return self._driver.translate_device_to_gui(data, original_message)

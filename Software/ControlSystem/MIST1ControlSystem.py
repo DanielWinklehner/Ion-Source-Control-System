@@ -57,7 +57,7 @@ def query_server(com_pipe, server_url, debug=False):
 
                 _device_dict_list = _in_message[1]
 
-        if _device_dict_list is not None:
+        if _device_dict_list is not None and len(_device_dict_list) > 0:
 
             poll_count += 1
 
@@ -226,7 +226,7 @@ class MIST1ControlSystem:
         # This will be used for the main GUI <--> Server polling rate
         self._communication_thread_poll_count = None
         self._communication_thread_start_time = timeit.default_timer()
-        self._polling_rate = 16  # (Hz) # TODO: make this a user-adjustable parameter
+        self._polling_rate = 15.0  # (Hz) # TODO: make this a user-adjustable parameter
         self._com_period = 1.0 / self._polling_rate  # Period between calls to the communicate function (s)
 
         # Dictionaries of last self._retain_last_n_values. These will be initialized with
@@ -615,13 +615,26 @@ class MIST1ControlSystem:
         :return:
         """
 
+        # device_data = {'device_driver': device_driver_name,
+        #                'device_id': device_id,
+        #                'locked_by_server': False,
+        #                'channel_ids': [channel_ids],
+        #                'precisions': [precisions],
+        #                'values': [values],
+        #                'data_types': [types]}
+
         device_dict_list = [{'device_driver': device.get_driver(),
                              'device_id': device.get_arduino_id(),
+                             'locked_by_server': False,
                              'channel_ids': [name for name, mych in device.channels().items() if
                                              mych.mode() == 'read' or mych.mode() == 'both'],
                              'precisions': [mych.get_precision() for name, mych in device.channels().items() if
                                             mych.mode() == 'read' or mych.mode() == 'both'],
-                             'locked_by_server': False}
+                             'values': [None for name, mych in device.channels().items() if
+                                        mych.mode() == 'read' or mych.mode() == 'both'],
+                             'data_types': [str(mych.data_type()) for name, mych in device.channels().items() if
+                                            mych.mode() == 'read' or mych.mode() == 'both']}
+
                             for device_name, device in self._devices.items()
                             if not (device.locked() or
                                     len([name for name, mych in device.channels().items() if
@@ -642,6 +655,7 @@ class MIST1ControlSystem:
                 print(_url)
                 print(_data)
 
+            _data = {'data': json.dumps(_data)}
             _r = requests.post(_url, data=_data)
 
             if _r.status_code == 200:
@@ -926,10 +940,22 @@ class MIST1ControlSystem:
             print("Set value callback was called with widget {}, type {}, and value {}.".format(channel,
                                                                                                 data_type,
                                                                                                 value))
+
+        # device_data = {'device_driver': device_driver_name,
+        #                'device_id': device_id,
+        #                'locked_by_server': False,
+        #                'channel_ids': [channel_ids],
+        #                'precisions': [precisions],
+        #                'values': [values],
+        #                'data_types': [types]}
+
         _data = {'device_driver': channel.get_parent_device().get_driver(),
                  'device_id': channel.get_parent_device().get_arduino_id(),
-                 'channel_name': channel.name(),
-                 'value_to_set': value}
+                 'locked_by_server': False,
+                 'channel_ids': [channel.name()],
+                 'precisions': [None],
+                 'values': [value],
+                 'data_types': [str(channel.data_type())]}
 
         # Create a new thread that sends the set command to the server and
         # waits for an answer.
@@ -1795,7 +1821,7 @@ if __name__ == "__main__":
     sensor_box.set_overview_page_presence(True)
     control_system.add_device(sensor_box)
 
-    # --- Set up the Sensor Box --- #
+    # --- Set up the Interlock Box --- #
     interlock_box = Device("interlock_box",
                            arduino_id="954323138373519002A2",
                            label="Interlock Box",
@@ -1821,7 +1847,7 @@ if __name__ == "__main__":
 
     interlock_box.add_channel(ch)
 
-    ch = Channel(name="s2", label="Turbo Vent Valve",
+    ch = Channel(name="s2", label="MFC Shutoff Valve",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
@@ -1833,77 +1859,77 @@ if __name__ == "__main__":
     control_system.add_device(interlock_box)
 
     # --- Controller for PS's on HV platform
-    # filament_ps_controller = Device("Filament Power Supplies",
-    #                                 arduino_id="954313534383514011F0",
-    #                                 label="Filament Heating",
-    #                                 debug=mydebug,
-    #                                 driver='arduino')
-    #
-    # ch = Channel(name="o1", label="Filament Heating ON",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              mode="write",
-    #              display_order=-4)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="v1", label="Filament Heating Voltage",
-    #              upper_limit=5.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-5)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="i1", label="Filament Heating Current",
-    #              upper_limit=0.1,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=3,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-6)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="o2", label="Filament Discharge ON",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              mode="write",
-    #              display_order=-1)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="v2", label="Filament Discharge Voltage",
-    #              upper_limit=10.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-2)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="i2", label="Filament Discharge Current",
-    #              upper_limit=10.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-3)
-    #
-    # filament_ps_controller.add_channel(ch)
-    # filament_ps_controller.set_overview_page_presence(True)
-    # control_system.add_device(filament_ps_controller)
+    filament_ps_controller = Device("Filament Power Supplies",
+                                    arduino_id="954313534383514011F0",
+                                    label="Filament Heating",
+                                    debug=mydebug,
+                                    driver='arduino')
 
-    # Set up HV Power Supplies
-    hv_ps_controller = Device("HV Power Supplies",
+    ch = Channel(name="o1", label="Filament Heating ON",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="write",
+                 display_order=-4)
+
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="v1", label="Filament Heating Voltage",
+                 upper_limit=5.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 unit="V",
+                 mode="write",
+                 display_order=-5)
+
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="i1", label="Filament Heating Current",
+                 upper_limit=0.1,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=4,
+                 unit="V",
+                 mode="write",
+                 display_order=-6)
+
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="o2", label="Filament Discharge ON",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="write",
+                 display_order=-1)
+
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="v2", label="Filament Discharge Voltage",
+                 upper_limit=10.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 unit="V",
+                 mode="write",
+                 display_order=-2)
+
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="i2", label="Filament Discharge Current",
+                 upper_limit=10.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 unit="V",
+                 mode="write",
+                 display_order=-3)
+
+    filament_ps_controller.add_channel(ch)
+    filament_ps_controller.set_overview_page_presence(True)
+    control_system.add_device(filament_ps_controller)
+
+    # --- Set up HV Power Supplies --- #
+    hv_ps_controller = Device("hv_ps_controller",
                               arduino_id="95433343733351507011",
-                              label="Source and Einzel Lens HV",
+                              label="HV Power Supplies",
                               debug=mydebug,
                               driver='arduino')
 
@@ -1937,6 +1963,46 @@ if __name__ == "__main__":
     hv_ps_controller.add_channel(ch)
     hv_ps_controller.set_overview_page_presence(True)
     control_system.add_device(hv_ps_controller)
+
+    # --- Mass Flow Controller --- #
+    mfc_controller = Device("mfc_controller",
+                            arduino_id="FTJRNRWQ_254",
+                            label="Mass Flow Controller",
+                            debug=mydebug,
+                            driver='mfc')
+
+    ch = Channel(name="wink", label="Blink LED",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="write")
+
+    mfc_controller.add_channel(ch)
+
+    # ch = Channel(name="baud_rate", label="Baud Rate",
+    #              upper_limit=10000.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              mode="read")
+    #
+    # ch = Channel(name="set_point_percent", label="SPP",
+    #              upper_limit=140.0,
+    #              lower_limit=-20.0,
+    #              unit="Percent",
+    #              data_type=float,
+    #              mode="read")
+
+    ch = Channel(name="set_point_percent", label="Set Point",
+                 upper_limit=140.0,
+                 lower_limit=-20.0,
+                 unit="Percent",
+                 precision=0,
+                 data_type=float,
+                 mode="write")
+
+    mfc_controller.add_channel(ch)
+    mfc_controller.set_overview_page_presence(True)
+    control_system.add_device(mfc_controller)
     # **************************************************************************************************************** #
 
     # ************************************* Dummy Devices in Daniel's Office ***************************************** #

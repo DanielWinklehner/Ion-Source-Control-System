@@ -2,8 +2,18 @@ from __future__ import division
 import time
 import re
 
+
 def build_set_message(channel_names, values_to_set):
     # Supports 1 message at at time only at the moment.
+
+    # For reference: This is the message from the GUI:
+    # device_data = {'device_driver': device_driver_name,
+    #                'device_id': device_id,
+    #                'locked_by_server': False,
+    #                'channel_ids': [channel_ids],
+    #                'precisions': [precisions],
+    #                'values': [values],
+    #                'data_types': [types]}
 
     if values_to_set[0] == "True":
         values_to_set[0] = "1"
@@ -14,8 +24,7 @@ def build_set_message(channel_names, values_to_set):
     msg += str(channel_names[0])
     msg += str(values_to_set[0])
 
-    return str(msg)
-
+    return [str(msg)]
 
 
 def output_message_per_channel_length(precision):
