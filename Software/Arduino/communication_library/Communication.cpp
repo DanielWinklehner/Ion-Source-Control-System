@@ -417,10 +417,9 @@ void mist1::Communication::respond_to_input_message() {
         
         if ((String)_all_channels[i].get_channel_number() == channelNumber){
 
-          int valueToSetNumerical = get_value_to_set(inputMessage);
-          
-          _all_channels[i].call_set_func(valueToSetNumerical);  
-          
+          float valueToSetNumerical = get_value_to_set(inputMessage);
+
+          _all_channels[i].call_set_func(valueToSetNumerical);
         }
       }
     }
@@ -428,7 +427,7 @@ void mist1::Communication::respond_to_input_message() {
 }
 
 
-int mist1::Communication::get_value_to_set(char * inputMessage){
+float mist1::Communication::get_value_to_set(char * inputMessage){
   // Find out the length of the value.
   int index = 3;
   char currentChar = inputMessage[index];
@@ -443,10 +442,11 @@ int mist1::Communication::get_value_to_set(char * inputMessage){
   for (unsigned i = 0; i < valueLength; i++) {
     valueToSet[i] = inputMessage[3 + i];
   }
-  
-  int valueToSetNumerical;
-  
-  sscanf(valueToSet, "%d", &valueToSetNumerical);
+
+  //float valueToSetNumerical;
+  //sscanf(valueToSet, "%f", &valueToSetNumerical);
+
+  float valueToSetNumerical = atof(valueToSet);
 
   return valueToSetNumerical;
 }

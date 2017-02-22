@@ -21,7 +21,7 @@ namespace mist1 {
       
       void get_serial_data(char message[128]);
       int get_number_of_channels_queried(char * inputMessage );
-      int get_value_to_set(char * inputMessage );
+      float get_value_to_set(char * inputMessage );
       char * float2s(float f, unsigned int digits=2);
       unsigned long ipow10(unsigned power);
       void convert_scientific_notation_to_mist1(char * source, char * target, unsigned precision);

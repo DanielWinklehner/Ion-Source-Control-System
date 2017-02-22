@@ -1,33 +1,4 @@
 from __future__ import division
-# import binascii
-# import json
-
-# def get_command(category, for_what):
-#    setup_dict = {"baud_rate": 'CC', "address": 'CA', "user_tag": 'UT', "operating_mode": 'OM',
-#                  "programmed_gas_table_size": 'GTS', "programmed_gas_table_search": 'GL',
-#                  "activate_programmed_gas": 'PG', "flow_units": 'U', "full_scale_range": 'FS', "wink": 'WK',
-#                  "run_hours_meter": 'RH'}
-#    flow_sensor_dict = {"auto_zero": "AZ", "high_trip_point": "H", "high_high_trip_point": "HH", "low_trip_point": "L",
-#                        "low_low_trip_point": "LL", "indicated_flow_rate_percent": "F",
-#                        "indicated_flow_rate_units": "FX", "flow_totalizer": "FT"}
-#    informational_dict = {"status": "T", "status_reset": "SR", "gas_name_or_number_search": "GN",
-#                          "gas_code_number": "SGN", "device_type": "DT", "valve_type": "VT",
-#                          "valve_power_off_state": "VPO", "manafacturer": "MF", "model_designation": "MD",
-#                          "serial_number": "SN", "internal_temperature": "TA", "standard_temperature": "ST",
-#                          "standard_pressure": "SP"}
-#    control_dict = {"control_mode": "CM", "set_point_percent": "S", "set_point_units": "SX", "freeze_mode": "FM",
-#                    "softstart_rate": "SS", "valve_override": "VO", "valve_drive_level": "VD"}
-#
-#    if category == "info":
-#        return informational_dict[for_what]
-#    elif category == "flow_sensor":
-#        return flow_sensor_dict[for_what]
-#    elif category == "control":
-#        return control_dict[for_what]
-#    elif category == "setup":
-#        return setup_dict[for_what]
-#
-# return error_dict[for_what]
 
 
 class MFCDriver:
@@ -93,7 +64,7 @@ class MFCDriver:
 
             return {'acknowledged': False, 'value': response_value}
 
-    def build_message(self, msg_type, device_address="254", for_what="wink", value=None, data_type='float'):
+    def build_message(self, msg_type, device_address="254", for_what="wink", value=None, data_type=None):
         """
         :param msg_type: True for set message and False for query message
         :param device_address:
@@ -129,9 +100,6 @@ class MFCDriver:
                 pass
 
         msg += ";"
-
-        # print msg, calculate_checksum(msg)
-
         msg += self.calculate_checksum(msg)
         msg = "@@" + msg
 
@@ -143,6 +111,7 @@ class MFCDriver:
 
     def translate_gui_to_device(self, server_to_driver):
 
+        # --- For reference: --- #
         # device_data = {'device_driver': device_driver_name,
         #                'device_id': device_id,
         #                'locked_by_server': False,
@@ -171,17 +140,12 @@ class MFCDriver:
     def translate_device_to_gui(self, responses, device_data):
 
         drivers_response_to_server = {}
-        #        response=response_string['response']
-        #        precision=response_string['precision']
-        # num_of_mesg = len(responses)
 
         for response, channel_id in zip(responses, device_data['channel_ids']):
 
             parsed_message = self.parse_message(response)
 
             if parsed_message['acknowledged']:
-                # concat_value = '{0:.{1}f}'.format(float(x['value']),precision[i])
-                # drivers_response_to_server.append(concat_value)
 
                 drivers_response_to_server[channel_id] = float(parsed_message['value'])
                 print(parsed_message['value'])
@@ -193,18 +157,7 @@ class MFCDriver:
         return drivers_response_to_server
 
 
-message_to_driver = {"channel_ids": ["wink", "wink", "wink", "wink"], "device_driver": "mfc", "set": False,
-                     "precisions": [1, 2, 3, 4], "device_id": "254"}
-response_from_driver = {'response': ["@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000ACK90.00;FF", "@@@000NAK34;FF"],
-                        'precision': [1, 2, 3, 4]}
 if __name__ == '__main__':
-    #    message_to_driver_string='{"channel_ids": ["wink", "wink", "wink","wink"],
-    #                               "device_driver": "mfc", "set": false,
-    #                               "precisions": [1, 2, 3, 4],
-    #                               "device_id": "254"}'
-
-    #    message_to_driver=json.loads(message_to_driver_string)
-
     message_to_driver = {"channel_ids": ["wink", "wink", "wink", "wink"], "device_driver": "mfc", "set": False,
                          "precisions": [1, 2, 3, 4], "device_id": "254"}
 
@@ -214,7 +167,4 @@ if __name__ == '__main__':
     x.tests()
     print(x.translate_gui_to_device(message_to_driver))
     print(x.translate_device_to_gui(response_from_driver, message_to_driver))
-    # print parse_message("@@@000ACKCR,H,HH;FF")
-    # print parse_message(message="@@@000ACK9600;A9")
-    # print parse_message(message="@@@000ACK10;FF")
-    # print parse_message(message="@@@000ACKAr,4,500,SCCM;FF")
+

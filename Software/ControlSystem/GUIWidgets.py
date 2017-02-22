@@ -8,52 +8,108 @@ __doc__ = """A number of widgets inheriting from gi to be placed in the GUI repe
 
 class FrontPageDisplayValue(Gtk.Frame):
     """
-    Simple widget with two labels and a entry box to display a single value
+    Simple widget with two labels and 1-2 entry boxes to set/read a single value
     """
 
     __gsignals__ = {'set_signal': (GObject.SIGNAL_RUN_FIRST, None, (str, float,))}
 
-    def __init__(self, name="Channel N/A", unit="N/A", displayformat=".2f", set_flag=False, parent_channel=None):
+    def __init__(self, name="Channel N/A", unit="N/A", displayformat=".2f", mode="read", parent_channel=None):
         """
         :param name:
         :param unit:
-        :param set_flag: flag whether this is a set or a read channel
+        :param mode: 0 for read, 1 for write, 2 for read/write
         """
-
         Gtk.Frame.__init__(self)
-        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4, margin=4)
+        self._alignment = Gtk.Alignment(bottom_padding=4, top_padding=4, left_padding=4, right_padding=4)
+        self.add(self._alignment)
 
-        self.name_label = Gtk.Label(name)
+        self._mode = mode
+
         self.unit_label = Gtk.Label(unit)
-        self.value_entry = Gtk.Entry()
-        self.value_entry.set_size_request(60, 40)
-
-        self.set_flag = set_flag
+        self.name_label = Gtk.Label(name)
 
         self._sig_id = None
-
-        self.displayformat = displayformat
-
-        self.add(hbox)
-
-        hbox.pack_start(self.name_label, True, True, 0)
-        hbox.pack_start(self.value_entry, True, True, 0)
-        hbox.pack_start(self.unit_label, True, True, 0)
-
+        self._displayformat = displayformat
         self._parent_channel = parent_channel
-
         self._old_value = 0.0
+        self._locked = False
+        self.set_value_entry = None
+        self.read_value_entry = None
 
-        if self.set_flag:
+        # Read only mode:
+        if mode == "read":
+
+            self._grid = Gtk.Grid(column_spacing=6, row_spacing=6)
+            self._alignment.add(self._grid)
+
+            self.read_value_entry = Gtk.Entry()
+            self.read_value_entry.set_size_request(60, 40)
+            self.read_value_entry.set_sensitive(False)
+
+            self._grid.add(self.name_label)
+            self._grid.add(self.read_value_entry)
+            self._grid.add(self.unit_label)
+
+        # Write only mode
+        elif mode == "write":
+
+            self._grid = Gtk.Grid(column_spacing=6, row_spacing=6)
+            self._alignment.add(self._grid)
+
+            self.set_value_entry = Gtk.Entry()
+            self.set_value_entry.set_size_request(60, 40)
 
             self._old_value = self._parent_channel.get_value()
-            self.value_entry.set_text(str(self._old_value))
+            self.set_value_entry.set_text(str(self._old_value))
 
-        else:
+            self._grid.add(self.name_label)
+            self._grid.add(self.set_value_entry)
+            self._grid.add(self.unit_label)
 
-            self.value_entry.set_sensitive(False)
+        # Read/Write mode (2 Gtk.Entries necessary)
+        elif self._mode == "both":
 
-        self._locked = False
+            self._grid = Gtk.Grid(column_spacing=6, row_spacing=6)
+            self._alignment.add(self._grid)
+
+            self.name_label = Gtk.Label(name)
+            self.read_label = Gtk.Label("")
+            self.unit_label2 = Gtk.Label(unit)
+
+            # vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
+            # hbox1 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4, margin=4)
+            # hbox2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4, margin=4)
+
+            self.set_value_entry = Gtk.Entry()
+            # self.set_value_entry.set_size_request(60, 40)
+
+            self.read_value_entry = Gtk.Entry()
+            # self.read_value_entry.set_size_request(60, 40)
+            self.read_value_entry.set_sensitive(False)
+
+            self._old_value = self._parent_channel.get_value()
+            self.set_value_entry.set_text(str(self._old_value))
+
+            # self.add(vbox)
+
+            # vbox.pack_start(hbox1, True, True, 0)
+            # vbox.pack_start(hbox2, True, True, 0)
+
+            self._grid.add(self.name_label)
+            self._grid.attach(self.set_value_entry, 1, 0, 1, 1)
+            self._grid.attach(self.unit_label, 2, 0, 1, 1)
+
+            self._grid.attach_next_to(self.read_label, self.name_label, Gtk.PositionType.BOTTOM, 1, 1)
+            self._grid.attach_next_to(self.read_value_entry, self.read_label, Gtk.PositionType.RIGHT, 1, 1)
+            self._grid.attach_next_to(self.unit_label2, self.read_value_entry, Gtk.PositionType.RIGHT, 1, 1)
+
+            # hbox1.pack_end(self.unit_label, True, True, 0)
+            # hbox1.pack_end(self.set_value_entry, True, True, 0)
+            # hbox1.pack_start(self.name_label, True, True, 0)
+            #
+            # hbox2.pack_end(self.unit_label2, True, True, 0)
+            # hbox2.pack_end(self.read_value_entry, True, True, 0)
+            # hbox2.pack_start(self.read_label, True, True, 0)
 
     def emit_signal(self, entry):
         # Check for a valid entry (number, within limits) and emit signal
@@ -66,26 +122,29 @@ class FrontPageDisplayValue(Gtk.Frame):
 
                     self._old_value = _value
                     self._parent_channel.set_value(_value)
-                    self.emit('set_signal', 'float', _value)
+                    # Apply scaling
+                    scaled_value = _value * self._parent_channel.scaling()
+                    # Emit signal with value scaled for Device
+                    self.emit('set_signal', 'float', scaled_value)
 
         except ValueError:
             pass
 
-        self.set_value(self._old_value)
+        self.set_set_value(self._old_value)
 
     def connect_set_signal(self):
-        self._sig_id = self.value_entry.connect('activate', self.emit_signal)
+        self._sig_id = self.set_value_entry.connect('activate', self.emit_signal)
 
     def disconnect_set_signal(self):
         if self._sig_id is not None:
-            self.value_entry.disconnect(self._sig_id)
+            self.set_value_entry.disconnect(self._sig_id)
 
     def get_displayformat(self):
         """
         :return: displayformat
         """
 
-        return self.displayformat
+        return self._displayformat
 
     def get_name(self):
         """
@@ -109,7 +168,7 @@ class FrontPageDisplayValue(Gtk.Frame):
         :return: value
         """
 
-        return float(self.value_entry.get_text())
+        return float(self.set_value_entry.get_text())
 
     def set_displayformat(self, displayformat):
         """
@@ -117,7 +176,7 @@ class FrontPageDisplayValue(Gtk.Frame):
         :return:
         """
 
-        self.displayformat = displayformat
+        self._displayformat = displayformat
 
         return 0
 
@@ -141,14 +200,25 @@ class FrontPageDisplayValue(Gtk.Frame):
 
         return 0
 
+    def set_set_value(self, value):
+        """
+        Sets the value in the value entry
+        :param value:
+        :return:
+        """
+        if value is not None and self.set_value_entry is not None:
+            self.set_value_entry.set_text("{0:{1}}".format(value, self._displayformat))
+
+        return 0
+
     def set_value(self, value):
         """
         Sets the value in the value entry
         :param value:
         :return:
         """
-        if value is not None:
-            self.value_entry.set_text("{0:{1}}".format(value, self.displayformat))
+        if value is not None and self.read_value_entry is not None:
+            self.read_value_entry.set_text("{0:{1}}".format(value, self._displayformat))
 
         return 0
 
@@ -161,13 +231,13 @@ class FrontPageDisplayValue(Gtk.Frame):
         return self._parent_channel
 
     def lock(self):
-        self.value_entry.set_sensitive(False)
+        self.set_value_entry.set_sensitive(False)
         self._locked = True
 
     def unlock(self):
 
         if self.set_flag:
-            self.value_entry.set_sensitive(True)
+            self.set_value_entry.set_sensitive(True)
 
         self._locked = False
 
@@ -302,6 +372,8 @@ class FrontPageDeviceFrame(Gtk.Frame):
         """
 
         Gtk.Frame.__init__(self, label=label, margin=4)
+        self._label = self.get_label_widget()
+        self._label.set_padding(6, 0)
         self.set_shadow_type(Gtk.ShadowType.ETCHED_OUT)
         self.vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, margin=4)
         self.add(self.vbox)
@@ -347,7 +419,7 @@ if __name__ == "__main__":
 
         if i == 2:
 
-            test_fpd = FrontPageDisplayValue("Channel %i" % i, "kV", displayformat=".2e", set_flag=True)
+            test_fpd = FrontPageDisplayValue("Channel %i" % i, "kV", displayformat=".2e", mode="read")
 
         elif i == 3:
 

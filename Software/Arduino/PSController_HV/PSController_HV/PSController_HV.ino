@@ -1,11 +1,11 @@
 #include <Channel.h>
 #include <Communication.h>
 
-// A PS Controller for the HV Power Supplies 
+// A PS Controller for the HV Power Supplies
 // * PS1 = Glassman, Einzel Lens, Lower Row of BNC's
-// 0-10 V on Voltage control, 0-10 mV on Current Control
+// 0-10 V on Voltage control, 0-10 V on Current Control
 // * PS2 = Farnell HiVolt, Ion Source HV, Upper Row of BNC's
-// 0-10 V on Voltage Control, 0-10 V on Current Control 
+// 0-10 V on Voltage Control, 0-10 V on Current Control
 
 // Set up serial communication
 char inputMessage[128];
@@ -136,8 +136,6 @@ float dummyGetFunc(){
 void setup() {
   Serial.begin(115200);
 
-  //delay(10);
-
   // Set up analog reference
   analogReference(EXTERNAL);
 
@@ -186,7 +184,6 @@ void setup() {
   com.add_channel(mist1::Channel("HV_GLAS_I", 'i', 1, &set_ps1_i, &get_ps1_i));
   com.add_channel(mist1::Channel("HV_FARN_I", 'i', 2, &set_ps2_i, &get_ps2_i));
   com.add_channel(mist1::Channel("EXT_ILK", 'x', 1, &dummySetFunc, &get_ext_ilk));  //To read interlock status
-  
 }
 
 void loop() {

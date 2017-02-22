@@ -1379,8 +1379,6 @@ Wire Wire Line
 Wire Wire Line
 	10700 1350 10700 2200
 Wire Wire Line
-	10600 1900 10600 1350
-Wire Wire Line
 	10250 1350 10900 1350
 Connection ~ 10600 1350
 Connection ~ 10700 1350
@@ -1636,7 +1634,7 @@ Wire Wire Line
 Wire Wire Line
 	10250 2200 10150 2200
 Wire Wire Line
-	10550 1900 10150 1900
+	10150 1900 10600 1900
 Wire Wire Line
 	10150 1900 10150 2000
 $Comp
@@ -1699,4 +1697,6 @@ Wire Wire Line
 	2050 7100 2150 7100
 Wire Wire Line
 	2150 7100 2150 7050
+Wire Wire Line
+	10600 1900 10600 1350
 $EndSCHEMATC

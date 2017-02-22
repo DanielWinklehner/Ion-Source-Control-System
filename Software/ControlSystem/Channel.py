@@ -5,11 +5,12 @@ from __future__ import division
 # import glob
 import json
 import GUIWidgets
+from scipy.interpolate import interp1d
 
 
 class Channel:
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
-                 scaling=1., mode="both", display_order=0, displayformat=".2f",
+                 scaling=1.0, mode="both", display_order=0,  # displayformat=".2f",
                  precision=2, default_value=0.0):
 
         """Summary
@@ -21,10 +22,10 @@ class Channel:
             lower_limit (TYPE): Description
             data_type (TYPE): Description
             unit (str, optional): Description
-            scaling (float, optional): Description
+            scaling (float, optional): Scaling is applied when the channel communicates with the server.
             mode (str, optional): Description
             display_order (int, optional): Description
-            displayformat (str, optional): Description
+            # displayformat (str, optional): Description
         
         Deleted Parameters:
             message_header (TYPE): Description
@@ -42,10 +43,10 @@ class Channel:
         self._parent_device = None  # The device this channel belongs to will be set during add_channel().
         self._initialized = False
         self._overview_page_display = None
-        self._displayformat = displayformat
+        self._displayformat = ".{}f".format(precision)  # TODO: Think about sense in having both precision and format
         self._precision = precision
 
-        self._timeout = 2   # In seconds.
+        self._timeout = 1.0  # (s)
 
         self._display_order = display_order  # Higher number on the top.
 
@@ -59,10 +60,6 @@ class Channel:
 
         parent_device = self._parent_device
 
-        set_flag = True
-        if self._mode == "read":
-            set_flag = False
-
         # Add channels to the devices GUI overview page frame if desired
         if parent_device.is_on_overview_page():
             # Create a display
@@ -70,7 +67,7 @@ class Channel:
             if self._data_type == bool:
 
                 self._overview_page_display = GUIWidgets.FrontPageDisplayBool(name=self._label,
-                                                                              set_flag=set_flag,
+                                                                              set_flag=(self._mode == "write"),
                                                                               parent_channel=self)
 
             else:
@@ -79,7 +76,7 @@ class Channel:
                 self._overview_page_display = GUIWidgets.FrontPageDisplayValue(name=self._label,
                                                                                unit=self._unit,
                                                                                displayformat=self._displayformat,
-                                                                               set_flag=set_flag,
+                                                                               mode=self._mode,
                                                                                parent_channel=self)
 
             parent_device.get_overview_frame().pack_start(self._overview_page_display, False, False, 4)
@@ -174,6 +171,7 @@ class Channel:
 
         return 0
 
+    @staticmethod
     def reinitialize(self):
         """Summary
         
@@ -277,18 +275,18 @@ class Channel:
         return self._mode
 
     def get_json(self):
-        properties = {}
 
-        properties['name'] = self._name
-        properties['label'] = self._label
-        properties['upper_limit'] = self._upper_limit
-        properties['lower_limit'] = self._lower_limit
-        properties['data_type'] = str(self._data_type)
-        properties['unit'] = self._unit
-        properties['scaling'] = self._scaling
-        properties['mode'] = self._mode
-        properties['displayformat'] = self._displayformat
-        properties['display_order'] = self._display_order
+        properties = {'name': self._name,
+                      'label': self._label,
+                      'upper_limit': self._upper_limit,
+                      'lower_limit': self._lower_limit,
+                      'data_type': str(self._data_type),
+                      'unit': self._unit,
+                      'scaling': self._scaling,
+                      'mode': self._mode,
+                      'displayformat': self._displayformat,
+                      'display_order': self._display_order
+                      }
 
         return json.dumps(properties)
     
@@ -299,7 +297,7 @@ class Channel:
 
         data_type_str = properties['data_type']
 
-        properties['data_type'] = eval( data_type_str.split("'")[1] )
+        properties['data_type'] = eval(data_type_str.split("'")[1])
 
         return Channel(**properties)
 
@@ -321,50 +319,6 @@ class Channel:
         
         return self._value
 
-        '''
-        # Build a query message.
-        message = "query:{}={}".format(self._message_header, '?')
-
-
-        try:
-            # Send the query message.
-            self._serial_com.send_message(message)
-
-            # Read the Arduino's response.
-            keyword, header, value = self.read_arduino_message()
-
-            # Ideally, we should have all we need. But in case the first message sent
-            # by the Arduino was dropped, keep querying until we get some response.
-
-            start_time = time.time()
-            while ( not (keyword == "output" and header == self._message_header) ) and (time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
-
-                print "Trying again!"
-
-                self._serial_com.send_message(message)
-
-                # print "Message sent: ", message
-                keyword, header, value = self.read_arduino_message()
-
-            # print keyword, header, self._message_header, header == self._message_header
-
-            # We have what we need.
-
-            
-            if len(str(value)) != 0:
-                self._value = self._data_type(float(value)) # TODO: This is hacky. Fix this.
-            else:
-                self._value = None
-
-
-        except Exception as e:
-            self._value = None
-            raise Exception(str(e))
-            
-        finally:
-            return self._value
-        '''
-
     def set_value(self, value_to_set):
         """Summary
         
@@ -378,43 +332,3 @@ class Channel:
             return None
 
         self._value = value_to_set
-
-        # if self._mode == "read":
-        #   raise ValueError("ERROR: You are trying to write values to a read-only channel!")
-
-        # if type(value_to_set) == bool:
-        #   value_to_set = int(value_to_set)
-
-
-
-        '''
-        # Build a set message to send to the Arduino.
-        message = "set:{}={}".format(self._message_header, value_to_set)
-
-        # Send the set message.
-        self._serial_com.send_message(message)
-
-        # We're probably set. But just listen for an "assigned" message to make sure the value was set properly.
-
-        # Read the Arduino's response.
-        keyword, header, value = self.read_arduino_message()
-
-        # Repeat the set message until we get the "assigned" message back from Arduino.
-
-        start_time = time.time()
-        while ( not ((keyword == "assigned") and (header == self._message_header)) ) and (time.time() - start_time) <= self._timeout:  # THOUGHT: Maybe have a timeout?
-
-            print "Did not work out the first time so trying again!"
-
-            self._serial_com.send_message(message)
-            keyword, header, value = self.read_arduino_message()
-
-        if len(value) == 0:
-            # This means there was a timeout.
-            print "Timeout!"
-            raise Exception("ERROR: Could not set value = {} for channel = {} because of a timeout!".format(value_to_set, self._name))
-
-        # THOUGHT: Do we even need to "store" the value here as a class attribute?
-        self._value = value
-        '''
-

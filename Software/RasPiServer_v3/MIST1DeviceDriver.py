@@ -1,10 +1,3 @@
-# import pkgutil
-# import os
-# import glob
-# import imp
-# import sys
-# from traceback import print_tb
-# import importlib
 from Drivers import *
 
 
@@ -20,7 +13,7 @@ class MIST1DeviceDriver:
         self.load_driver()
 
     def load_driver(self):
-        self._driver = driver_mapping[self._driver_name]()
+        self._driver = driver_mapping[self._driver_name]['driver']()
 
     def get_driver_name(self):
         return self._driver_name

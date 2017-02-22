@@ -22,6 +22,11 @@ def manager():
     return m
 
 
+# Set up a dictionary with all available drivers (slightly faster than creating them every query)
+_my_drivers = {}
+for key in driver_mapping.keys():
+    _my_drivers[key] = MIST1DeviceDriver(driver_name=key)
+
 # --- This is a nice implementation of a simple timer I found online -DW --- #
 _tm = 0
 
@@ -37,20 +42,21 @@ def stopwatch(msg=''):
 # ------------------------------------------------------------------------- #
 
 
-def serial_watchdog(com_pipe, debug):
+def serial_watchdog(com_pipe, debug, port_identifyers):
     """
     Function to be called as a process. Watches the serial ports and looks for devices plugged in
     or removed.
     Underscore at beginning prevents flask_classy from making it a route in the Flask server.
     :param com_pipe: this end of the pipe to communicate with main server process.
     :param debug: Flag whether or not debugging should be turned on.
+    :param port_identifyers: A list of strings that are used to identify a specific serial port (e.g. "Arduino")
     :return:
     """
     _keep_communicating2 = True
     _com_freq = 2.0  # (Hz)
     _com_period = 1.0 / _com_freq  # (s)
     _debug = debug
-
+    _port_identifyers = port_identifyers
     _current_ports_by_ids = {}
     _new_ports_by_ids = {}
 
@@ -66,8 +72,14 @@ def serial_watchdog(com_pipe, debug):
             if _in_message[0] == "com_period":
                 _com_period = _in_message[1]
 
-            if _in_message[0] == "shutdown":
+            elif _in_message[0] == "shutdown":
                 break
+
+            elif _in_message[0] == "port_identifyers":
+                _port_identifyers = _in_message[1]
+
+            elif _in_message[0] == "debug":
+                _debug = _in_message[1]
 
         # Find the serial ports and whether they belong to an arduino
         # TODO: This takes a very long time, is there a faster way?
@@ -86,16 +98,22 @@ def serial_watchdog(com_pipe, debug):
         # Loop through all found devices and add them to a new list, remove them from the current list
         for line in output.split("\n"):
 
-            if "Arduino" in line or "RS485" in line:
+            # Go through all identifyers and see if one is found in this serial port
+            _current_identifyer = [identifyer for identifyer in _port_identifyers if identifyer in line]
+
+            if len(_current_identifyer) == 1:
+
+                _current_identifyer = _current_identifyer[0]
 
                 port, raw_info = line.split(" - ")
                 serial_number = raw_info.split("_")[-1]
 
-                _new_ports_by_ids[serial_number] = port
+                _new_ports_by_ids[serial_number] = {"port": port,
+                                                    "identifyer": _current_identifyer}
 
                 if serial_number not in _device_ids:
                     _device_added = True
-                    _added_ports_by_ids[serial_number] = port
+                    _added_ports_by_ids[serial_number] = _new_ports_by_ids[serial_number]
                 else:
                     del _current_ports_by_ids[serial_number]
             #
@@ -121,12 +139,12 @@ def serial_watchdog(com_pipe, debug):
             if _debug:
                 print("Updated List:")
                 for _key, item in _current_ports_by_ids.items():
-                    print ("Device {} at port {}".format(_key, item))
+                    print ("{} #{} at port {}".format(item["identifyer"], _key, item["port"]))
 
             # Reverse ports_by_ids:
             _current_ids_by_ports = {}
-            for myid, myport in _current_ports_by_ids.items():
-                _current_ids_by_ports[myport] = myid
+            for myid, myport_info in _current_ports_by_ids.items():
+                _current_ids_by_ports[myport_info["port"]] = myid
 
             # Send the new dictionaries back to the server
             pipe_message = ["updated_list",
@@ -155,23 +173,36 @@ _welcome_message = "Hi, this is the MIST-1 Control System server running on a Ra
 _pipe_server, pipe_serial_watcher = Pipe()
 _ports_by_ids = {}
 _ids_by_ports = {}
-_watch_proc = Process(target=serial_watchdog, args=(pipe_serial_watcher, _mydebug,))
+_watch_proc = Process(target=serial_watchdog, args=(pipe_serial_watcher,
+                                                    _mydebug,
+                                                    driver_mapping.keys()))
 _watch_proc.daemon = True
 _keep_communicating = False
 _initialized = False
 _serial_comms = {}
 # TODO: Add another Pipe/Process combo for displaying stuff on our new display
 
-# Set up a dictionary with all available drivers (slightly faster than creating them every query)
-_my_drivers = {}
-for key in driver_mapping.keys():
-    _my_drivers[key] = MIST1DeviceDriver(driver_name=key)
-
 
 @app.route("/")
 def hello():
 
     return _welcome_message
+
+
+@app.route("/debug/")
+def toggle_debug():
+    global _mydebug
+
+    _mydebug = not _mydebug
+
+    if _mydebug:
+        mode = "on"
+    else:
+        mode = "off"
+
+    _pipe_server.send(["debug", _mydebug])
+
+    return "Toggled debug mode {}.".format(mode)
 
 
 @app.route("/kill/")
@@ -235,7 +266,7 @@ def initialize():
 
         _keep_communicating = True
 
-        threading.Timer(0.1, _listen_to_pipe).start()
+        threading.Timer(0.1, listen_to_pipe).start()
 
         time.sleep(0.2)  # Need to wait a little for the thread to be ready to receive initial info of watchdog
 
@@ -320,6 +351,8 @@ def query_device():
 
     for device_data in data:
 
+        device_data['set'] = False
+
         old_device_id = device_data['device_id']
         device_id_parts = old_device_id.split("_")
         port_id = device_id_parts[0]
@@ -327,8 +360,6 @@ def query_device():
 
         if len(device_id_parts) > 1:
             device_id = device_id_parts[1]
-
-        device_data['set'] = False
 
         device_data['device_id'] = device_id
         device_messages = _my_drivers[device_data["device_driver"]].translate_gui_to_device(device_data)
@@ -340,7 +371,7 @@ def query_device():
 
         else:
 
-            message_data.append((_ports_by_ids[port_id], device_messages))
+            message_data.append((_ports_by_ids[port_id]["port"], device_messages))
 
         my_driver_names[port_id] = device_data["device_driver"]
 
@@ -364,8 +395,6 @@ def query_device():
             for response, device_data in zip(all_responses, data):
 
                 device_id, raw_output_message = response
-
-                # TODO: THIS HAS TO BE CHANGED IN THE FUTURE!
 
                 try:
                     devices_responses[device_data['device_id']] = _my_drivers[
@@ -413,7 +442,7 @@ def mp_worker(args):
     return _serial_comms[myid].get_arduino_id(), all_responses
 
 
-def _listen_to_pipe():
+def listen_to_pipe():
 
     global _ports_by_ids
     global _ids_by_ports
@@ -434,16 +463,14 @@ def _listen_to_pipe():
 
             for _key in _obsolete.keys():
                 del _serial_comms[_key]
-            for _key, _port in _added.items():
-                # TODO: This HAS to be handled better in the future! -DW
-                if _key == "FTJRNRWQ":
-                    _serial_comms[_key] = manager().SerialCOM(arduino_id=_key, port_name=_port, baud_rate=9600)
-                else:
-                    _serial_comms[_key] = manager().SerialCOM(arduino_id=_key, port_name=_port)
-                # _serial_comms[_key] = SerialCOM(arduino_id=_key, port_name=_port)
+            for _key, _port_info in _added.items():
+                _baud_rate = driver_mapping[_port_info["identifyer"]]["baud_rate"]
+                _serial_comms[_key] = manager().SerialCOM(arduino_id=_key,
+                                                          port_name=_port_info["port"],
+                                                          baud_rate=_baud_rate)
 
     if _keep_communicating:
-        threading.Timer(0.5, _listen_to_pipe).start()
+        threading.Timer(0.5, listen_to_pipe).start()
 
 
 if __name__ == "__main__":
