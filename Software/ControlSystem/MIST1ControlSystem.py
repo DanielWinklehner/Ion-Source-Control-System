@@ -1733,7 +1733,7 @@ if __name__ == "__main__":
     mydebug = False
 
     # # 95432313837351E00271
-    control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=5000, debug=mydebug)
+    control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=5000, debug=mydebug)
     # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=mydebug)
 
     # Setup data logging.
@@ -1742,283 +1742,224 @@ if __name__ == "__main__":
 
     # ************************************** Actual Running Devices: ************************************************* #
     # --- Set up ion gauge --- #
-    # ion_gauge_controller = Device("ig_controller",
-    #                               arduino_id="954313534383514071A0",
-    #                               label="Ion Gauge Controller",
-    #                               driver='arduino',
-    #                               debug=mydebug)
-    #
-    # ch = Channel(name="p1", label="APG Pressure",
-    #              upper_limit=1000.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              mode="read")
-    #
-    # ion_gauge_controller.add_channel(ch)
-    #
-    # ch = Channel(name="p2", label="AIM Pressure",
-    #              upper_limit=1000.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              mode="read")
-    #
-    # ion_gauge_controller.add_channel(ch)
-    # ion_gauge_controller.set_overview_page_presence(True)
-    # control_system.add_device(ion_gauge_controller)
-    #
-    # # --- Set up the Sensor Box --- #
-    # sensor_box = Device("sensor_box",
-    #                     arduino_id="954323138373513060D0",
-    #                     label="Sensor Box",
-    #                     debug=mydebug,
-    #                     driver='arduino')
-    #
-    # for i in range(5):
-    #     ch = Channel(name="f{}".format(i + 1), label="Flow Meter {}".format(i + 1),
-    #                  upper_limit=10.0,
-    #                  lower_limit=0.0,
-    #                  data_type=float,
-    #                  mode="read")
-    #
-    #     sensor_box.add_channel(ch)
-    #
-    # for i in range(7):
-    #     ch = Channel(name="t{}".format(i + 1), label="Temperature {}".format(i + 1),
-    #                  upper_limit=100.0,
-    #                  lower_limit=0.0,
-    #                  data_type=float,
-    #                  mode="read")
-    #
-    #     sensor_box.add_channel(ch)
-    #
-    # sensor_box.set_overview_page_presence(True)
-    # control_system.add_device(sensor_box)
-    #
-    # # --- Set up the Interlock Box --- #
-    # interlock_box = Device("interlock_box",
-    #                        arduino_id="954323138373519002A2",
-    #                        label="Interlock Box",
-    #                        debug=mydebug,
-    #                        driver='arduino')
-    #
-    # for i in range(2):
-    #     ch = Channel(name="i{}".format(i + 1), label="Interlock {}".format(i + 1),
-    #                  upper_limit=1,
-    #                  lower_limit=0,
-    #                  data_type=bool,
-    #                  mode="read",
-    #                  display_order=-(i + 1))
-    #
-    #     interlock_box.add_channel(ch)
-    #
-    # ch = Channel(name="s1", label="Foreline Valve",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              mode="write",
-    #              display_order=-3)
-    #
-    # interlock_box.add_channel(ch)
-    #
-    # ch = Channel(name="s2", label="MFC Shutoff Valve",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              mode="write",
-    #              display_order=-4)
-    #
-    # interlock_box.add_channel(ch)
-    # interlock_box.set_overview_page_presence(True)
-    # control_system.add_device(interlock_box)
-    #
+    ion_gauge_controller = Device("ig_controller",
+                                  arduino_id="954313534383514071A0",
+                                  label="Ion Gauge Controller",
+                                  driver='Arduino',
+                                  debug=mydebug)
+
+    ch = Channel(name="p1", label="APG Pressure",
+                 upper_limit=1000.0,
+                 lower_limit=0.0,
+                 precision=6,
+                 data_type=float,
+                 mode="read")
+
+    ion_gauge_controller.add_channel(ch)
+
+    ch = Channel(name="p2", label="AIM Pressure",
+                 upper_limit=1000.0,
+                 lower_limit=0.0,
+                 precision=6,
+                 data_type=float,
+                 mode="read")
+
+    ion_gauge_controller.add_channel(ch)
+    ion_gauge_controller.set_overview_page_presence(True)
+    control_system.add_device(ion_gauge_controller)
+
+    # --- Set up the Sensor Box --- #
+    sensor_box = Device("sensor_box",
+                        arduino_id="954323138373513060D0",
+                        label="Sensor Box",
+                        debug=mydebug,
+                        driver='Arduino')
+
+    for i in range(5):
+        ch = Channel(name="f{}".format(i + 1), label="Flow Meter {}".format(i + 1),
+                     upper_limit=10.0,
+                     lower_limit=0.0,
+                     data_type=float,
+                     mode="read")
+
+        sensor_box.add_channel(ch)
+
+    for i in range(7):
+        ch = Channel(name="t{}".format(i + 1), label="Temperature {}".format(i + 1),
+                     upper_limit=100.0,
+                     lower_limit=0.0,
+                     data_type=float,
+                     mode="read")
+
+        sensor_box.add_channel(ch)
+
+    sensor_box.set_overview_page_presence(True)
+    control_system.add_device(sensor_box)
+
+    # --- Set up the Interlock Box --- #
+    interlock_box = Device("interlock_box",
+                           arduino_id="954323138373519002A2",
+                           label="Interlock Box",
+                           debug=mydebug,
+                           driver='Arduino')
+
+    for i in range(2):
+        ch = Channel(name="i{}".format(i + 1), label="Interlock {}".format(i + 1),
+                     upper_limit=1,
+                     lower_limit=0,
+                     data_type=bool,
+                     mode="read",
+                     display_order=-(i + 1))
+
+        interlock_box.add_channel(ch)
+
+    ch = Channel(name="s1", label="Foreline Valve",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="write",
+                 display_order=-3)
+
+    interlock_box.add_channel(ch)
+
+    ch = Channel(name="s2", label="MFC Shutoff Valve",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 mode="write",
+                 display_order=-4)
+
+    interlock_box.add_channel(ch)
+    interlock_box.set_overview_page_presence(True)
+    control_system.add_device(interlock_box)
+
     # # --- Controller for PS's on HV platform
-    # filament_ps_controller = Device("Filament Power Supplies",
-    #                                 arduino_id="954313534383514011F0",
-    #                                 label="Filament Heating",
-    #                                 debug=mydebug,
-    #                                 driver='arduino')
-    #
-    # ch = Channel(name="o1", label="Filament Heating ON",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              mode="write",
-    #              display_order=-4)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="v1", label="Filament Heating Voltage",
-    #              upper_limit=5.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-5)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="i1", label="Filament Heating Current",
-    #              upper_limit=0.1,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=4,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-6)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="o2", label="Filament Discharge ON",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              mode="write",
-    #              display_order=-1)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="v2", label="Filament Discharge Voltage",
-    #              upper_limit=10.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-2)
-    #
-    # filament_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="i2", label="Filament Discharge Current",
-    #              upper_limit=10.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-3)
-    #
-    # filament_ps_controller.add_channel(ch)
-    # filament_ps_controller.set_overview_page_presence(True)
-    # control_system.add_device(filament_ps_controller)
-    #
-    # # --- Set up HV Power Supplies --- #
-    # hv_ps_controller = Device("hv_ps_controller",
-    #                           arduino_id="95433343733351507011",
-    #                           label="HV Power Supplies",
-    #                           debug=mydebug,
-    #                           driver='arduino')
-    #
-    # ch = Channel(name="o1", label="Einzel Lens ON",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              mode="write",
-    #              display_order=-4)
-    #
-    # hv_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="v1", label="Einzel Lens Voltage",
-    #              upper_limit=10.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-5)
-    #
-    # hv_ps_controller.add_channel(ch)
-    #
-    # ch = Channel(name="i1", label="Einzel Lens Current",
-    #              upper_limit=10.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              unit="V",
-    #              mode="write",
-    #              display_order=-6)
-    #
-    # hv_ps_controller.add_channel(ch)
-    # hv_ps_controller.set_overview_page_presence(True)
-    # control_system.add_device(hv_ps_controller)
-    #
-    # # --- Mass Flow Controller --- #
-    # mfc_controller = Device("mfc_controller",
-    #                         arduino_id="FTJRNRWQ_254",
-    #                         label="Mass Flow Controller",
-    #                         debug=mydebug,
-    #                         driver='RS485')
-    #
-    # ch = Channel(name="wink", label="Blink LED",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              mode="write")
-    #
-    # mfc_controller.add_channel(ch)
-    #
-    # # ch = Channel(name="baud_rate", label="Baud Rate",
-    # #              upper_limit=10000.0,
-    # #              lower_limit=0.0,
-    # #              data_type=float,
-    # #              mode="read")
-    # #
-    # # ch = Channel(name="set_point_percent", label="SPP",
-    # #              upper_limit=140.0,
-    # #              lower_limit=-20.0,
-    # #              unit="Percent",
-    # #              data_type=float,
-    # #              mode="read")
-    #
-    # ch = Channel(name="set_point_percent", label="Set Point",
-    #              upper_limit=140.0,
-    #              lower_limit=-20.0,
-    #              unit="Percent",
-    #              precision=0,
-    #              data_type=float,
-    #              mode="write")
-    #
-    # mfc_controller.add_channel(ch)
-    # mfc_controller.set_overview_page_presence(True)
-    # control_system.add_device(mfc_controller)
-    # **************************************************************************************************************** #
+    filament_ps_controller = Device("Filament Power Supplies",
+                                    arduino_id="954313534383514011F0",
+                                    label="Filament Heating",
+                                    debug=mydebug,
+                                    driver='Arduino')
 
-    # ************************************* Dummy Devices in Daniel's Office ***************************************** #
-    # --- Set up the Dummy PS Controller 1 --- #
-    ps_controller1 = Device("ps_controller1",
-                            arduino_id="95432313837351706152",
-                            label="Dummy HV Power Supplies",
-                            debug=mydebug,
-                            driver='Arduino')
+    ch = Channel(name="t1", label="Feedthrough Temperature",
+                 upper_limit=1000.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 display_order=12,
+                 unit="C",
+                 mode="read")
 
-    ch = Channel(name="o2", label="Source HV On/Off",
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="o1", label="Filament Heating On/Off",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
                  display_order=10,
                  mode="write")
 
-    ps_controller1.add_channel(ch)
+    filament_ps_controller.add_channel(ch)
 
-    ch = Channel(name="v2", label="Source HV Voltage",
-                 upper_limit=20.0,
+    ch = Channel(name="v1", label="Filament Heating Voltage",
+                 upper_limit=7.5,
                  lower_limit=0.0,
                  data_type=float,
                  precision=2,
-                 scaling=10.0/20.0,
+                 scaling=5.0 / 7.5,
                  display_order=9,
-                 unit="kV",
-                 mode="both")
+                 unit="V",
+                 mode="write")
 
-    ps_controller1.add_channel(ch)
+    filament_ps_controller.add_channel(ch)
 
-    ch = Channel(name="i2", label="Source HV Current",
-                 upper_limit=120.0,
+    ch = Channel(name="i1", label="Filament Heating Current",
+                 upper_limit=300.0,
                  lower_limit=0.0,
                  data_type=float,
                  precision=2,
-                 scaling=10.0/120.0,
+                 scaling=0.1 / 300.0,
                  display_order=8,
-                 unit="mA",
+                 unit="A",
+                 mode="write")
+
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="o2", label="Discharge On/Off",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 display_order=6,
+                 mode="write")
+
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="v2", label="Discharge Voltage",
+                 upper_limit=100.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0 / 100.0,
+                 display_order=5,
+                 unit="V",
+                 mode="write")
+
+    filament_ps_controller.add_channel(ch)
+
+    ch = Channel(name="i2", label="Discharge Current",
+                 upper_limit=10.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0 / 10.0,
+                 display_order=4,
+                 unit="A",
                  mode="both")
 
-    ps_controller1.add_channel(ch)
+    filament_ps_controller.add_channel(ch)
 
+    filament_ps_controller.set_overview_page_presence(True)
+    control_system.add_device(filament_ps_controller)
+
+    # --- Set up HV Power Supplies --- #
+    hv_ps_controller = Device("hv_ps_controller",
+                              arduino_id="95433343733351507011",
+                              label="HV Power Supplies",
+                              debug=mydebug,
+                              driver='Arduino')
+
+    # ch = Channel(name="o2", label="Source HV On/Off",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              display_order=10,
+    #              mode="write")
+    #
+    # hv_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="v2", label="Source HV Voltage",
+    #              upper_limit=20.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0/20.0,
+    #              display_order=9,
+    #              unit="kV",
+    #              mode="both")
+    #
+    # hv_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="i2", label="Source HV Current",
+    #              upper_limit=120.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0/120.0,
+    #              display_order=8,
+    #              unit="mA",
+    #              mode="both")
+    #
+    # hv_ps_controller.add_channel(ch)
+    #
     ch = Channel(name="o1", label="Einzel Lens On/Off",
                  upper_limit=1,
                  lower_limit=0,
@@ -2026,7 +1967,7 @@ if __name__ == "__main__":
                  display_order=6,
                  mode="write")
 
-    ps_controller1.add_channel(ch)
+    hv_ps_controller.add_channel(ch)
 
     ch = Channel(name="v1", label="Einzel Lens Voltage",
                  upper_limit=30.0,
@@ -2038,7 +1979,7 @@ if __name__ == "__main__":
                  unit="kV",
                  mode="both")
 
-    ps_controller1.add_channel(ch)
+    hv_ps_controller.add_channel(ch)
 
     ch = Channel(name="i1", label="Einzel Lens Current",
                  upper_limit=40.0,
@@ -2050,86 +1991,203 @@ if __name__ == "__main__":
                  unit="mA",
                  mode="both")
 
-    ps_controller1.add_channel(ch)
+    hv_ps_controller.add_channel(ch)
+    hv_ps_controller.set_overview_page_presence(True)
+    control_system.add_device(hv_ps_controller)
 
-    ps_controller1.set_overview_page_presence(True)
-    control_system.add_device(ps_controller1)
-
-    # Dummy Filament Power Supplies
-    ps_controller2 = Device("ps_controller2",
-                            arduino_id="95432313837351E00271",
-                            label="Dummy Filament Power Supplies",
+    # --- Mass Flow Controller --- #
+    mfc_controller = Device("mfc_controller",
+                            arduino_id="FTJRNRWQ_254",
+                            label="Mass Flow Controller",
                             debug=mydebug,
-                            driver='Arduino')
+                            driver='RS485')
 
-    ch = Channel(name="o1", label="Filament Heating On/Off",
+    ch = Channel(name="wink", label="Blink LED",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
-                 display_order=10,
                  mode="write")
 
-    ps_controller2.add_channel(ch)
+    mfc_controller.add_channel(ch)
 
-    ch = Channel(name="v1", label="Filament Heating Voltage",
-                 upper_limit=7.5,
-                 lower_limit=0.0,
+    # ch = Channel(name="baud_rate", label="Baud Rate",
+    #              upper_limit=10000.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              mode="read")
+    #
+    # ch = Channel(name="set_point_percent", label="SPP",
+    #              upper_limit=140.0,
+    #              lower_limit=-20.0,
+    #              unit="Percent",
+    #              data_type=float,
+    #              mode="read")
+
+    ch = Channel(name="set_point_percent", label="Set Point",
+                 upper_limit=140.0,
+                 lower_limit=-20.0,
+                 unit="Percent",
+                 precision=0,
                  data_type=float,
-                 precision=2,
-                 scaling=5.0/7.5,
-                 display_order=9,
-                 unit="V",
                  mode="write")
 
-    ps_controller2.add_channel(ch)
+    mfc_controller.add_channel(ch)
+    mfc_controller.set_overview_page_presence(True)
+    control_system.add_device(mfc_controller)
+    # **************************************************************************************************************** #
 
-    ch = Channel(name="i1", label="Filament Heating Current",
-                 upper_limit=300.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 precision=2,
-                 scaling=0.1/300.0,
-                 display_order=8,
-                 unit="A",
-                 mode="write")
-
-    ps_controller2.add_channel(ch)
-
-    ch = Channel(name="o2", label="Discharge On/Off",
-                 upper_limit=1,
-                 lower_limit=0,
-                 data_type=bool,
-                 display_order=6,
-                 mode="write")
-
-    ps_controller2.add_channel(ch)
-
-    ch = Channel(name="v2", label="Discharge Voltage",
-                 upper_limit=100.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 precision=2,
-                 scaling=10.0/100.0,
-                 display_order=5,
-                 unit="V",
-                 mode="write")
-
-    ps_controller2.add_channel(ch)
-
-    ch = Channel(name="i2", label="Discharge Current",
-                 upper_limit=10.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 precision=2,
-                 scaling=10.0/10.0,
-                 display_order=4,
-                 unit="A",
-                 mode="both")
-
-    ps_controller2.add_channel(ch)
-
-    ps_controller2.set_overview_page_presence(True)
-    control_system.add_device(ps_controller2)
+    # ************************************* Dummy Devices in Daniel's Office ***************************************** #
+    # --- Set up the Dummy PS Controller 1 --- #
+    # ps_controller1 = Device("ps_controller1",
+    #                         arduino_id="95432313837351706152",
+    #                         label="Dummy HV Power Supplies",
+    #                         debug=mydebug,
+    #                         driver='Arduino')
+    #
+    # ch = Channel(name="o2", label="Source HV On/Off",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              display_order=10,
+    #              mode="write")
+    #
+    # ps_controller1.add_channel(ch)
+    #
+    # ch = Channel(name="v2", label="Source HV Voltage",
+    #              upper_limit=20.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0/20.0,
+    #              display_order=9,
+    #              unit="kV",
+    #              mode="both")
+    #
+    # ps_controller1.add_channel(ch)
+    #
+    # ch = Channel(name="i2", label="Source HV Current",
+    #              upper_limit=120.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0/120.0,
+    #              display_order=8,
+    #              unit="mA",
+    #              mode="both")
+    #
+    # ps_controller1.add_channel(ch)
+    #
+    # ch = Channel(name="o1", label="Einzel Lens On/Off",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              display_order=6,
+    #              mode="write")
+    #
+    # ps_controller1.add_channel(ch)
+    #
+    # ch = Channel(name="v1", label="Einzel Lens Voltage",
+    #              upper_limit=30.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0/30.0,
+    #              display_order=5,
+    #              unit="kV",
+    #              mode="both")
+    #
+    # ps_controller1.add_channel(ch)
+    #
+    # ch = Channel(name="i1", label="Einzel Lens Current",
+    #              upper_limit=40.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0/40.0,
+    #              display_order=4,
+    #              unit="mA",
+    #              mode="both")
+    #
+    # ps_controller1.add_channel(ch)
+    #
+    # ps_controller1.set_overview_page_presence(True)
+    # control_system.add_device(ps_controller1)
+    #
+    # # Dummy Filament Power Supplies
+    # ps_controller2 = Device("ps_controller2",
+    #                         arduino_id="95432313837351E00271",
+    #                         label="Dummy Filament Power Supplies",
+    #                         debug=mydebug,
+    #                         driver='Arduino')
+    #
+    # ch = Channel(name="o1", label="Filament Heating On/Off",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              display_order=10,
+    #              mode="write")
+    #
+    # ps_controller2.add_channel(ch)
+    #
+    # ch = Channel(name="v1", label="Filament Heating Voltage",
+    #              upper_limit=7.5,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=5.0/7.5,
+    #              display_order=9,
+    #              unit="V",
+    #              mode="write")
+    #
+    # ps_controller2.add_channel(ch)
+    #
+    # ch = Channel(name="i1", label="Filament Heating Current",
+    #              upper_limit=300.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=0.1/300.0,
+    #              display_order=8,
+    #              unit="A",
+    #              mode="write")
+    #
+    # ps_controller2.add_channel(ch)
+    #
+    # ch = Channel(name="o2", label="Discharge On/Off",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              display_order=6,
+    #              mode="write")
+    #
+    # ps_controller2.add_channel(ch)
+    #
+    # ch = Channel(name="v2", label="Discharge Voltage",
+    #              upper_limit=100.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0/100.0,
+    #              display_order=5,
+    #              unit="V",
+    #              mode="write")
+    #
+    # ps_controller2.add_channel(ch)
+    #
+    # ch = Channel(name="i2", label="Discharge Current",
+    #              upper_limit=10.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0/10.0,
+    #              display_order=4,
+    #              unit="A",
+    #              mode="both")
+    #
+    # ps_controller2.add_channel(ch)
+    #
+    # ps_controller2.set_overview_page_presence(True)
+    # control_system.add_device(ps_controller2)
     # **************************************************************************************************************** #
 
     # Run the control system, this has to be last as it does

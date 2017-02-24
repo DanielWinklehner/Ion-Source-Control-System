@@ -318,6 +318,7 @@ def set_value_on_device():
     driver = _my_drivers[device_data['device_driver']]
 
     device_data['device_id'] = device_id
+
     msg = driver.translate_gui_to_device(device_data)
     device_data['device_id'] = old_device_id
 

@@ -122,7 +122,7 @@ class MFCDriver:
 
         num_of_mesg = len(server_to_driver['channel_ids'])
         assert num_of_mesg == len(server_to_driver['precisions'])
-        assert server_to_driver['device_driver'] == "mfc"
+        assert server_to_driver['device_driver'] == "RS485"
 
         drivers_response_to_server = []
 
