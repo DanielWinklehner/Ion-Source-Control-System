@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 
 class Channel:
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
-                 scaling=1.0, mode="both", display_order=0,  # displayformat=".2f",
+                 scaling=1.0, mode="both", display_order=0, displayformat="f",
                  precision=2, default_value=0.0):
 
         """Summary
@@ -43,7 +43,7 @@ class Channel:
         self._parent_device = None  # The device this channel belongs to will be set during add_channel().
         self._initialized = False
         self._overview_page_display = None
-        self._displayformat = ".{}f".format(precision)  # TODO: Think about sense in having both precision and format
+        self._displayformat = ".{}{}".format(precision, displayformat)
         self._precision = precision
 
         self._timeout = 1.0  # (s)

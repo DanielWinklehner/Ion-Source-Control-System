@@ -1751,7 +1751,8 @@ if __name__ == "__main__":
     ch = Channel(name="p1", label="APG Pressure",
                  upper_limit=1000.0,
                  lower_limit=0.0,
-                 precision=6,
+                 precision=4,
+                 displayformat="e",
                  data_type=float,
                  mode="read")
 
@@ -1760,7 +1761,8 @@ if __name__ == "__main__":
     ch = Channel(name="p2", label="AIM Pressure",
                  upper_limit=1000.0,
                  lower_limit=0.0,
-                 precision=6,
+                 precision=4,
+                 displayformat="e",
                  data_type=float,
                  mode="read")
 
@@ -1813,7 +1815,7 @@ if __name__ == "__main__":
 
         interlock_box.add_channel(ch)
 
-    ch = Channel(name="s1", label="Foreline Valve",
+    ch = Channel(name="s1", label="Turbo Vent Valve",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
@@ -1833,92 +1835,103 @@ if __name__ == "__main__":
     interlock_box.set_overview_page_presence(True)
     control_system.add_device(interlock_box)
 
-    # # --- Controller for PS's on HV platform
-    filament_ps_controller = Device("Filament Power Supplies",
-                                    arduino_id="954313534383514011F0",
-                                    label="Filament Heating",
-                                    debug=mydebug,
-                                    driver='Arduino')
-
-    ch = Channel(name="t1", label="Feedthrough Temperature",
-                 upper_limit=1000.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 precision=2,
-                 display_order=12,
-                 unit="C",
-                 mode="read")
-
-    filament_ps_controller.add_channel(ch)
-
-    ch = Channel(name="o1", label="Filament Heating On/Off",
-                 upper_limit=1,
-                 lower_limit=0,
-                 data_type=bool,
-                 display_order=10,
-                 mode="write")
-
-    filament_ps_controller.add_channel(ch)
-
-    ch = Channel(name="v1", label="Filament Heating Voltage",
-                 upper_limit=7.5,
-                 lower_limit=0.0,
-                 data_type=float,
-                 precision=2,
-                 scaling=5.0 / 7.5,
-                 display_order=9,
-                 unit="V",
-                 mode="write")
-
-    filament_ps_controller.add_channel(ch)
-
-    ch = Channel(name="i1", label="Filament Heating Current",
-                 upper_limit=300.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 precision=2,
-                 scaling=0.1 / 300.0,
-                 display_order=8,
-                 unit="A",
-                 mode="write")
-
-    filament_ps_controller.add_channel(ch)
-
-    ch = Channel(name="o2", label="Discharge On/Off",
-                 upper_limit=1,
-                 lower_limit=0,
-                 data_type=bool,
-                 display_order=6,
-                 mode="write")
-
-    filament_ps_controller.add_channel(ch)
-
-    ch = Channel(name="v2", label="Discharge Voltage",
-                 upper_limit=100.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 precision=2,
-                 scaling=10.0 / 100.0,
-                 display_order=5,
-                 unit="V",
-                 mode="write")
-
-    filament_ps_controller.add_channel(ch)
-
-    ch = Channel(name="i2", label="Discharge Current",
-                 upper_limit=10.0,
-                 lower_limit=0.0,
-                 data_type=float,
-                 precision=2,
-                 scaling=10.0 / 10.0,
-                 display_order=4,
-                 unit="A",
-                 mode="both")
-
-    filament_ps_controller.add_channel(ch)
-
-    filament_ps_controller.set_overview_page_presence(True)
-    control_system.add_device(filament_ps_controller)
+    # --- Controller for PS's on HV platform
+    # filament_ps_controller = Device("Filament Power Supplies",
+    #                                 arduino_id="954313534383514011F0",
+    #                                 label="Filament Heating",
+    #                                 debug=mydebug,
+    #                                 driver='Arduino')
+    #
+    # ch = Channel(name="t1", label="Feedthrough Temperature",
+    #              upper_limit=1000.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              display_order=12,
+    #              unit="C",
+    #              mode="read")
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="t2", label="Backplate Temperature",
+    #              upper_limit=1000.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              display_order=11,
+    #              unit="C",
+    #              mode="read")
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="o1", label="Filament Heating On/Off",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              display_order=10,
+    #              mode="write")
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="v1", label="Filament Heating Voltage",
+    #              upper_limit=7.5,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=5.0 / 7.5,
+    #              display_order=9,
+    #              unit="V",
+    #              mode="write")
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="i1", label="Filament Heating Current",
+    #              upper_limit=300.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=0.1 / 300.0,
+    #              display_order=8,
+    #              unit="A",
+    #              mode="write")
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="o2", label="Discharge On/Off",
+    #              upper_limit=1,
+    #              lower_limit=0,
+    #              data_type=bool,
+    #              display_order=6,
+    #              mode="write")
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="v2", label="Discharge Voltage",
+    #              upper_limit=100.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0 / 100.0,
+    #              display_order=5,
+    #              unit="V",
+    #              mode="write")
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # ch = Channel(name="i2", label="Discharge Current",
+    #              upper_limit=10.0,
+    #              lower_limit=0.0,
+    #              data_type=float,
+    #              precision=2,
+    #              scaling=10.0 / 10.0,
+    #              display_order=4,
+    #              unit="A",
+    #              mode="both")
+    #
+    # filament_ps_controller.add_channel(ch)
+    #
+    # filament_ps_controller.set_overview_page_presence(True)
+    # control_system.add_device(filament_ps_controller)
 
     # --- Set up HV Power Supplies --- #
     hv_ps_controller = Device("hv_ps_controller",
