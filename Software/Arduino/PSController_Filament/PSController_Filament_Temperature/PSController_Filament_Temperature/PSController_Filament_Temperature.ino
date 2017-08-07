@@ -129,7 +129,12 @@ void set_ps1_v (float value){
 }
 
 float get_ps1_v (){
-  return analogRead(PS1_V_IN);
+  analogRead(PS1_V_IN);
+  int sum10 = 0;
+  for (int i = 0; i < 10; i++){
+    sum10 += analogRead(PS1_V_IN);
+  }
+  return sum10 / 1605.4;
 }
 
 void set_ps2_v (float value){
@@ -147,12 +152,17 @@ float get_ps2_v (){
 }
 
 void set_ps1_i (float value){
-  value *= 2550;
+  value *= 48.2;
   analogWrite(PS1_I_OUT, value);
 }
 
 float get_ps1_i (){
-  return analogRead(PS1_I_IN);
+  analogRead(PS1_I_IN);
+  int sum10 = 0;
+  for (int i = 0; i < 10; i++){
+    sum10 += analogRead(PS1_I_IN);
+  }
+  return sum10 / 10.0;
 }
 
 void set_ps2_i (float value){

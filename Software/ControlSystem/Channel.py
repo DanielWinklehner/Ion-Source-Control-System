@@ -10,7 +10,7 @@ from scipy.interpolate import interp1d
 
 class Channel:
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
-                 scaling=1.0, mode="both", display_order=0, displayformat="f",
+                 scaling=1.0, scaling_read=None, mode="both", display_order=0, displayformat="f",
                  precision=2, default_value=0.0):
 
         """Summary
@@ -37,6 +37,7 @@ class Channel:
         self._data_type = data_type
         self._unit = unit
         self._scaling = scaling
+        self._scaling_read = scaling_read
         self._value = default_value
         self._mode = mode
         self._arduino_id = None
@@ -266,6 +267,13 @@ class Channel:
         """
         return self._scaling
 
+    def scaling_read(self):
+        """
+
+        :return: self._scaling_read
+        """
+        return self._scaling_read
+
     def mode(self):
         """Summary
         
@@ -283,6 +291,7 @@ class Channel:
                       'data_type': str(self._data_type),
                       'unit': self._unit,
                       'scaling': self._scaling,
+                      'scaling_read': self._scaling_read,
                       'mode': self._mode,
                       'displayformat': self._displayformat,
                       'display_order': self._display_order
