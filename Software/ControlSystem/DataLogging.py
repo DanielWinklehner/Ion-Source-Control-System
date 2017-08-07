@@ -4,6 +4,7 @@ import Device
 import h5py
 import numpy as np
 import time
+import os
 
 
 class DataLogging:
@@ -13,6 +14,8 @@ class DataLogging:
         self._data_set = {}
 
     def initialize(self):
+        if not os.path.exists("log"):
+                os.makedirs("log")
         self._file_object = h5py.File(self._log_filename, "w")
         self._main_group = self._file_object.create_group("mist1_control_system")
 
