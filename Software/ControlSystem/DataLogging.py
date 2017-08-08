@@ -14,8 +14,8 @@ class DataLogging:
         self._data_set = {}
 
     def initialize(self):
-        if not os.path.exists("log"):
-                os.makedirs("log")
+        if not os.path.exists(os.path.dirname(self._log_filename)):
+                os.makedirs(os.path.dirname(self._log_filename))
         self._file_object = h5py.File(self._log_filename, "w")
         self._main_group = self._file_object.create_group("mist1_control_system")
 
