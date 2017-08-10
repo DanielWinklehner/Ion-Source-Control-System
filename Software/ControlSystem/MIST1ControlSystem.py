@@ -151,7 +151,7 @@ class MIST1ControlSystem:
         # --- Paint the stop button red! --- #
         style_provider = Gtk.CssProvider()
 
-        css = """
+        css = b"""
         GtkButton#stop_button {
             color: #000000;
             font-size: 18pt;
