@@ -519,7 +519,6 @@ class PlottingChannelsDialog(Gtk.Dialog):
                              ))
 
         self.set_default_size(450, 700)
-        print(selections)
         self._tree_store = tree_store
         self._box = self.get_content_area()
         self._selections = copy.deepcopy(list(selections))
