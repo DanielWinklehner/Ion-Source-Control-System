@@ -133,15 +133,15 @@ class Listener(QObject):
 
 class ControlSystem():
     def __init__(self, server_ip='127.0.0.1', server_port=80, debug=False):
-        ## Set up Qt UI
+        ## Set up Qt UI and connect UI signals
         self._window = MainWindow.MainWindow()
-        self._window._btnquit.clicked.connect(self.on_quit_button)
-        self._pinned_curve = self._window._pinnedplot.plot(pen='r')
+        self._window._btnquit.triggered.connect(self.on_quit_button)
+        self._window.sig_plots_changed.connect(self.on_plots_changed)
                 
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-                
+        
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -162,7 +162,7 @@ class ControlSystem():
                     device_info['identifyer'], device_id, device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-         
+        
         ## Set up communication pipes.
         self._keep_communicating = False 
         self._polling_rate = 15.0
@@ -176,16 +176,17 @@ class ControlSystem():
         ## Set up data dictionaries
         self._devices = {}
         self._device_name_arduino_id_map = {}
+        self._read_textboxes = {} # textboxes on overview page to update
         self._x_values = {}
         self._y_values = {}
         self._procedures = {}
         self._critical_procedures = {}
-        self._plottings_frames = {}
-        self._threads = None
-        self._retain_last_n_values = 500
+        self._plotted_channels = {}
+        self._threads = None # holds listener thead
+        self._retain_last_n_values = 500 # number of points to plot before removing
 
-        self._pinned_dev = 'ps_controller1'
-        self._pinned_ch = 'i2'
+        self._pinned_curve = self._window._pinnedplot.plot(pen='r')
+        self._pinned_plot_name = ()
 
         self._window.status_message('Initialization complete.')
 
@@ -260,12 +261,41 @@ class ControlSystem():
                                 print("Exception '{}' caught while updating GUI.".format(e))
 
     def update_stored_values(self, device_name, channel_name, timestamp):
+        # update the stored data dictionaries
         self._x_values[(device_name, channel_name)].append(timestamp)
         self._y_values[(device_name, channel_name)].append(
             self._devices[device_name].channels[channel_name].value)
         
-        self._pinned_curve.setData(self._x_values[(self._pinned_dev, self._pinned_ch)],
-                                   self._y_values[(self._pinned_dev, self._pinned_ch)])
+        # update read values on overview page
+        if self._window.current_tab == 'main':
+            for arduino_id, boxinfo in self._read_textboxes.items():
+                for chname, data in boxinfo.items():
+                    data['textbox'].setText(str(data['channel'].value))
+
+        # update the pinned plot
+        if self._pinned_plot_name != ():
+            self._pinned_curve.setData(self._x_values[self._pinned_plot_name],
+                                       self._y_values[self._pinned_plot_name],
+                                       clear=True, _callsync='off')
+
+        # if we are on the plotting tab, update the plots there too
+        if self._window.current_tab == 'plots':
+            if len(self._window._plotted_channels) > 0:
+                for names, data in self._window._plotted_channels.items():
+                    data['curve'].setData(self._x_values[names], 
+                                          self._y_values[names], 
+                                          clear=True, _callsync='off')
+
+
+    @pyqtSlot(dict)
+    def on_plots_changed(self, plottedchs):
+        self._plotted_channels = plottedchs
+        for names, data in self._plotted_channels.items():
+            data['btnPin'].connect(self.on_pin_plot_button)
+
+    @pyqtSlot(tuple)
+    def on_pin_plot_button(self, data):
+       self._pinned_plot_name = data 
 
     @pyqtSlot()
     def on_quit_button(self):
@@ -313,7 +343,15 @@ class ControlSystem():
         self._devices[device.name] = device
         self._device_name_arduino_id_map[device.arduino_id] = device.name
 
-        self._window.add_device_to_overview(device)
+        # connect form controls to main control system set value function
+        readboxes, emitters = self._window.add_device_to_overview(device)
+        for chname, emitter in emitters.items():
+            #print(emitter)
+            emitter.connect(self.set_value_callback)
+
+        #for chname, readboxes in readboxes.items():
+        self._read_textboxes[device.arduino_id] = readboxes
+
         """ 
         # Add corresponding channels to the hdf5 log.
         for channel_name, channel in device.channels().items():
@@ -335,27 +373,54 @@ class ControlSystem():
                                                                   maxlen=self._retain_last_n_values)
             self._y_values[(device.name, channel_name)] = deque(np.zeros(self._retain_last_n_values),
                                                                   maxlen=self._retain_last_n_values)
-        """
-        self._settings_page_tree_store.append(device_iter,
-                                              ["<b>[ Add a New Channel ]</b>", "", "add_new_channel",
-                                               device.name(), device.name()])
+            # TODO: Add device to settings page
 
-        self._settings_tree_view.show_all()
-        """
+    @pyqtSlot(dict)
+    def set_value_callback(self, emitter_info):
+        """ Gets updated channel info from GUI, creates a message to send to server """
+        # TODO: Need an elegant way to do this...
+        channel = emitter_info['channel']
+        if self.debug:
+            print('Set value callback was called with widget {}, '
+                  'type {}, and scaled value {}.'.format(channel, channel.data_type, channel.value))
+
+        _data = {'device_driver': channel.parent_device.driver,
+                 'device_id': channel.parent_device.arduino_id,
+                 'locked_by_server': False,
+                 'channel_ids': [channel.name],
+                 'precisions': [None],
+                 'values': [emitter_info['value']],
+                 'data_types': [str(channel.data_type)]}
+
+        # Create a new thread that sends the set command to the server and
+        # waits for an answer.
+        new_set_thread = threading.Thread(target=self.update_device_on_server, args=(_data,))
+        new_set_thread.start()
+
+    def update_device_on_server(self, _data):
+        """ Sends POST request to RasPi server with new device/channel info """
+        _url = self._server_url + "device/set"
+        try:
+            _data = {'data': json.dumps(_data)}
+            _r = requests.post(_url, data=_data)
+
+            if _r.status_code == 200:
+                print("Sending set command to server successful, response was: {}".format(_r.text))
+            else:
+                print("Sending set command to server unsuccessful, response-code was: {}".format(_r.status_code))
+        except Exception as e:
+            if self.debug:
+                print("Exception '{}' caught while communicating with RasPi server.".format(e))
+
     def run(self):
         self.setup_communication_threads()
         self._window.show()
 
 
-if __name__ == '__main__':
-    app = QApplication([])
-    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
-
-
-    mydebug = False
+def dummy_device(n, ard_id):
     # --- Set up the Dummy PS Controller 1 --- #
-    ps_controller1 = Device("ps_controller1",
-                            arduino_id="95432313837351706152",
+    ps_controller1 = Device("ps_controller" + str(n),
+                            arduino_id=ard_id,
                             label="Dummy HV Power Supplies",
                             debug=mydebug,
                             driver='Arduino')
@@ -425,8 +490,17 @@ if __name__ == '__main__':
                  mode="both")
     
     ps_controller1.add_channel(ch)
+    return ps_controller1
     
-    cs.add_device(ps_controller1)
+
+if __name__ == '__main__':
+    app = QApplication([])
+    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
+
+    mydebug = False
+
+    cs.add_device(dummy_device(1, "95432313837351706152"))
+    cs.add_device(dummy_device(2, "95433343933351B012C2"))
 
     cs.run()
     sys.exit(app.exec_())
