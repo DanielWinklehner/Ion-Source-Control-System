@@ -8,7 +8,8 @@ import time
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QLineEdit, QFrame, QLabel, \
-                            QRadioButton, QScrollArea, QPushButton
+                            QRadioButton, QScrollArea, QPushButton, \
+                            QWidget, QSizePolicy, QAction
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 
 import pyqtgraph as pg
@@ -16,6 +17,8 @@ from pyqtgraph.widgets.RemoteGraphicsView import RemoteGraphicsView
 
 from .ui_MainWindow import Ui_MainWindow
 from .dialogs.PlotChooseDialog import PlotChooseDialog 
+from .dialogs.ProcedureDialog import ProcedureDialog 
+from .dialogs.AboutDialog import AboutDialog 
 from lib.Device import Device
 from lib.Channel import Channel
 
@@ -38,9 +41,22 @@ class MainWindow(QMainWindow):
         self._tabview = self.ui.tabMain
         self._btnquit = self.ui.btnQuit
         self._btnplotchoose = self.ui.btnSetupDevicePlots
+        self._btnaddprocedure = self.ui.btnAddProcedure
 
+        # add a right-aligned About tool bar button
+        spc = QWidget()
+        spc.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        spc.setVisible(True)
+        self.ui.toolBar.addWidget(spc)
+        self._btnAbout = QAction('About', None)
+        self.ui.toolBar.addAction(self._btnAbout)
+
+        # dialog connections
         self._btnplotchoose.clicked.connect(self.show_PlotChooseDialog)
+        self._btnaddprocedure.clicked.connect(self.show_ProcedureDialog)
+        self._btnAbout.triggered.connect(self.show_AboutDialog)
 
+        # tab changes
         self._current_tab = 'main'
         self._tabview.currentChanged.connect(self.tab_changed)
 
@@ -55,6 +71,8 @@ class MainWindow(QMainWindow):
 
         ## remove the temporary rate label
         self.ui.label_2.deleteLater()
+
+        # local copies of data
         self._overview_devices = {}
         self._plotted_channels = {}
 
@@ -78,6 +96,7 @@ class MainWindow(QMainWindow):
         # create group box for this device, add it to overview frame
         devbox = QGroupBox(device.label)
         devbox.setMaximumWidth(250)
+        devbox.setLayoutDirection(Qt.LeftToRight)
         # add groupbox to first row, nth column
         self._overview_layout.addWidget(devbox) #, Qt.AlignLeft)
         self._overview_layout.setAlignment(devbox, Qt.AlignLeft)
@@ -197,6 +216,18 @@ class MainWindow(QMainWindow):
                                                                'btnPin': None,
                                                                'color' : 'r'}
             self.update_plots()
+
+    def show_ProcedureDialog(self, devdict, proc=None):
+        devdict = {}
+        for devname, data in self._overview_devices.items():
+            devdict[devname] = data['device']
+
+        _proceduredialog = ProcedureDialog(devdict, proc)
+        accept, procs = _proceduredialog.exec_()
+
+    def show_AboutDialog(self):
+        _aboutdialog = AboutDialog()
+        _aboutdialog.exec_()
 
     def update_plots(self):
         self.clearLayout(self._gbox)

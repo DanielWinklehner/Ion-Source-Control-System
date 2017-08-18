@@ -1,90 +1,65 @@
-from __future__ import division
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-import time
+# Thomas Wester <twester@mit.edu>
+# Procedure class
+
+import operator
 
 class Procedure:
+    def __init__(self, name, rules, actions, critical=False, email='', sms=''):
 
-	def __init__(self, name, conditions, actions, priority=1):
-		"""Summary
-		
-		Args:
-		    name (TYPE): Description
-		    conditions (list[ tuple(function, channel) ]): A list of tuples of two elements- (lambda) function and channel. e.g., [ (lambda x: return not x, interlock_box.micro_switch#1) ]
-		    actions (list[ tuple(function, kwargs) ]): A list of tuples of two elements- function and kwargs. For function, the string "emergency_stop" is also accepted. If you use "emergency_stop" as the "function", use None or an empty dict for kwargs. 
-		    priority (int, optional): lower number = higher priority. A priority of -1 gets its own thread.
-		
-		Deleted Parameters:
-		    channel_to_act_on (TYPE): Description
-		    action (TYPE): Description
-		"""
+        # Rules dict:
+        # key = arduino_id, device, channel, comparison, value
 
-		print actions[0][1]
+        # Action dict:
+        # key = arduino_id, device, channel, value to set
 
-		self._name = name
-		self._conditions = conditions
-		self._actions = actions
-		self._priority = priority
+        self._name = name
+        self._rules = {}
+        self._actions = {}
+        self._actions = actions
+        self._critical = critical
+        
+        # these will trigger sending email/sms if not blank
+        self._email = email
+        self._sms = sms
 
+        @property
+        def name(self):
+            return self._name
 
-	def get_name(self):
-		return self._name
+        @property
+        def condition(self):
+            return self._condition
 
-	def get_conditions(self):
-		return self._conditions
+        @property
+        def actions(self):
+            return self._actions
 
-	def get_actions(self):
-		return self._actions
+        @property
+        def critical(self):
+            return self._critical
 
-	def get_priority(self):
-		return self._priority
+        def should_perform_procedure(self):
+            condition_satisfied = True
+            for arduino_id, rule in self._rules.items():
+                if not rule['comparison'](channel.value, rule['value']):
+                    condition_satisfied = False
+                    break
 
-	def should_perform_procedure(self):
-		condition_satisfied = 0
+            return condition_satisfied
+        
+        def do_actions(self):
+            for arduino_id, action in self._actions.items():
+                print('setting value of {}.{} to {}'.format(action['device'].name,
+                                                            action['channel'].name,
+                                                            action['value'].name))
 
-		condition_count = 0
-		for condition_func, channel in self._conditions:
-			
-			# This is so that, in cases where conditions = [] is an empty list, we don't act on it. 
-			if condition_count == 0:
-				condition_satisfied += 1
+            if self._email != '':
+                # send email
+                pass
 
-			if condition_func( channel.get_value() ):
-				condition_satisfied *= 1
-
-			condition_count += 1
-
-
-		return bool(condition_satisfied)
-
-
-	def act(self):
-		
-		"""Summary
-		
-		Returns:
-		    TYPE: Returns either 	STOP => Perform an emergency stop.
-									True => The procedure was successful. 
-									False => The procedure was not successful.
-		"""
-
-		print "acting the procedure"
-
-		if self.should_perform_procedure():
-			for action, kwargs in self._actions:
-				if action == "emergency_stop":
-					return "STOP"
-				else:
-					action_function = action
-
-					def dummy_func(**kwargs):
-						print kwargs.keys()
-						# func(kwargs)
-
-
-					# print kwargs
-					# dummy_func(**kwargs)
-
-					action_function(**kwargs)
-
-
-		return False
+            if self._sms != '':
+                # send text
+                pass

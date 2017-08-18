@@ -304,9 +304,9 @@ class ControlSystem():
 
     @pyqtSlot(tuple)
     def on_pin_plot_button(self, data):
-       self._pinned_plot_name = (data[0].name, data[1].name)
        # click button emits (device, channel)
-       self._window._gbpinnedplot.setTitle(data[0].label + ' : ' + data[1].label)
+       self._pinned_plot_name = (data[0].name, data[1].name)
+       self._window._gbpinnedplot.setTitle(data[0].label + ' / ' + data[1].label)
 
     @pyqtSlot()
     def on_quit_button(self):
@@ -391,6 +391,11 @@ class ControlSystem():
         """ Gets updated channel info from GUI, creates a message to send to server """
         # TODO: Need an elegant way to do this...
         channel = emitter_info['channel']
+        values = None
+        if channel.data_type == float:
+            values = emitter_info['value'] * channel.scaling
+        else:
+            values = emitter_info['value']
         if self.debug:
             print('Set value callback was called with widget {}, '
                   'type {}, and scaled value {}.'.format(channel, channel.data_type, channel.value))
@@ -400,7 +405,7 @@ class ControlSystem():
                  'locked_by_server': False,
                  'channel_ids': [channel.name],
                  'precisions': [None],
-                 'values': [emitter_info['value']],
+                 'values': [values],
                  'data_types': [str(channel.data_type)]}
 
         # Create a new thread that sends the set command to the server and
