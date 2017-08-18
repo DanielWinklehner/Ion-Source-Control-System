@@ -13,7 +13,7 @@ from lib.Channel import Channel
 
 class PlotChooseDialog(QDialog):
 
-    def __init__(self, device_list, plotted_channels):
+    def __init__(self, device_dict, plotted_channels):
         super().__init__()
         self.ui = Ui_PlotChooseDialog()
         self.ui.setupUi(self)
@@ -21,14 +21,14 @@ class PlotChooseDialog(QDialog):
 
         self._accepted = False # true if user presses 'done' instead of closing out the window
         
-        self._device_list = device_list
+        self._device_dict = device_dict
         self._plotted_channels = plotted_channels
         self.update_devices()
         self._selected_channels = []
 
         ## TODO HACK: Gets a list of device objects, assumes these are sorted to get return value
         self._devices = []
-        for devname, dev in self._device_list.items():
+        for devname, dev in self._device_dict.items():
             chlist = []
             for chname, ch in reversed(sorted(dev.channels.items(), key=lambda x: x[1].display_order)):
                 if ch.data_type == float:
@@ -37,7 +37,7 @@ class PlotChooseDialog(QDialog):
             
     def update_devices(self):
         """ Populates tree view with devices/channels """
-        for devname, dev in self._device_list.items():
+        for devname, dev in self._device_dict.items():
             devrow = QTreeWidgetItem(self.ui.treeDevices)
             devrow.setFlags(devrow.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
             devrow.setText(0, dev.label)

@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QLineEdit, QFrame, QLabel, \
                             QRadioButton, QScrollArea, QPushButton
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 
 import pyqtgraph as pg
 from pyqtgraph.widgets.RemoteGraphicsView import RemoteGraphicsView
@@ -34,6 +34,7 @@ class MainWindow(QMainWindow):
         self._overview = self.ui.fmOverview
         self._plots = self.ui.fmPlots
         self._pinnedplot = self.ui.pltPinned
+        self._gbpinnedplot = self.ui.gbPinnedPlot
         self._tabview = self.ui.tabMain
         self._btnquit = self.ui.btnQuit
         self._btnplotchoose = self.ui.btnSetupDevicePlots
@@ -44,8 +45,10 @@ class MainWindow(QMainWindow):
         self._tabview.currentChanged.connect(self.tab_changed)
 
         ## set up containers
-        self._hbox = QHBoxLayout()
-        self._overview.setLayout(self._hbox) 
+        self._overview_layout = QHBoxLayout()
+        self._overview.setLayout(self._overview_layout) 
+        self._overview.setLayoutDirection(Qt.RightToLeft)
+        self._overview_layout.addStretch()
 
         self._gbox = QGridLayout()
         self._plots.setLayout(self._gbox)
@@ -69,16 +72,21 @@ class MainWindow(QMainWindow):
             self._current_tab = 'plots'
 
     def add_device_to_overview(self, device):
-        if device in self._overview_devices:
+        if device in [x['device'] for _a, x in self._overview_devices.items()]:
             return
 
         # create group box for this device, add it to overview frame
-        self._overview_devices[device.name] = device
-
         devbox = QGroupBox(device.label)
-        self._hbox.addWidget(devbox)
+        devbox.setMaximumWidth(250)
+        # add groupbox to first row, nth column
+        self._overview_layout.addWidget(devbox) #, Qt.AlignLeft)
+        self._overview_layout.setAlignment(devbox, Qt.AlignLeft)
         vbox = QVBoxLayout()
         devbox.setLayout(vbox)
+
+        self._overview_devices[device.arduino_id] = {'device': device, 
+                                                     'groupbox': devbox,
+                                                     'layout': vbox}
 
         # dict of signals needed from these controls by the main control system
         emitters = {} 
@@ -147,6 +155,21 @@ class MainWindow(QMainWindow):
                 vbox.addWidget(gb)
 
         return readboxes, emitters
+    
+    def on_device_error(self, arduino_id, err_msg = 'Error'):
+        """ Disable group box if server gives an error """ 
+        if self._overview_devices[arduino_id]['groupbox'].isEnabled():
+            self._overview_devices[arduino_id]['groupbox'].setEnabled(False)
+            lblError = QLabel()
+            lblError.setText('<font color="red">' + err_msg.split('ERROR: ')[1] + "</font>")
+            self._overview_devices[arduino_id]['layout'].insertWidget(0, lblError)
+
+    def on_device_working(self, arduino_id):
+        """ Re-enable group box if server does not give an error """ 
+        if not self._overview_devices[arduino_id]['groupbox'].isEnabled():
+            self._overview_devices[arduino_id]['groupbox'].setEnabled(True)
+            lbl = self._overview_devices[arduino_id]['layout'].takeAt(0)
+            lbl.widget().deleteLater()
 
     def set_polling_rate(self, text):
         self.ui.lblServPoll.setText('Server polling rate: ' + text + ' Hz')
@@ -156,7 +179,11 @@ class MainWindow(QMainWindow):
         self._messagelog.append(time.strftime('[%Y-%m-%d %H:%M:%S] ', time.localtime()) + text)
 
     def show_PlotChooseDialog(self):
-        _plotchoosedialog = PlotChooseDialog(self._overview_devices, self._plotted_channels)
+        devdict = {}
+        for devname, data in self._overview_devices.items():
+            devdict[devname] = data['device']
+
+        _plotchoosedialog = PlotChooseDialog(devdict, self._plotted_channels)
         # dialog returns a tuple (bool, list), bool is true if closed via 'Done' button
         # list contains channel objects to be plotted
         accept, chs = _plotchoosedialog.exec_()
@@ -242,7 +269,7 @@ class QPushButtonX(QPushButton):
 
     @pyqtSlot()
     def on_clicked(self):
-        data = (self.ch.parent_device.name, self.ch.name)
+        data = (self.ch.parent_device, self.ch)
         self.clickedX.emit(data)
 
 class QRadioButtonX(QRadioButton):

@@ -1,4 +1,5 @@
 # import time
+import sys
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Process, Pipe
 from multiprocessing.managers import BaseManager
@@ -349,9 +350,10 @@ def query_device():
 
     message_data = []
     my_driver_names = {}
+    disconnected_devices = []
+    disconnected_indices = []
 
-    for device_data in data:
-
+    for i, device_data in enumerate(data):
         device_data['set'] = False
 
         old_device_id = device_data['device_id']
@@ -367,16 +369,28 @@ def query_device():
         device_data['device_id'] = old_device_id
 
         if len(device_messages) == 0:
-
+            """ GUI sent no message """
             raise Exception("Error building message for: ", str(device_data))
 
         else:
 
-            message_data.append((_ports_by_ids[port_id]["port"], device_messages))
-
-        my_driver_names[port_id] = device_data["device_driver"]
+            if port_id in _ports_by_ids.keys():
+                message_data.append((_ports_by_ids[port_id]["port"], device_messages))
+                my_driver_names[port_id] = device_data["device_driver"]
+            else:
+                """ Device not found on the server """
+                print("could not find {}".format(port_id))
+                disconnected_devices.append(device_data)
+                disconnected_indices.append(i)
+    
+    # Remove the missing devices from the gui data objecit
+    for i in reversed(disconnected_indices):
+        data.pop(i)
 
     devices_responses = dict()
+
+    for device in disconnected_devices:
+        devices_responses[device['device_id']] = "ERROR: Device not found on server"
 
     try:
 
@@ -387,11 +401,7 @@ def query_device():
         # Use existing global pool of 10 worker threads
         all_responses = _threadpool.map(mp_worker, message_data)
 
-        if len(all_responses) == 0 or len(all_responses[0]) == 0:
-
-            return None
-
-        else:
+        if len(all_responses) > 0 and len(all_responses[0]) > 0:
             # responses and device_data are in the same order.
             for response, device_data in zip(all_responses, data):
 

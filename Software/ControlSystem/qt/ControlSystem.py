@@ -13,7 +13,7 @@ import threading
 from multiprocessing import Process, Pipe
 from collections import deque
 
-from PyQt5.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication
 
 import pyqtgraph as pg
@@ -64,7 +64,8 @@ def query_server(com_pipe, server_url, debug=False):
                     print("Response code was not 200: {}".format(_response_code))
                 continue
 
-            if _response.strip() != r"{}" and "error" not in str(_response).lower():
+            #if _response.strip() != r"{}" and "error" not in str(_response).lower():
+            if _response.strip() != r"{}":
                 parsed_response = json.loads(_response)
                 parsed_response["timestamp"] = timestamp
                 pipe_message = ["query_response", parsed_response]
@@ -137,11 +138,16 @@ class ControlSystem():
         self._window = MainWindow.MainWindow()
         self._window._btnquit.triggered.connect(self.on_quit_button)
         self._window.sig_plots_changed.connect(self.on_plots_changed)
+
+        ## Plotting timer
+        self._plot_timer = QTimer()
+        self._plot_timer.timeout.connect(self.update_value_displays)
+        self._plot_timer.start(20)
                 
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-        
+         
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -241,7 +247,8 @@ class ControlSystem():
         for device_name, device in devices.items():
             arduino_id = device.arduino_id
             if not device.locked and arduino_id in parsed_response.keys():
-                if "ERR" not in parsed_response[arduino_id]:
+                if "ERROR" not in parsed_response[arduino_id]:
+                    self._window.on_device_working(arduino_id)
                     for channel_name, value in parsed_response[arduino_id].items():
                         channel = device.get_channel_by_name(channel_name)
                         # Scale value back to channel
@@ -253,12 +260,8 @@ class ControlSystem():
                         except Exception as e:
                             if self.debug:
                                 print("Exception '{}' caught while trying to log data.".format(e))
-                        try:
-                            pass
-                            #print(parsed_response)
-                        except Exception as e:
-                            if self.debug:
-                                print("Exception '{}' caught while updating GUI.".format(e))
+                else:
+                    self._window.on_device_error(arduino_id, err_msg=parsed_response[arduino_id])
 
     def update_stored_values(self, device_name, channel_name, timestamp):
         # update the stored data dictionaries
@@ -266,6 +269,12 @@ class ControlSystem():
         self._y_values[(device_name, channel_name)].append(
             self._devices[device_name].channels[channel_name].value)
         
+    @pyqtSlot()
+    def update_value_displays(self):
+        """ This function is called by a QTimer to ensure the GUI has a chance
+            to get input. Handles updating of 'read' values on the overview
+            page, and redraws plots if applicable """
+
         # update read values on overview page
         if self._window.current_tab == 'main':
             for arduino_id, boxinfo in self._read_textboxes.items():
@@ -295,7 +304,9 @@ class ControlSystem():
 
     @pyqtSlot(tuple)
     def on_pin_plot_button(self, data):
-       self._pinned_plot_name = data 
+       self._pinned_plot_name = (data[0].name, data[1].name)
+       # click button emits (device, channel)
+       self._window._gbpinnedplot.setTitle(data[0].label + ' : ' + data[1].label)
 
     @pyqtSlot()
     def on_quit_button(self):
