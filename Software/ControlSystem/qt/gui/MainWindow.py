@@ -21,10 +21,14 @@ from .dialogs.ProcedureDialog import ProcedureDialog
 from .dialogs.AboutDialog import AboutDialog 
 from lib.Device import Device
 from lib.Channel import Channel
+from lib.Procedure import Procedure
 
 class MainWindow(QMainWindow):
     # signal to be emitted to main program when plots change on plotting page
     sig_plots_changed = pyqtSignal(dict)
+
+    #signal to be emitted when procedures change
+    sig_procedures_changed = pyqtSignal(dict)
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -75,6 +79,9 @@ class MainWindow(QMainWindow):
         # local copies of data
         self._overview_devices = {}
         self._plotted_channels = {}
+        self._procedures = {}
+
+        self._prevproc = None
 
     @property
     def current_tab(self):
@@ -94,11 +101,14 @@ class MainWindow(QMainWindow):
             return
 
         # create group box for this device, add it to overview frame
+        vwrap = QVBoxLayout()
         devbox = QGroupBox(device.label)
         devbox.setMaximumWidth(250)
         devbox.setLayoutDirection(Qt.LeftToRight)
         # add groupbox to first row, nth column
-        self._overview_layout.addWidget(devbox) #, Qt.AlignLeft)
+        vwrap.addWidget(devbox)
+        vwrap.addStretch()
+        self._overview_layout.addLayout(vwrap) #, Qt.AlignLeft)
         self._overview_layout.setAlignment(devbox, Qt.AlignLeft)
         vbox = QVBoxLayout()
         devbox.setLayout(vbox)
@@ -208,22 +218,74 @@ class MainWindow(QMainWindow):
         accept, chs = _plotchoosedialog.exec_()
         if accept:
             # update plotted channels
-            self._plotted_channels = {}
+            newplottedchs = {}
             for ch in chs:
                 dev = ch.parent_device
-                self._plotted_channels[(dev.name, ch.name)] = {'channel': ch, 
-                                                               'curve': None,
-                                                               'btnPin': None,
-                                                               'color' : 'r'}
-            self.update_plots()
+                newplottedchs[(dev.name, ch.name)] = {'channel': ch, 
+                                                      'curve': None,
+                                                      'btnPin': None,
+                                                      'color' : 'r'}
+            # TODO need to figure out a nice way to not redraw plots 
+            # if they haven't changed.
+            if newplottedchs != self._plotted_channels:
+                self._plotted_channels = newplottedchs
+                self.update_plots()
 
-    def show_ProcedureDialog(self, devdict, proc=None):
+    @pyqtSlot()
+    @pyqtSlot(Procedure)
+    # can be called with no arguments, or a Procedure argument
+    # a bool argument gets passed from the button click without the decorators
+    def show_ProcedureDialog(self, proc=None):
         devdict = {}
         for devname, data in self._overview_devices.items():
             devdict[devname] = data['device']
 
-        _proceduredialog = ProcedureDialog(devdict, proc)
-        accept, procs = _proceduredialog.exec_()
+        _proceduredialog = ProcedureDialog(devdict, self._procedures.keys(), proc)
+        accept, rproc = _proceduredialog.exec_()
+
+        if rproc is not None:
+            if proc is not None:
+                # if we edited a procedure delete the old version before adding the new one
+                del self._procedures[proc.name]
+            self._procedures[rproc.name] = rproc 
+            self.update_procedures()
+
+    def update_procedures(self):
+        # Add procedures to the procedures tab
+        self.clearLayout(self.ui.vboxProcedures)
+        for name, proc in self._procedures.items():
+            title = ''
+            if proc.critical:
+                title = '(Critical) {}'.format(proc.name)
+            else:
+                title = proc.name
+            gb = QGroupBox(title)
+            vbox = QVBoxLayout()
+            gb.setLayout(vbox)
+            lblProc = QLabel(proc.info)
+            vbox.addWidget(lblProc)
+            hbox = QHBoxLayout()
+            hbox.addStretch()
+            btnEdit = QPushButtonProc('Edit', proc)
+            btnDelete = QPushButtonProc('Delete', proc)
+            btnEdit.clickedX.connect(self.edit_procedure)
+            btnDelete.clickedX.connect(self.delete_procedure)
+            hbox.addWidget(btnEdit)
+            hbox.addWidget(btnDelete)
+            vbox.addLayout(hbox)
+
+            self.ui.vboxProcedures.addWidget(gb)
+
+        self.ui.vboxProcedures.addStretch()
+
+    @pyqtSlot(Procedure)
+    def delete_procedure(self, proc):
+        del self._procedures[proc.name]
+        self.update_procedures()
+
+    @pyqtSlot(Procedure)
+    def edit_procedure(self, proc):
+        self.show_ProcedureDialog(proc = proc)
 
     def show_AboutDialog(self):
         _aboutdialog = AboutDialog()
@@ -239,13 +301,8 @@ class MainWindow(QMainWindow):
             vbox = QVBoxLayout()
             chbox.setLayout(vbox)
             self._gbox.addWidget(chbox, row, col)
-            #view = RemoteGraphicsView() #PlotWidget()
             pltBox = pg.PlotWidget()
             vbox.addWidget(pltBox)
-            #vbox.addWidget(view)
-            #pltBox = view.pg.PlotItem()
-            #pltBox._setProxyOptions(deferGetattr=True) ## speeds up access
-            #view.setCentralItem(pltBox)
             self._plotted_channels[(ch.parent_device.name, ch.name)]['curve'] = pltBox.plot(pen=data['color'])
             pinbutton = QPushButtonX('Pin', ch)
             self._plotted_channels[(ch.parent_device.name, ch.name)]['btnPin'] = pinbutton.clickedX
@@ -301,6 +358,21 @@ class QPushButtonX(QPushButton):
     @pyqtSlot()
     def on_clicked(self):
         data = (self.ch.parent_device, self.ch)
+        self.clickedX.emit(data)
+
+class QPushButtonProc(QPushButton):
+    """ QPushButton which returns a dict of channel info on clicked """
+    clickedX = pyqtSignal(Procedure)
+
+    def __init__(self, text, proc):
+        super().__init__()
+        self._proc = proc
+        self.setText(text)
+        self.clicked.connect(self.on_clicked)
+
+    @pyqtSlot()
+    def on_clicked(self):
+        data = self._proc
         self.clickedX.emit(data)
 
 class QRadioButtonX(QRadioButton):

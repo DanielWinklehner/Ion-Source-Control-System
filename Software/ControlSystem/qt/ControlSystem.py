@@ -138,6 +138,7 @@ class ControlSystem():
         self._window = MainWindow.MainWindow()
         self._window._btnquit.triggered.connect(self.on_quit_button)
         self._window.sig_plots_changed.connect(self.on_plots_changed)
+        self._window.sig_procedures_changed.connect(self.on_procedures_changed)
 
         ## Plotting timer
         self._plot_timer = QTimer()
@@ -301,6 +302,10 @@ class ControlSystem():
         self._plotted_channels = plottedchs
         for names, data in self._plotted_channels.items():
             data['btnPin'].connect(self.on_pin_plot_button)
+
+    @pyqtSlot(dict)
+    def on_procedures_changed(self, procs):
+        self._procedures = procs
 
     @pyqtSlot(tuple)
     def on_pin_plot_button(self, data):

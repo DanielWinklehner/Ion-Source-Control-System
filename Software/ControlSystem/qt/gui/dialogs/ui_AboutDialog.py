@@ -16,9 +16,7 @@ class Ui_AboutDialog(object):
         font.setFamily("Ubuntu")
         font.setPointSize(12)
         AboutDialog.setFont(font)
-        self.gridLayout = QtWidgets.QGridLayout(AboutDialog)
-        self.gridLayout.setObjectName("gridLayout")
-        self.verticalLayout = QtWidgets.QVBoxLayout()
+        self.verticalLayout = QtWidgets.QVBoxLayout(AboutDialog)
         self.verticalLayout.setObjectName("verticalLayout")
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
@@ -58,7 +56,6 @@ class Ui_AboutDialog(object):
         spacerItem6 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem6)
         self.verticalLayout.addLayout(self.horizontalLayout)
-        self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
 
         self.retranslateUi(AboutDialog)
         QtCore.QMetaObject.connectSlotsByName(AboutDialog)
