@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1163</width>
-    <height>641</height>
+    <height>629</height>
    </rect>
   </property>
   <property name="font">
@@ -285,8 +285,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>577</width>
-              <height>503</height>
+              <width>544</width>
+              <height>491</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_6">
@@ -336,10 +336,77 @@
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <widget class="QTreeView" name="treeDevices">
-            <property name="frameShape">
-             <enum>QFrame::Box</enum>
-            </property>
+           <widget class="QWidget" name="">
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QTreeWidget" name="treeDevices">
+               <property name="sortingEnabled">
+                <bool>true</bool>
+               </property>
+               <property name="columnCount">
+                <number>2</number>
+               </property>
+               <attribute name="headerDefaultSectionSize">
+                <number>300</number>
+               </attribute>
+               <column>
+                <property name="text">
+                 <string notr="true">1</string>
+                </property>
+               </column>
+               <column>
+                <property name="text">
+                 <string notr="true">2</string>
+                </property>
+               </column>
+              </widget>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout">
+               <property name="sizeConstraint">
+                <enum>QLayout::SetDefaultConstraint</enum>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QPushButton" name="btnExpand">
+                 <property name="text">
+                  <string>Expand All</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="btnCollapse">
+                 <property name="text">
+                  <string>Collapse All</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
            </widget>
            <widget class="QFrame" name="frame">
             <property name="frameShape">
@@ -438,8 +505,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>577</width>
-              <height>461</height>
+              <width>544</width>
+              <height>449</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_4">
@@ -518,8 +585,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>577</width>
-              <height>461</height>
+              <width>544</width>
+              <height>449</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_10">

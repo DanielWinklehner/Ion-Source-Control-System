@@ -21,7 +21,8 @@ import numpy as np
 
 from gui import MainWindow
 from lib.Device import Device
-from lib.Channel import Channel #, Procedure
+from lib.Channel import Channel
+from lib.Procedure import Procedure
 
 def query_server(com_pipe, server_url, debug=False):
     """ Sends info from RasPi server to listener pipe """
@@ -296,7 +297,6 @@ class ControlSystem():
                                           self._y_values[names], 
                                           clear=True, _callsync='off')
 
-
     @pyqtSlot(dict)
     def on_plots_changed(self, plottedchs):
         self._plotted_channels = plottedchs
@@ -322,7 +322,6 @@ class ControlSystem():
         for thread, listener in self._threads:
             thread.quit()
 
-        # close window
         self._window.close()
 
     def device_or_channel_changed(self):
@@ -352,7 +351,6 @@ class ControlSystem():
     def add_device(self, device):
         """ Adds a device to the control system """
 
-        # Set the control system as the device parent
         device.parent = self
 
         # Add device to the list of devices in the control system
@@ -362,7 +360,6 @@ class ControlSystem():
         # connect form controls to main control system set value function
         readboxes, emitters = self._window.add_device_to_overview(device)
         for chname, emitter in emitters.items():
-            #print(emitter)
             emitter.connect(self.set_value_callback)
 
         #for chname, readboxes in readboxes.items():

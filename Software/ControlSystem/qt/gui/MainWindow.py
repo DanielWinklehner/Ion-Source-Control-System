@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QLineEdit, QFrame, QLabel, \
                             QRadioButton, QScrollArea, QPushButton, \
-                            QWidget, QSizePolicy, QAction
+                            QWidget, QSizePolicy, QAction, QTreeWidgetItem
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 
 import pyqtgraph as pg
@@ -72,6 +72,10 @@ class MainWindow(QMainWindow):
 
         self._gbox = QGridLayout()
         self._plots.setLayout(self._gbox)
+
+        self.ui.treeDevices.setHeaderLabels(['Label', 'Type'])
+        self.ui.btnExpand.clicked.connect(self.ui.treeDevices.expandAll)
+        self.ui.btnCollapse.clicked.connect(self.ui.treeDevices.collapseAll)
 
         ## remove the temporary rate label
         self.ui.label_2.deleteLater()
@@ -183,6 +187,8 @@ class MainWindow(QMainWindow):
 
                 vbox.addWidget(gb)
 
+        self.update_device_settings()
+
         return readboxes, emitters
     
     def on_device_error(self, arduino_id, err_msg = 'Error'):
@@ -234,7 +240,7 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     @pyqtSlot(Procedure)
     # can be called with no arguments, or a Procedure argument
-    # a bool argument gets passed from the button click without the decorators
+    # a bool argument gets passed from the button click without the decorators, which we don't want
     def show_ProcedureDialog(self, proc=None):
         devdict = {}
         for devname, data in self._overview_devices.items():
@@ -312,6 +318,27 @@ class MainWindow(QMainWindow):
                 row = 0
                 col += 1
         self.sig_plots_changed.emit(self._plotted_channels)
+
+    def update_device_settings(self):
+        self.ui.treeDevices.clear()
+        for ard_id, data in self._overview_devices.items():
+            dev = data['device']
+            devrow = QTreeWidgetItem(self.ui.treeDevices)
+            devrow.setText(0, dev.label)
+            devrow.setText(1, 'Device')
+            for chname, ch in reversed(sorted(dev.channels.items(), key=lambda x: x[1].display_order)):
+                chrow = QTreeWidgetItem(devrow)
+                chrow.setText(0, ch.label)
+                chrow.setText(1, 'Channel')
+            newchrow = QTreeWidgetItem(devrow)
+            newchrow.setText(0, '[Add a new Channel]')
+            #newchrow.setText(1, 'Channel')
+
+        newdevrow = QTreeWidgetItem(self.ui.treeDevices)
+        newdevrow.setText(0, '[Add a new Device]')
+        #newdevrow.setText(1, 'Device')
+
+        self.ui.treeDevices.expandAll()
 
     def clearLayout(self ,layout):
         """ Removes all items from a QLayout """
