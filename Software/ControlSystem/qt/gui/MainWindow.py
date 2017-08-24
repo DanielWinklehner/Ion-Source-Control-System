@@ -9,7 +9,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QLineEdit, QFrame, QLabel, \
                             QRadioButton, QScrollArea, QPushButton, \
-                            QWidget, QSizePolicy, QAction, QTreeWidgetItem
+                            QWidget, QSizePolicy, QAction, QTreeWidgetItem, \
+                            QComboBox
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 
 import pyqtgraph as pg
@@ -73,15 +74,20 @@ class MainWindow(QMainWindow):
         self._gbox = QGridLayout()
         self._plots.setLayout(self._gbox)
 
+        # settings page
         self.ui.treeDevices.setHeaderLabels(['Label', 'Type'])
+        self.ui.treeDevices.currentItemChanged.connect(self.on_settings_row_changed)
         self.ui.btnExpand.clicked.connect(self.ui.treeDevices.expandAll)
         self.ui.btnCollapse.clicked.connect(self.ui.treeDevices.collapseAll)
+        self._devvbox = QVBoxLayout()
+        self.ui.fmDeviceSettings.setLayout(self._devvbox)
 
         ## remove the temporary rate label
         self.ui.label_2.deleteLater()
 
         # local copies of data
         self._overview_devices = {}
+        self._settings_devices = {}
         self._plotted_channels = {}
         self._procedures = {}
 
@@ -321,15 +327,18 @@ class MainWindow(QMainWindow):
 
     def update_device_settings(self):
         self.ui.treeDevices.clear()
+        self._settings_devices = {}
         for ard_id, data in self._overview_devices.items():
             dev = data['device']
             devrow = QTreeWidgetItem(self.ui.treeDevices)
             devrow.setText(0, dev.label)
             devrow.setText(1, 'Device')
+            self._settings_devices[dev.arduino_id] = {'device': dev, 'row': devrow, 'channels': {}}
             for chname, ch in reversed(sorted(dev.channels.items(), key=lambda x: x[1].display_order)):
                 chrow = QTreeWidgetItem(devrow)
                 chrow.setText(0, ch.label)
                 chrow.setText(1, 'Channel')
+                self._settings_devices[dev.arduino_id]['channels'][ch.name] = {'channel': ch, 'row': chrow}
             newchrow = QTreeWidgetItem(devrow)
             newchrow.setText(0, '[Add a new Channel]')
             #newchrow.setText(1, 'Channel')
@@ -340,12 +349,126 @@ class MainWindow(QMainWindow):
 
         self.ui.treeDevices.expandAll()
 
+    def on_settings_row_changed(self, item):
+        self.clearLayout(self._devvbox)
+        # recover the associated object to change
+        obj = None
+        for ard_id, data in self._settings_devices.items():
+            if data['row'] == item:
+                obj = data['device']
+                break
+            else:
+                for name, chdata in data['channels'].items():
+                    if chdata['row'] == item:
+                        obj = chdata['channel']
+                        break
+
+        if type(obj) == Device:
+            # set up device entry form
+            lblTitle = QLabel(obj.label)
+            self._devvbox.addWidget(lblTitle)
+            gbox = QGridLayout()
+            
+            lblArdId = QLabel('Arduino ID')
+            lblLabel = QLabel('Label')
+            lblName = QLabel('Name')
+            
+            txtArdId = QLineEdit(obj.arduino_id)
+            txtLabel = QLineEdit(obj.label)
+            txtName = QLineEdit(obj.name)
+
+            gbox.addWidget(lblName, 0, 0)
+            gbox.addWidget(txtName, 0, 1)
+            gbox.addWidget(lblArdId, 1, 0)
+            gbox.addWidget(txtArdId, 1, 1)
+            gbox.addWidget(lblLabel, 2, 0)
+            gbox.addWidget(txtLabel, 2, 1)
+
+            self._devvbox.addLayout(gbox)
+
+            hbox = QHBoxLayout()
+            hbox.addStretch()
+            btnSave = QPushButton('Save Changes')
+            hbox.addWidget(btnSave)
+            hbox.addStretch()
+
+            self._devvbox.addLayout(hbox)
+
+            self._devvbox.addStretch()
+        elif type(obj) == Channel:
+            # set up device entry form
+            lblTitle = QLabel('{}/{}'.format(obj.parent_device.label, obj.label))
+            self._devvbox.addWidget(lblTitle)
+            gbox = QGridLayout()
+            
+            lblMode = QLabel('Read/Write')
+            lblType = QLabel('Data Type')
+            lblUnit = QLabel('Unit')
+            lblMinVal = QLabel('Lower Limit')
+            lblMaxVal = QLabel('Upper Limit')
+            lblLabel = QLabel('Label')
+            lblName = QLabel('Name')
+            
+            cbType = QComboBox()
+            cbType.addItems(['Int', 'Bool', 'Float'])
+            cbMode = QComboBox()
+            cbMode.addItems(['Read', 'Write', 'Both'])
+
+            if obj.mode == 'read':
+                cbMode.setCurrentIndex(0)
+            elif obj.mode == 'write':
+                cbMode.setCurrentIndex(1)
+            else:
+                cbMode.setCurrentIndex(2)
+
+            if obj.data_type == int:
+                cbType.setCurrentIndex(0)
+            elif obj.data_type == bool:
+                cbType.setCurrentIndex(1)
+            else:
+                cbType.setCurrentIndex(2)
+
+            txtUnit = QLineEdit(obj.unit)
+            txtMinVal = QLineEdit(str(obj.lower_limit))
+            txtMaxVal = QLineEdit(str(obj.upper_limit))
+            txtLabel = QLineEdit(obj.label)
+            txtName = QLineEdit(obj.name)
+
+            gbox.addWidget(lblName, 0, 0)
+            gbox.addWidget(txtName, 0, 1)
+            gbox.addWidget(lblLabel, 1, 0)
+            gbox.addWidget(txtLabel, 1, 1)
+            gbox.addWidget(lblUnit, 2, 0)
+            gbox.addWidget(txtUnit, 2, 1)
+            gbox.addWidget(lblMinVal, 3, 0)
+            gbox.addWidget(txtMinVal, 3, 1)
+            gbox.addWidget(lblMaxVal, 4, 0)
+            gbox.addWidget(txtMaxVal, 4, 1)
+            gbox.addWidget(lblType, 5, 0)
+            gbox.addWidget(cbType, 5, 1)
+            gbox.addWidget(lblMode, 6, 0)
+            gbox.addWidget(cbMode, 6, 1)
+
+            self._devvbox.addLayout(gbox)
+
+            hbox = QHBoxLayout()
+            hbox.addStretch()
+            btnSave = QPushButton('Save Changes')
+            hbox.addWidget(btnSave)
+            hbox.addStretch()
+
+            self._devvbox.addLayout(hbox)
+
+            self._devvbox.addStretch()
+
     def clearLayout(self ,layout):
-        """ Removes all items from a QLayout """
+        """ Recursively removes all items from a QLayout """
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
+            if child.layout():
+                self.clearLayout(child)
 
 # ----- Custom Controls ----- #
 class QLineEditX(QLineEdit):

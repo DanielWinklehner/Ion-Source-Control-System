@@ -285,7 +285,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>544</width>
+              <width>546</width>
               <height>491</height>
              </rect>
             </property>
@@ -336,7 +336,7 @@
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
-           <widget class="QWidget" name="">
+           <widget class="QWidget" name="layoutWidget">
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <property name="leftMargin">
               <number>0</number>
@@ -408,7 +408,13 @@
              </item>
             </layout>
            </widget>
-           <widget class="QFrame" name="frame">
+           <widget class="QFrame" name="fmDeviceSettings">
+            <property name="minimumSize">
+             <size>
+              <width>250</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
             </property>
@@ -505,7 +511,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>544</width>
+              <width>546</width>
               <height>449</height>
              </rect>
             </property>
@@ -585,7 +591,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>544</width>
+              <width>546</width>
               <height>449</height>
              </rect>
             </property>
