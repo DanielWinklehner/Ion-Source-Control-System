@@ -107,25 +107,49 @@ class Channel:
     def label(self):
         return self._label
 
+    @label.setter
+    def label(self, value):
+        self._label = value
+
     @property
     def name(self):
         return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
 
     @property
     def upper_limit(self):
         return self._upper_limit
 
+    @upper_limit.setter
+    def upper_limit(self, value):
+        self._upper_limit = value
+
     @property
     def lower_limit(self):
         return self._lower_limit
+
+    @lower_limit.setter
+    def lower_limit(self, value):
+        self._lower_limit = value
 
     @property
     def data_type(self):
         return self._data_type
 
+    @data_type.setter
+    def data_type(self, value):
+        self._data_type = value
+
     @property
     def unit(self):
         return self._unit
+
+    @unit.setter
+    def unit(self, value):
+        self._unit = value
 
     @property
     def scaling(self):
@@ -137,6 +161,10 @@ class Channel:
     @property
     def mode(self):
         return self._mode
+
+    @mode.setter
+    def mode(self, value):
+        self._mode = value
 
     def get_json(self):
 

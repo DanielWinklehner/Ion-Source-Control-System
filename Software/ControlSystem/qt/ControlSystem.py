@@ -149,7 +149,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-        """         
+                 
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -170,7 +170,7 @@ class ControlSystem():
                     device_info['identifyer'], device_id, device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        """
+        
         ## Set up communication pipes.
         self._keep_communicating = False 
         self._polling_rate = 15.0
@@ -431,7 +431,7 @@ class ControlSystem():
                 print("Exception '{}' caught while communicating with RasPi server.".format(e))
 
     def run(self):
-        #self.setup_communication_threads()
+        self.setup_communication_threads()
         self._window.show()
 
 

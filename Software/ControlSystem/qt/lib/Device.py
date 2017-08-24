@@ -28,6 +28,10 @@ class Device:
     def arduino_id(self):
         return self._arduino_id
 
+    @arduino_id.setter
+    def arduino_id(self, value):
+        self._arduino_id = value
+
     @property
     def driver(self):
         return self._driver
@@ -64,9 +68,17 @@ class Device:
     def name(self):
         return self._name
 
+    @name.setter
+    def name(self, value):
+        self._name = value
+
     @property
     def label(self):
         return self._label
+    
+    @label.setter
+    def label(self, value):
+        self._label = value
 
     @property
     def channels(self):

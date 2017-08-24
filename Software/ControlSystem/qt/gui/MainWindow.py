@@ -5,6 +5,7 @@
 # Handles dialog and widget creation
 
 import time
+import copy
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
                             QGroupBox, QLineEdit, QFrame, QLabel, \
@@ -12,6 +13,7 @@ from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
                             QWidget, QSizePolicy, QAction, QTreeWidgetItem, \
                             QComboBox
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QFont
 
 import pyqtgraph as pg
 from pyqtgraph.widgets.RemoteGraphicsView import RemoteGraphicsView
@@ -30,6 +32,9 @@ class MainWindow(QMainWindow):
 
     #signal to be emitted when procedures change
     sig_procedures_changed = pyqtSignal(dict)
+
+    # signal to be emitted when device/channel is changed
+    sig_device_channel_changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -81,9 +86,6 @@ class MainWindow(QMainWindow):
         self.ui.btnCollapse.clicked.connect(self.ui.treeDevices.collapseAll)
         self._devvbox = QVBoxLayout()
         self.ui.fmDeviceSettings.setLayout(self._devvbox)
-
-        ## remove the temporary rate label
-        self.ui.label_2.deleteLater()
 
         # local copies of data
         self._overview_devices = {}
@@ -350,22 +352,43 @@ class MainWindow(QMainWindow):
         self.ui.treeDevices.expandAll()
 
     def on_settings_row_changed(self, item):
+        if item == None:
+            #self.ui.treeDevices.setCurrentItem(self.ui.treeDevices.topLevelItem(0))
+            return
+
         self.clearLayout(self._devvbox)
         # recover the associated object to change
         obj = None
+        parent = None
         for ard_id, data in self._settings_devices.items():
             if data['row'] == item:
                 obj = data['device']
                 break
             else:
                 for name, chdata in data['channels'].items():
+                    if item.parent() == data['row']:
+                        parent = data['device']
                     if chdata['row'] == item:
                         obj = chdata['channel']
                         break
 
-        if type(obj) == Device:
+        if type(obj) == Device or 'device' in item.text(0).lower():
             # set up device entry form
-            lblTitle = QLabel(obj.label)
+            label = ''
+            name = ''
+            ardid = ''
+
+            if obj is not None:
+                label = obj.label
+                name = obj.name
+                ardid = obj.arduino_id
+            else:
+                label = 'New Device'
+
+            lblTitle = QLabel(label)
+            font = QFont()
+            font.setPointSize(14)
+            lblTitle.setFont(font)
             self._devvbox.addWidget(lblTitle)
             gbox = QGridLayout()
             
@@ -373,9 +396,9 @@ class MainWindow(QMainWindow):
             lblLabel = QLabel('Label')
             lblName = QLabel('Name')
             
-            txtArdId = QLineEdit(obj.arduino_id)
-            txtLabel = QLineEdit(obj.label)
-            txtName = QLineEdit(obj.name)
+            txtArdId = QLineEdit(ardid)
+            txtLabel = QLineEdit(label)
+            txtName = QLineEdit(name)
 
             gbox.addWidget(lblName, 0, 0)
             gbox.addWidget(txtName, 0, 1)
@@ -388,16 +411,23 @@ class MainWindow(QMainWindow):
 
             hbox = QHBoxLayout()
             hbox.addStretch()
-            btnSave = QPushButton('Save Changes')
+            btnSave = QPushButtonObj('Save Changes', obj)
+            btnSave.clickedX.connect(self.on_save_changes_click)
             hbox.addWidget(btnSave)
             hbox.addStretch()
 
             self._devvbox.addLayout(hbox)
 
             self._devvbox.addStretch()
-        elif type(obj) == Channel:
-            # set up device entry form
-            lblTitle = QLabel('{}/{}'.format(obj.parent_device.label, obj.label))
+        elif type(obj) == Channel or 'channel' in item.text(0).lower():
+            # set up channel entry form
+            title = '{}/{}'.format(parent.label,'New Channel')
+            if obj is not None:
+                title = '{}/{}'.format(obj.parent_device.label, obj.label)
+            lblTitle = QLabel(title)
+            font = QFont()
+            font.setPointSize(14)
+            lblTitle.setFont(font)
             self._devvbox.addWidget(lblTitle)
             gbox = QGridLayout()
             
@@ -414,25 +444,37 @@ class MainWindow(QMainWindow):
             cbMode = QComboBox()
             cbMode.addItems(['Read', 'Write', 'Both'])
 
-            if obj.mode == 'read':
-                cbMode.setCurrentIndex(0)
-            elif obj.mode == 'write':
-                cbMode.setCurrentIndex(1)
-            else:
-                cbMode.setCurrentIndex(2)
+            unit = ''
+            minval = ''
+            maxval = ''
+            label = ''
+            name = ''
+            if obj is not None:
+                if obj.mode == 'read':
+                    cbMode.setCurrentIndex(0)
+                elif obj.mode == 'write':
+                    cbMode.setCurrentIndex(1)
+                else:
+                    cbMode.setCurrentIndex(2)
 
-            if obj.data_type == int:
-                cbType.setCurrentIndex(0)
-            elif obj.data_type == bool:
-                cbType.setCurrentIndex(1)
-            else:
-                cbType.setCurrentIndex(2)
+                if obj.data_type == int:
+                    cbType.setCurrentIndex(0)
+                elif obj.data_type == bool:
+                    cbType.setCurrentIndex(1)
+                else:
+                    cbType.setCurrentIndex(2)
 
-            txtUnit = QLineEdit(obj.unit)
-            txtMinVal = QLineEdit(str(obj.lower_limit))
-            txtMaxVal = QLineEdit(str(obj.upper_limit))
-            txtLabel = QLineEdit(obj.label)
-            txtName = QLineEdit(obj.name)
+                unit = obj.unit
+                minval = str(obj.lower_limit)
+                maxval = str(obj.upper_limit)
+                label = obj.label
+                name = obj.name
+
+            txtUnit = QLineEdit(unit)
+            txtMinVal = QLineEdit(minval)
+            txtMaxVal = QLineEdit(maxval)
+            txtLabel = QLineEdit(label)
+            txtName = QLineEdit(name)
 
             gbox.addWidget(lblName, 0, 0)
             gbox.addWidget(txtName, 0, 1)
@@ -453,13 +495,76 @@ class MainWindow(QMainWindow):
 
             hbox = QHBoxLayout()
             hbox.addStretch()
-            btnSave = QPushButton('Save Changes')
+            if obj is not None:
+                btnSave = QPushButtonObj('Save Changes', obj)
+            else:
+                btnSave = QPushButtonObj('Save Changes', 'channel')
+            btnSave.clickedX.connect(self.on_save_changes_click)
             hbox.addWidget(btnSave)
             hbox.addStretch()
 
             self._devvbox.addLayout(hbox)
 
             self._devvbox.addStretch()
+
+    def on_save_changes_click(self, obj):
+        
+        #newobj = copy.deepcopy(obj)
+        if type(obj) == Device or (type(obj) == str and 'device' in obj.lower()):
+            # TODO This is hard-coded to avoid passing references to all the controls around
+            # probably not the best solution.
+
+            # locate device in self._overview_devices
+            dev = self._overview_devices[obj.arduino_id]['device']
+
+            # make changes
+            # order is: name, arduino_id, label -> (1, 3, 5)
+            gbox = self._devvbox.itemAt(1).layout()
+            dev.name = gbox.itemAt(1).widget().text()
+            dev.label = gbox.itemAt(5).widget().text()
+            
+            new_ard_id = gbox.itemAt(3).widget().text()
+            if new_ard_id != dev.arduino_id:
+                self._overview_devices[new_ard_id] = self._overview_devices.pop(dev.arduino_id)
+                dev.arduino_id = new_ard_id
+
+        elif type(obj) == Channel or (type(obj) == str and 'channel' in obj.lower()):
+            ch = obj.parent_device.channels[obj.name]
+            gbox = self._devvbox.itemAt(1).layout()
+
+            # order is: name, label, unit, lower, upper, type, mode
+            ch.name = gbox.itemAt(1).widget().text()
+            ch.label = gbox.itemAt(3).widget().text()
+            ch.unit = gbox.itemAt(5).widget().text()
+
+            cbType = gbox.itemAt(11).widget()
+            # int, bool, float
+            if cbType.currentIndex() == 0:
+                ch.data_type = int
+            elif cbType.currentIndex() == 1:
+                ch.data_type = bool
+            else:
+                ch.data_type = float
+
+            try:
+                ch.lower_limit = ch.data_type(gbox.itemAt(7).widget().text())
+                ch.upper_limit = ch.data_type(gbox.itemAt(9).widget().text())
+            except:
+                print('bad values for limits')
+                return
+
+            cbMode = gbox.itemAt(13).widget()
+            # read, write, both
+            if cbMode.currentIndex() == 0:
+                ch.mode = 'read'
+            elif cbMode.currentIndex() == 1:
+                ch.mode = 'write'
+            else:
+                ch.mode = 'both'
+
+        self.clearLayout(self._devvbox)
+        self.update_device_settings()
+        self.sig_device_channel_changed.emit()
 
     def clearLayout(self ,layout):
         """ Recursively removes all items from a QLayout """
@@ -509,6 +614,20 @@ class QPushButtonX(QPushButton):
     def on_clicked(self):
         data = (self.ch.parent_device, self.ch)
         self.clickedX.emit(data)
+
+class QPushButtonObj(QPushButton):
+    """ QPushButton which returns an object on click """
+    clickedX = pyqtSignal(object)
+
+    def __init__(self, text, obj):
+        super().__init__()
+        self.obj = obj
+        self.setText(text)
+        self.clicked.connect(self.on_clicked)
+
+    @pyqtSlot()
+    def on_clicked(self):
+        self.clickedX.emit(self.obj)
 
 class QPushButtonProc(QPushButton):
     """ QPushButton which returns a dict of channel info on clicked """
