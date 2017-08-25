@@ -31,16 +31,18 @@ class Channel(QWidget):
         self._locked = False
 
         self._pages = ['overview']
-        self._overview_widget = None
+        
+        gb = QGroupBox(self._label)
+        self._overview_widget = gb
+
         self._write_widget = None
         self._read_widget = None
         self.update()
 
     def update(self):
-        gb = QGroupBox(self._label)
         if self._data_type == bool:
             hbox_radio = QHBoxLayout()
-            gb.setLayout(hbox_radio)
+            self._overview_widget.setLayout(hbox_radio)
             rbOn = QRadioButton('On')
             self._write_widget = rbOn
             rbOn.toggled.connect(self.set_value_callback)
@@ -51,7 +53,7 @@ class Channel(QWidget):
 
         else:
             vbox_readwrite = QVBoxLayout()
-            gb.setLayout(vbox_readwrite)
+            self._overview_widget.setLayout(vbox_readwrite)
             if self._mode in ['write', 'both']:
                 # add first row
                 hbox_write = QHBoxLayout()
@@ -76,7 +78,6 @@ class Channel(QWidget):
                 hbox_read.addWidget(lblUnit)
                 vbox_readwrite.addLayout(hbox_read)
 
-        self._overview_widget = gb
 
     @pyqtSlot()
     def set_value_callback(self):
@@ -156,6 +157,8 @@ class Channel(QWidget):
     @label.setter
     def label(self, value):
         self._label = value
+        if self._overview_widget.title() != self._label:
+            self._overview_widget.setTitle(self._label)
 
     @property
     def name(self):

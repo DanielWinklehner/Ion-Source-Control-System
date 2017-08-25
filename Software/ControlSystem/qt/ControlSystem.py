@@ -248,6 +248,7 @@ class ControlSystem():
     def on_listener_device_info(self, data: dict):
         """ update device info in GUI """
         parsed_response = data
+        #print(parsed_response)
         timestamp = parsed_response["timestamp"]
 
         for device_name, device in self._devices.items():
@@ -312,7 +313,36 @@ class ControlSystem():
         if vals == {}:
             if type(obj) == Device:
                 self.add_device(obj)
-                self.update_gui_devices()
+            elif type(obj) == Channel:
+                obj.parent_device.add_channel(obj)
+        else:
+            for attr, val in vals.items():
+                # attempt to set attributes. Need to make sure we only have
+                # unique channel/device names, and arduino ids
+                if type(obj) == Channel and attr == 'name' and val != obj.name:
+                    if val in obj.parent_device.channels.keys():
+                        print('channel name already exists')
+                        continue
+                    # channel name is unique, so we update it in the device object
+                    obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name) 
+                elif type(obj) == Device and attr == 'name' and val != obj.name:
+                    if val in self._devices.keys():
+                        print('device name already exists')
+                        continue
+                    # device name is unique, so update it in the Control System
+                    self._devices[val] = self._devices.pop(obj.name)
+                    for channel_name, channel in self._devices[val].channels.items():
+                        self._x_values[(val, channel_name)] = self._x_values.pop((obj.name, channel_name))
+                        self._y_values[(val, channel_name)] = self._y_values.pop((obj.name, channel_name))
+                elif type(obj) == Device and attr == 'arduino_id' and val != obj.arduino_id:
+                    if val in [x.arduino_id for name, x in self._devices.items()]:
+                        print('arduino id already assigned')
+                        continue
+                # use setattr to set obj properties by 'attr' which is a string
+                setattr(obj, attr, val)
+
+        self.device_or_channel_changed()
+        self.update_gui_devices()
 
     @pyqtSlot(dict)
     def on_plots_changed(self, plottedchs):

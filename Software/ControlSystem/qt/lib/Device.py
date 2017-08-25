@@ -1,5 +1,4 @@
 import json
-import inspect
 import time
 
 from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLabel
@@ -7,7 +6,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLabel
 from .Channel import Channel
 
 class Device:
-    def __init__(self, name, arduino_id, label="", channels=None, driver='arduino'):
+    def __init__(self, name, arduino_id, label="", channels=None, driver='Arduino'):
 
         self._name = name
         self._label = label
@@ -46,10 +45,6 @@ class Device:
             gb.setDisabled(True)
         """
 
-        print('update called')
-        (frame, filename, line_number,
-                     function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
-        print(frame, filename, line_number, function_name, lines, index)
         chlist = [ch for chname, ch in reversed(sorted(self._channels.items(), 
                                                         key=lambda x: x[1].display_order))]
         for idx, ch in enumerate(chlist):
@@ -117,6 +112,8 @@ class Device:
     @label.setter
     def label(self, value):
         self._label = value
+        if self._gblayout.parent().title() != self._label:
+            self._gblayout.parent().setTitle(self._label)
 
 
     @property

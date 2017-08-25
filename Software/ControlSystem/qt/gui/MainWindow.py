@@ -122,10 +122,6 @@ class MainWindow(QMainWindow):
         self._messagelog.append(time.strftime('[%Y-%m-%d %H:%M:%S] ', time.localtime()) + text)
 
     def show_PlotChooseDialog(self):
-        devdict = {}
-        for devname, data in self._overview_devices.items():
-            devdict[devname] = data['device']
-
         _plotchoosedialog = PlotChooseDialog(devdict, self._plotted_channels)
         # dialog returns a tuple (bool, list), bool is true if closed via 'Done' button
         # list contains channel objects to be plotted
