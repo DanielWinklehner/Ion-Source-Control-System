@@ -1,29 +1,17 @@
 import json
 from scipy.interpolate import interp1d
 
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel, \
+                            QRadioButton, QLineEdit
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
-class Channel:
+class Channel(QWidget):
+    _set_signal = pyqtSignal(object, object)
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
                  scaling=1.0, scaling_read=None, mode="both", display_order=0, displayformat="f",
                  precision=2, default_value=0.0):
 
-        """Summary
-        
-        Args:
-            name (TYPE): Description
-            label (TYPE): Description
-            upper_limit (TYPE): Description
-            lower_limit (TYPE): Description
-            data_type (TYPE): Description
-            unit (str, optional): Description
-            scaling (float, optional): Scaling is applied when the channel communicates with the server.
-            mode (str, optional): Description
-            display_order (int, optional): Description
-            # displayformat (str, optional): Description
-        
-        Deleted Parameters:
-            message_header (TYPE): Description
-        """
+        super().__init__()
         self._name = name
         self._label = label
         self._upper_limit = upper_limit
@@ -35,16 +23,74 @@ class Channel:
         self._value = default_value
         self._mode = mode
         self._display_order = display_order
-        self._arduino_id = None
+        #self._arduino_id = None
         self._parent_device = None  # The device this channel belongs to will be set during add_channel().
         self._displayformat = ".{}{}".format(precision, displayformat)
         self._precision = precision
 
-        self._timeout = 1.0  # (s)
         self._locked = False
 
-    def __repr__(self):
-        return 'Channel {}, label={}, data_type={}, unit={}, mode={}'.format(self._name, self._label, self._data_type, self._unit, self._mode)
+        self._pages = ['overview']
+        self._overview_widget = None
+        self._write_widget = None
+        self._read_widget = None
+        self.update()
+
+    def update(self):
+        gb = QGroupBox(self._label)
+        if self._data_type == bool:
+            hbox_radio = QHBoxLayout()
+            gb.setLayout(hbox_radio)
+            rbOn = QRadioButton('On')
+            self._write_widget = rbOn
+            rbOn.toggled.connect(self.set_value_callback)
+            rbOff = QRadioButton('Off')
+            rbOff.toggle()
+            hbox_radio.addWidget(rbOn)
+            hbox_radio.addWidget(rbOff)
+
+        else:
+            vbox_readwrite = QVBoxLayout()
+            gb.setLayout(vbox_readwrite)
+            if self._mode in ['write', 'both']:
+                # add first row
+                hbox_write = QHBoxLayout()
+                lblUnit = QLabel(self._unit)
+                txtWrite = QLineEdit(str(self._lower_limit))
+                txtWrite.returnPressed.connect(self.set_value_callback)
+                self._write_widget = txtWrite
+
+                hbox_write.addWidget(txtWrite)
+                hbox_write.addWidget(lblUnit)
+                vbox_readwrite.addLayout(hbox_write)
+
+            if self._mode in ['read', 'both']:
+                # add readonly second row
+                hbox_read = QHBoxLayout()
+                lblUnit = QLabel(self._unit)
+                txtRead = QLineEdit()
+                txtRead.setDisabled(True)
+                self._read_widget = txtRead
+
+                hbox_read.addWidget(txtRead)
+                hbox_read.addWidget(lblUnit)
+                vbox_readwrite.addLayout(hbox_read)
+
+        self._overview_widget = gb
+
+    @pyqtSlot()
+    def set_value_callback(self):
+        if self._data_type != bool:
+            try:
+                val = self._data_type(self._write_widget.text())
+            except:
+                print('bad value entered')
+                return
+
+            self._write_widget.setText(str(self._data_type(val)))
+            self._set_signal.emit(self, val)
+        else:
+            self._set_signal.emit(self, self._write_widget.isChecked())
 
     @property
     def precision(self):
@@ -141,6 +187,8 @@ class Channel:
 
     @data_type.setter
     def data_type(self, value):
+        if value not in [bool, int, float]:
+            return
         self._data_type = value
 
     @property
@@ -149,7 +197,9 @@ class Channel:
 
     @unit.setter
     def unit(self, value):
-        self._unit = value
+        if len(str(value)) > 5:
+            return
+        self._unit = str(value)
 
     @property
     def scaling(self):
@@ -164,6 +214,8 @@ class Channel:
 
     @mode.setter
     def mode(self, value):
+        if value not in ['read', 'write', 'both']:
+            return
         self._mode = value
 
     def get_json(self):

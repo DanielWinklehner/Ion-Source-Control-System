@@ -130,35 +130,9 @@
             </item>
            </layout>
           </widget>
-          <widget class="QFrame" name="fmPollRates">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>100</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+          <widget class="QGroupBox" name="groupBox">
+           <property name="title">
+            <string>Information</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
@@ -171,22 +145,9 @@
                </font>
               </property>
               <property name="text">
-               <string>Server Polling Rate: 15 Hz</string>
+               <string>Information</string>
               </property>
              </widget>
-            </item>
-            <item>
-             <spacer name="verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
             </item>
            </layout>
           </widget>
@@ -216,7 +177,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>1</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="overview">
         <attribute name="title">
@@ -256,7 +217,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>841</width>
+              <width>848</width>
               <height>675</height>
              </rect>
             </property>
@@ -488,7 +449,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>841</width>
+              <width>848</width>
               <height>633</height>
              </rect>
             </property>
@@ -568,7 +529,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>841</width>
+              <width>848</width>
               <height>633</height>
              </rect>
             </property>

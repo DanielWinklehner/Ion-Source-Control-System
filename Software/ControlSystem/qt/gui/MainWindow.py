@@ -34,7 +34,7 @@ class MainWindow(QMainWindow):
     sig_procedures_changed = pyqtSignal(dict)
 
     # signal to be emitted when device/channel is changed
-    sig_device_channel_changed = pyqtSignal()
+    sig_device_channel_changed = pyqtSignal(object, dict)
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -73,8 +73,8 @@ class MainWindow(QMainWindow):
         ## set up containers
         self._overview_layout = QHBoxLayout()
         self._overview.setLayout(self._overview_layout) 
-        self._overview.setLayoutDirection(Qt.RightToLeft)
         self._overview_layout.addStretch()
+        #self._overview.setLayoutDirection(Qt.RightToLeft)
 
         self._gbox = QGridLayout()
         self._plots.setLayout(self._gbox)
@@ -108,112 +108,12 @@ class MainWindow(QMainWindow):
         elif tabName == 'Plotting':
             self._current_tab = 'plots'
 
-    def add_device_to_overview(self, device):
-        if device in [x['device'] for _a, x in self._overview_devices.items()]:
-            return
-
-        # create group box for this device, add it to overview frame
-        vwrap = QVBoxLayout()
-        devbox = QGroupBox(device.label)
-        devbox.setMaximumWidth(250)
-        devbox.setLayoutDirection(Qt.LeftToRight)
-        # add groupbox to first row, nth column
-        vwrap.addWidget(devbox)
-        vwrap.addStretch()
-        self._overview_layout.addLayout(vwrap) #, Qt.AlignLeft)
-        self._overview_layout.setAlignment(devbox, Qt.AlignLeft)
-        vbox = QVBoxLayout()
-        devbox.setLayout(vbox)
-
-        self._overview_devices[device.arduino_id] = {'device': device, 
-                                                     'groupbox': devbox,
-                                                     'layout': vbox}
-
-        # dict of signals needed from these controls by the main control system
-        emitters = {} 
-
-        # dict of QTextEdits to have their text set by the main control system (read values)
-        readboxes = {}
-
-        for chname, ch in reversed(sorted(device.channels.items(), key=lambda x: x[1].display_order)):
-            # create frame for channel info
-            gb = QGroupBox(ch.label)
-
-            if ch.data_type == float:
-                # set the group box to vertical layout
-                vl = QVBoxLayout()
-                gb.setLayout(vl)
-
-                if ch.mode == 'write' or ch.mode == 'both':
-                    # create a row with a text box, add it to group box
-                    row = QFrame()
-                    hl = QHBoxLayout()
-                    hl.setContentsMargins(0, 0, 0, 0)
-                    row.setLayout(hl)
-
-                    txt = QLineEditX(ch)
-                    lbl = QLabel(ch.unit)
-                    hl.addWidget(txt)
-                    hl.addWidget(lbl)
-                    vl.addWidget(row)
-
-                    # save the emitter from text box enter press
-                    emitters[chname] = txt.returnPressedX
-                
-                if ch.mode == 'read' or ch.mode == 'both':
-                    # add read channel
-                    row2 = QFrame()
-                    hl2 = QHBoxLayout()
-                    hl2.setContentsMargins(0, 0, 0 ,0)
-                    row2.setLayout(hl2)
-
-                    txt2 = QLineEdit()
-                    txt2.setDisabled(True)
-                    lbl2 = QLabel(ch.unit)
-                    hl2.addWidget(txt2)
-                    hl2.addWidget(lbl2)
-                    vl.addWidget(row2)
-
-                    readboxes[chname] = { 'textbox' : txt2, 'channel' : ch }
-
-                vbox.addWidget(gb)
-
-            elif ch.data_type == bool:
-                # need two radio buttons
-                hbox = QHBoxLayout()
-                gb.setLayout(hbox)
-                rbOn = QRadioButtonX('On', ch)
-                rbOff = QRadioButtonX('Off', ch)
-
-                if ch.value == 0:
-                    rbOff.toggle()
-                elif ch.value == 1:
-                    rbOn.toggle()
-                emitters[chname] = rbOn.toggledX
-                hbox.addWidget(rbOn)
-                hbox.addWidget(rbOff)
-
-                vbox.addWidget(gb)
-
-        self.update_device_settings()
-
-        return readboxes, emitters
-    
-    def on_device_error(self, arduino_id, err_msg = 'Error'):
-        """ Disable group box if server gives an error """ 
-        if self._overview_devices[arduino_id]['groupbox'].isEnabled():
-            self._overview_devices[arduino_id]['groupbox'].setEnabled(False)
-            lblError = QLabel()
-            lblError.setText('<font color="red">' + err_msg.split('ERROR: ')[1] + "</font>")
-            self._overview_devices[arduino_id]['layout'].insertWidget(0, lblError)
-
-    def on_device_working(self, arduino_id):
-        """ Re-enable group box if server does not give an error """ 
-        if not self._overview_devices[arduino_id]['groupbox'].isEnabled():
-            self._overview_devices[arduino_id]['groupbox'].setEnabled(True)
-            lbl = self._overview_devices[arduino_id]['layout'].takeAt(0)
-            lbl.widget().deleteLater()
-
+    def update_overview(self, devices):
+        #self.clearLayout(self._overview_layout)
+        for device_name, device in devices.items():
+            if 'overview' in device.pages and device._overview_widget.parent() == None:
+                self._overview_layout.insertLayout(0, device._overview_widget)
+        
     def set_polling_rate(self, text):
         self.ui.lblServPoll.setText('Server polling rate: ' + text + ' Hz')
 
@@ -327,20 +227,18 @@ class MainWindow(QMainWindow):
                 col += 1
         self.sig_plots_changed.emit(self._plotted_channels)
 
-    def update_device_settings(self):
+    def update_device_settings(self, devices):
         self.ui.treeDevices.clear()
-        self._settings_devices = {}
-        for ard_id, data in self._overview_devices.items():
-            dev = data['device']
+        for device_name, device in devices.items():
             devrow = QTreeWidgetItem(self.ui.treeDevices)
-            devrow.setText(0, dev.label)
+            devrow.setText(0, device.label)
             devrow.setText(1, 'Device')
-            self._settings_devices[dev.arduino_id] = {'device': dev, 'row': devrow, 'channels': {}}
-            for chname, ch in reversed(sorted(dev.channels.items(), key=lambda x: x[1].display_order)):
+            self._settings_devices[device.name] = {'device': device, 'row': devrow, 'channels': {}}
+            for chname, ch in reversed(sorted(device.channels.items(), key=lambda x: x[1].display_order)):
                 chrow = QTreeWidgetItem(devrow)
                 chrow.setText(0, ch.label)
                 chrow.setText(1, 'Channel')
-                self._settings_devices[dev.arduino_id]['channels'][ch.name] = {'channel': ch, 'row': chrow}
+                self._settings_devices[device.name]['channels'][ch.name] = {'channel': ch, 'row': chrow}
             newchrow = QTreeWidgetItem(devrow)
             newchrow.setText(0, '[Add a new Channel]')
             #newchrow.setText(1, 'Channel')
@@ -353,26 +251,36 @@ class MainWindow(QMainWindow):
 
     def on_settings_row_changed(self, item):
         if item == None:
-            #self.ui.treeDevices.setCurrentItem(self.ui.treeDevices.topLevelItem(0))
+            # if nothing is selected, do nothing
             return
 
         self.clearLayout(self._devvbox)
         # recover the associated object to change
         obj = None
         parent = None
-        for ard_id, data in self._settings_devices.items():
-            if data['row'] == item:
-                obj = data['device']
+
+        for device_name, device_data in self._settings_devices.items():
+            # are we editing an existing device/channel?
+            if device_data['row'] == item:
+                obj = device_data['device']
                 break
             else:
-                for name, chdata in data['channels'].items():
-                    if item.parent() == data['row']:
-                        parent = data['device']
-                    if chdata['row'] == item:
-                        obj = chdata['channel']
+                for channel_name, channel_data in device_data['channels'].items():
+                    if channel_data['row'] == item:
+                        obj = channel_data['channel']
+                        parent = device_data['device']
                         break
 
-        if type(obj) == Device or 'device' in item.text(0).lower():
+        if (obj, parent) == (None, None):
+            # adding a new device or channel
+            if 'channel' in item.text(0).lower():
+                for device_name, device_data in self._settings_devices.items():
+                    if device_data['row'] == item.parent():
+                            parent = device_data['device']
+                            break
+
+
+        if parent is None: #type(obj) == Device or 'device' in item.text(0).lower():
             # set up device entry form
             label = ''
             name = ''
@@ -411,7 +319,10 @@ class MainWindow(QMainWindow):
 
             hbox = QHBoxLayout()
             hbox.addStretch()
-            btnSave = QPushButtonObj('Save Changes', obj)
+            if obj is not None:
+                btnSave = QPushButtonObj('Save Changes', obj)
+            else:
+                btnSave = QPushButtonObj('Save Changes', 'device')
             btnSave.clickedX.connect(self.on_save_changes_click)
             hbox.addWidget(btnSave)
             hbox.addStretch()
@@ -419,7 +330,7 @@ class MainWindow(QMainWindow):
             self._devvbox.addLayout(hbox)
 
             self._devvbox.addStretch()
-        elif type(obj) == Channel or 'channel' in item.text(0).lower():
+        else: # type(obj) == Channel or 'channel' in item.text(0).lower():
             # set up channel entry form
             title = '{}/{}'.format(parent.label,'New Channel')
             if obj is not None:
@@ -498,7 +409,7 @@ class MainWindow(QMainWindow):
             if obj is not None:
                 btnSave = QPushButtonObj('Save Changes', obj)
             else:
-                btnSave = QPushButtonObj('Save Changes', 'channel')
+                btnSave = QPushButtonObj('Save Changes', ('channel', parent))
             btnSave.clickedX.connect(self.on_save_changes_click)
             hbox.addWidget(btnSave)
             hbox.addStretch()
@@ -506,65 +417,86 @@ class MainWindow(QMainWindow):
             self._devvbox.addLayout(hbox)
 
             self._devvbox.addStretch()
+            if obj is not None:
+                hbox = QHBoxLayout()
+                hbox.addStretch()
+                btnDel = QPushButtonObj('Delete Channel', obj)
+                hbox.addWidget(btnDel)
+                hbox.addStretch()
+                self._devvbox.addLayout(hbox)
 
     def on_save_changes_click(self, obj):
-        
-        #newobj = copy.deepcopy(obj)
+        newobj = None
+        newvals = {}
         if type(obj) == Device or (type(obj) == str and 'device' in obj.lower()):
             # TODO This is hard-coded to avoid passing references to all the controls around
             # probably not the best solution.
 
-            # locate device in self._overview_devices
-            dev = self._overview_devices[obj.arduino_id]['device']
-
-            # make changes
             # order is: name, arduino_id, label -> (1, 3, 5)
             gbox = self._devvbox.itemAt(1).layout()
-            dev.name = gbox.itemAt(1).widget().text()
-            dev.label = gbox.itemAt(5).widget().text()
+            name = gbox.itemAt(1).widget().text()
+            label = gbox.itemAt(5).widget().text()
             
-            new_ard_id = gbox.itemAt(3).widget().text()
-            if new_ard_id != dev.arduino_id:
-                self._overview_devices[new_ard_id] = self._overview_devices.pop(dev.arduino_id)
-                dev.arduino_id = new_ard_id
+            ard_id = gbox.itemAt(3).widget().text()
 
-        elif type(obj) == Channel or (type(obj) == str and 'channel' in obj.lower()):
-            ch = obj.parent_device.channels[obj.name]
+            if type(obj) == Device:
+                # we are modifying a device
+                newobj = obj
+                newvals = {'name': name, 'label': label, 'arduino_id': ard_id}
+            else:
+                # we are adding a new device. No need to set newvals
+                newobj = Device(name, ard_id, label) 
+
+        else:
             gbox = self._devvbox.itemAt(1).layout()
 
             # order is: name, label, unit, lower, upper, type, mode
-            ch.name = gbox.itemAt(1).widget().text()
-            ch.label = gbox.itemAt(3).widget().text()
-            ch.unit = gbox.itemAt(5).widget().text()
+            name = gbox.itemAt(1).widget().text()
+            label = gbox.itemAt(3).widget().text()
+            unit = gbox.itemAt(5).widget().text()
 
             cbType = gbox.itemAt(11).widget()
             # int, bool, float
+            data_type = None
             if cbType.currentIndex() == 0:
-                ch.data_type = int
+                data_type = int
             elif cbType.currentIndex() == 1:
-                ch.data_type = bool
+                data_type = bool
             else:
-                ch.data_type = float
+                data_type = float
 
             try:
-                ch.lower_limit = ch.data_type(gbox.itemAt(7).widget().text())
-                ch.upper_limit = ch.data_type(gbox.itemAt(9).widget().text())
+                lower_limit = data_type(gbox.itemAt(7).widget().text())
+                upper_limit = data_type(gbox.itemAt(9).widget().text())
             except:
                 print('bad values for limits')
                 return
 
             cbMode = gbox.itemAt(13).widget()
             # read, write, both
+            mode = ''
             if cbMode.currentIndex() == 0:
-                ch.mode = 'read'
+                mode = 'read'
             elif cbMode.currentIndex() == 1:
-                ch.mode = 'write'
+                mode = 'write'
             else:
-                ch.mode = 'both'
+                mode = 'both'
+
+            if type(obj) == Channel:
+                # modifying a channel. Set newobj and newvals
+                newobj = obj
+                newvals = {'label': label, 'unit': unit, 'data_type': data_type,
+                           'lower_limit': lower_limit, 'upper_limit': upper_limit,
+                           'mode': mode, 'name': name}
+            else:
+                # adding a new channel, only set newobj
+                parent = obj[1]
+                newobj = Channel(name, label, upper_limit, lower_limit, data_type, unit)
+                newobj.parent_device = parent
 
         self.clearLayout(self._devvbox)
-        self.update_device_settings()
-        self.sig_device_channel_changed.emit()
+        #self.clearLayout(self._overview_layout)
+        self.sig_device_channel_changed.emit(newobj, newvals)
 
     def clearLayout(self ,layout):
         """ Recursively removes all items from a QLayout """

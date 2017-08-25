@@ -138,6 +138,7 @@ class ControlSystem():
         ## Set up Qt UI and connect UI signals
         self._window = MainWindow.MainWindow()
         self._window._btnquit.triggered.connect(self.on_quit_button)
+        self._window.sig_device_channel_changed.connect(self.on_device_channel_changed)
         self._window.sig_plots_changed.connect(self.on_plots_changed)
         self._window.sig_procedures_changed.connect(self.on_procedures_changed)
 
@@ -198,6 +199,10 @@ class ControlSystem():
 
         self._window.status_message('Initialization complete.')
 
+    def update_gui_devices(self):
+        self._window.update_overview(self._devices)
+        self._window.update_device_settings(self._devices)
+
     def setup_communication_threads(self):
         """ For each device, we create a thread to communicate with the corresponding Arduino. """
         self._threads = []
@@ -244,13 +249,13 @@ class ControlSystem():
         """ update device info in GUI """
         parsed_response = data
         timestamp = parsed_response["timestamp"]
-        devices = self._devices
 
-        for device_name, device in devices.items():
+        for device_name, device in self._devices.items():
             arduino_id = device.arduino_id
             if not device.locked and arduino_id in parsed_response.keys():
                 if "ERROR" not in parsed_response[arduino_id]:
-                    self._window.on_device_working(arduino_id)
+                    if device.error_message != '':
+                        device.error_message = ''
                     for channel_name, value in parsed_response[arduino_id].items():
                         channel = device.get_channel_by_name(channel_name)
                         # Scale value back to channel
@@ -263,7 +268,8 @@ class ControlSystem():
                             if self.debug:
                                 print("Exception '{}' caught while trying to log data.".format(e))
                 else:
-                    self._window.on_device_error(arduino_id, err_msg=parsed_response[arduino_id])
+                    if device.error_message != parsed_response[arduino_id]:
+                        device.error_message = parsed_response[arduino_id]
 
     def update_stored_values(self, device_name, channel_name, timestamp):
         # update the stored data dictionaries
@@ -279,10 +285,14 @@ class ControlSystem():
 
         # update read values on overview page
         if self._window.current_tab == 'main':
-            for arduino_id, boxinfo in self._read_textboxes.items():
-                for chname, data in boxinfo.items():
-                    data['textbox'].setText(str(data['channel'].value))
+            for name, device in self._devices.items():
+                for chname, channel in device.channels.items():
+                    if channel._read_widget is None:
+                        continue
 
+                    if channel.data_type in [int, float]:
+                        channel._read_widget.setText(str(channel.value))
+               
         # update the pinned plot
         if self._pinned_plot_name != ():
             self._pinned_curve.setData(self._x_values[self._pinned_plot_name],
@@ -296,6 +306,13 @@ class ControlSystem():
                     data['curve'].setData(self._x_values[names], 
                                           self._y_values[names], 
                                           clear=True, _callsync='off')
+
+    @pyqtSlot(object, dict)
+    def on_device_channel_changed(self, obj, vals):
+        if vals == {}:
+            if type(obj) == Device:
+                self.add_device(obj)
+                self.update_gui_devices()
 
     @pyqtSlot(dict)
     def on_plots_changed(self, plottedchs):
@@ -350,20 +367,14 @@ class ControlSystem():
 
     def add_device(self, device):
         """ Adds a device to the control system """
-
         device.parent = self
 
         # Add device to the list of devices in the control system
         self._devices[device.name] = device
         self._device_name_arduino_id_map[device.arduino_id] = device.name
 
-        # connect form controls to main control system set value function
-        readboxes, emitters = self._window.add_device_to_overview(device)
-        for chname, emitter in emitters.items():
-            emitter.connect(self.set_value_callback)
-
-        #for chname, readboxes in readboxes.items():
-        self._read_textboxes[device.arduino_id] = readboxes
+        for chname, ch in device.channels.items():
+            ch._set_signal.connect(self.set_value_callback)
 
         """ 
         # Add corresponding channels to the hdf5 log.
@@ -386,18 +397,16 @@ class ControlSystem():
                                                                   maxlen=self._retain_last_n_values)
             self._y_values[(device.name, channel_name)] = deque(np.zeros(self._retain_last_n_values),
                                                                   maxlen=self._retain_last_n_values)
-            # TODO: Add device to settings page
 
-    @pyqtSlot(dict)
-    def set_value_callback(self, emitter_info):
+    @pyqtSlot(Channel, object)
+    def set_value_callback(self, ch, val):
         """ Gets updated channel info from GUI, creates a message to send to server """
-        # TODO: Need an elegant way to do this...
-        channel = emitter_info['channel']
+        channel = ch
         values = None
         if channel.data_type == float:
-            values = emitter_info['value'] * channel.scaling
+            values = val * channel.scaling
         else:
-            values = emitter_info['value']
+            values = float(val)
         if self.debug:
             print('Set value callback was called with widget {}, '
                   'type {}, and scaled value {}.'.format(channel, channel.data_type, channel.value))
@@ -432,6 +441,7 @@ class ControlSystem():
 
     def run(self):
         self.setup_communication_threads()
+        self.update_gui_devices()
         self._window.show()
 
 
@@ -440,7 +450,6 @@ def dummy_device(n, ard_id):
     ps_controller1 = Device("ps_controller" + str(n),
                             arduino_id=ard_id,
                             label="Dummy HV Power Supplies",
-                            debug=mydebug,
                             driver='Arduino')
     
     ch = Channel(name="o2", label="Source HV On/Off",

@@ -1,17 +1,16 @@
 import json
+import inspect
 import time
+
+from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLabel
+
 from .Channel import Channel
 
 class Device:
-    def __init__(self, name, arduino_id, label="",
-                 channels=None, debug=False, driver='arduino'):
-
-        self.debug = debug
+    def __init__(self, name, arduino_id, label="", channels=None, driver='arduino'):
 
         self._name = name
         self._label = label
-        self._poll_count = 0
-        self._poll_start_time = 0.0
 
         self._channels = {}  # This is a dictionary of channels with their names as keys.
         if channels is not None:
@@ -20,9 +19,64 @@ class Device:
         self._arduino_id = arduino_id
         self._driver = driver
 
-        # Parent will be set during add_channel in control system
         self._parent = None
         self._locked = False
+
+        self._pages = ['overview']
+
+        # create gui representation
+        vbox_main = QVBoxLayout()
+        gb = QGroupBox(self._label)
+        vbox_main.addWidget(gb)
+        vbox_main.addStretch()
+
+        vbox_gb = QVBoxLayout()
+        gb.setLayout(vbox_gb)
+
+        self._gblayout = vbox_gb
+        self._overview_widget = vbox_main
+        self._error_message = ''
+        self._hasError = False
+    
+    def update(self):
+        """
+        if self._error_message != '':
+            lblError = QLabel('<font color="red">{}</font>'.format(self._error_message))
+            self._gblayout.addWidget(lblError)
+            gb.setDisabled(True)
+        """
+
+        print('update called')
+        (frame, filename, line_number,
+                     function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+        print(frame, filename, line_number, function_name, lines, index)
+        chlist = [ch for chname, ch in reversed(sorted(self._channels.items(), 
+                                                        key=lambda x: x[1].display_order))]
+        for idx, ch in enumerate(chlist):
+            if ch._overview_widget.parent() != self._gblayout.parent():
+                self._gblayout.insertWidget(idx, ch._overview_widget)
+
+    @property
+    def error_message(self):
+        return self._error_message
+
+    @error_message.setter
+    def error_message(self, value):
+        self._error_message = value
+       
+        if self._error_message != '':
+            if not self._hasError:
+                self._hasError = True
+                txtError = QLabel('<font color="red">{}</font>'.format(self._error_message))
+                self._overview_widget.insertWidget(0, txtError)
+                self._gblayout.parent().setEnabled(False)
+        else:
+            if self._hasError:
+                self._hasError = False
+                txtError = self._overview_widget.takeAt(0).widget()
+                txtError.deleteLater()
+                self._gblayout.parent().setEnabled(True)
+      
 
     @property
     def arduino_id(self):
@@ -48,22 +102,6 @@ class Device:
     def parent(self, parent):
         self._parent = parent
 
-    def add_one_to_poll_count(self):
-        self._poll_count += 1
-
-    def reset_poll_count(self):
-        self._poll_count = 0
-
-    @property
-    def poll_count(self):
-        return self._poll_count
-
-    def poll_start_time(self):
-        return self._poll_start_time
-
-    def reset_poll_start_time(self):
-        self._poll_start_time = time.time()
-
     @property
     def name(self):
         return self._name
@@ -80,6 +118,14 @@ class Device:
     def label(self, value):
         self._label = value
 
+
+    @property
+    def pages(self):
+        return self._pages
+
+    def add_page(self, value):
+        self._pages.append(value)
+
     @property
     def channels(self):
         return self._channels
@@ -88,13 +134,10 @@ class Device:
         return self._channels[channel_name]
 
     def add_channel(self, channel):
-        """
-        Adds a channel to the current device. Since the _channels property of the Device class is a
-        dictionary with channel names as its keys, this takes Channel.name() as the key for the channel being added.
-        """
         channel.arduino_id = self._arduino_id
         channel.parent_device = self
         self._channels[channel.name] = channel
+        self.update()
 
     def lock(self):
         if not self._locked:
