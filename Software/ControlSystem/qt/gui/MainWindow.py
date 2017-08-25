@@ -16,7 +16,6 @@ from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont
 
 import pyqtgraph as pg
-from pyqtgraph.widgets.RemoteGraphicsView import RemoteGraphicsView
 
 from .ui_MainWindow import Ui_MainWindow
 from .dialogs.PlotChooseDialog import PlotChooseDialog 
@@ -62,7 +61,7 @@ class MainWindow(QMainWindow):
         self.ui.toolBar.addAction(self._btnAbout)
 
         # dialog connections
-        self._btnplotchoose.clicked.connect(self.show_PlotChooseDialog)
+        #self._btnplotchoose.clicked.connect(self.show_PlotChooseDialog)
         self._btnaddprocedure.clicked.connect(self.show_ProcedureDialog)
         self._btnAbout.triggered.connect(self.show_AboutDialog)
 
@@ -121,8 +120,8 @@ class MainWindow(QMainWindow):
         self._statusbar.showMessage(text)
         self._messagelog.append(time.strftime('[%Y-%m-%d %H:%M:%S] ', time.localtime()) + text)
 
-    def show_PlotChooseDialog(self):
-        _plotchoosedialog = PlotChooseDialog(devdict, self._plotted_channels)
+    def show_PlotChooseDialog(self, devices):
+        _plotchoosedialog = PlotChooseDialog(devices, self._plotted_channels)
         # dialog returns a tuple (bool, list), bool is true if closed via 'Done' button
         # list contains channel objects to be plotted
         accept, chs = _plotchoosedialog.exec_()
@@ -201,11 +200,20 @@ class MainWindow(QMainWindow):
         _aboutdialog = AboutDialog()
         _aboutdialog.exec_()
 
-    def update_plots(self):
+    def update_plots(self, devices, plotted_channels):
         self.clearLayout(self._gbox)
+        print(plotted_channels)
         row = 0
         col = 0
-        for names, data in self._plotted_channels.items():
+        for device_name, device in devices.items():
+            for channel_name, channel in device.channels.items():
+                if channel._plot_widget is not None and channel.data_type == float and channel in plotted_channels:
+                    self._gbox.addWidget(channel._plot_widget, row, col)
+                    row += 1
+                    if row == 2:
+                        row = 0
+                        col += 1
+            """
             ch = data['channel']
             chbox = QGroupBox(ch.parent_device.label + " / " + ch.label)
             vbox = QVBoxLayout()
@@ -222,7 +230,7 @@ class MainWindow(QMainWindow):
                 row = 0
                 col += 1
         self.sig_plots_changed.emit(self._plotted_channels)
-
+            """
     def update_device_settings(self, devices):
         self.ui.treeDevices.clear()
         for device_name, device in devices.items():
@@ -495,11 +503,11 @@ class MainWindow(QMainWindow):
         self.sig_device_channel_changed.emit(newobj, newvals)
 
     def clearLayout(self ,layout):
-        """ Recursively removes all items from a QLayout """
+        """ Recursively removes all items from a QLayout. Does not delete the item """
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
-                child.widget().deleteLater()
+                child.widget().setParent(None)
             if child.layout():
                 self.clearLayout(child)
 

@@ -13,7 +13,7 @@ from lib.Channel import Channel
 
 class PlotChooseDialog(QDialog):
 
-    def __init__(self, device_dict, plotted_channels):
+    def __init__(self, devices, plotted_channels):
         super().__init__()
         self.ui = Ui_PlotChooseDialog()
         self.ui.setupUi(self)
@@ -21,7 +21,7 @@ class PlotChooseDialog(QDialog):
 
         self._accepted = False # true if user presses 'done' instead of closing out the window
         
-        self._device_dict = device_dict
+        self._device_dict = devices
         self._plotted_channels = plotted_channels
         self.update_devices()
         self._selected_channels = []
@@ -47,8 +47,7 @@ class PlotChooseDialog(QDialog):
                     chrow.setFlags(chrow.flags() | Qt.ItemIsUserCheckable)
                     chrow.setText(0, ch.label)
                     # Check the channels that are already enabled on the main window
-                    selectedlist = [data['channel'] for name, data in self._plotted_channels.items()]  
-                    if ch in selectedlist:
+                    if ch in self._plotted_channels:
                         chrow.setCheckState(0, Qt.Checked)
                     else:
                         chrow.setCheckState(0, Qt.Unchecked)

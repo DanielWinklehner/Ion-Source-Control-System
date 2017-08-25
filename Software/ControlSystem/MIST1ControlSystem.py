@@ -172,7 +172,7 @@ class MIST1ControlSystem:
         self._server_port = server_port
         self._server_url = "http://{}:{}/".format(server_ip, server_port)
         self._server_infobar = None
-         
+        """         
         try:
             # Send the initialize command to the server
             r = requests.get(self._server_url + "initialize/")
@@ -209,7 +209,7 @@ class MIST1ControlSystem:
             if self.debug:
                 print("{}: {}".format(r.status_code, r.text))
         # ---------------------------- #
-        
+        """
         # --- The main device dict --- #
         self._devices = {}
         self._device_name_arduino_id_map = {}
@@ -2190,84 +2190,84 @@ if __name__ == "__main__":
     ps_controller1.set_overview_page_presence(True)
     control_system.add_device(ps_controller1)
     
-    """
-    # # Dummy Filament Power Supplies
-    # ps_controller2 = Device("ps_controller2",
-    #                         arduino_id="95432313837351E00271",
-    #                         label="Dummy Filament Power Supplies",
-    #                         debug=mydebug,
-    #                         driver='Arduino')
-    #
-    # ch = Channel(name="o1", label="Filament Heating On/Off",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              display_order=10,
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="v1", label="Filament Heating Voltage",
-    #              upper_limit=7.5,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=5.0/7.5,
-    #              display_order=9,
-    #              unit="V",
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="i1", label="Filament Heating Current",
-    #              upper_limit=300.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=0.1/300.0,
-    #              display_order=8,
-    #              unit="A",
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="o2", label="Discharge On/Off",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              display_order=6,
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="v2", label="Discharge Voltage",
-    #              upper_limit=100.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=10.0/100.0,
-    #              display_order=5,
-    #              unit="V",
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="i2", label="Discharge Current",
-    #              upper_limit=10.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=10.0/10.0,
-    #              display_order=4,
-    #              unit="A",
-    #              mode="both")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ps_controller2.set_overview_page_presence(True)
-    # control_system.add_device(ps_controller2)
+    
+    # Dummy Filament Power Supplies
+    ps_controller2 = Device("ps_controller2",
+                            arduino_id="95433343933351B012C2",
+                            label="Dummy Filament Power Supplies",
+                            debug=mydebug,
+                            driver='Arduino')
+    
+    ch = Channel(name="o1", label="Filament Heating On/Off",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 display_order=10,
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="v1", label="Filament Heating Voltage",
+                 upper_limit=7.5,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=5.0/7.5,
+                 display_order=9,
+                 unit="V",
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="i1", label="Filament Heating Current",
+                 upper_limit=300.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=0.1/300.0,
+                 display_order=8,
+                 unit="A",
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="o2", label="Discharge On/Off",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 display_order=6,
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="v2", label="Discharge Voltage",
+                 upper_limit=100.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0/100.0,
+                 display_order=5,
+                 unit="V",
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="i2", label="Discharge Current",
+                 upper_limit=10.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0/10.0,
+                 display_order=4,
+                 unit="A",
+                 mode="both")
+    
+    ps_controller2.add_channel(ch)
+    
+    ps_controller2.set_overview_page_presence(True)
+    control_system.add_device(ps_controller2)
     # **************************************************************************************************************** #
-    """
+    
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
     control_system.run()

@@ -20,6 +20,7 @@ import pyqtgraph as pg
 import numpy as np
 
 from gui import MainWindow
+from gui.dialogs.PlotChooseDialog import PlotChooseDialog
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure
@@ -138,6 +139,7 @@ class ControlSystem():
         ## Set up Qt UI and connect UI signals
         self._window = MainWindow.MainWindow()
         self._window._btnquit.triggered.connect(self.on_quit_button)
+        self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
         self._window.sig_device_channel_changed.connect(self.on_device_channel_changed)
         self._window.sig_plots_changed.connect(self.on_plots_changed)
         self._window.sig_procedures_changed.connect(self.on_procedures_changed)
@@ -202,6 +204,7 @@ class ControlSystem():
     def update_gui_devices(self):
         self._window.update_overview(self._devices)
         self._window.update_device_settings(self._devices)
+        self._window.update_plots(self._devices, self._plotted_channels)
 
     def setup_communication_threads(self):
         """ For each device, we create a thread to communicate with the corresponding Arduino. """
@@ -302,10 +305,10 @@ class ControlSystem():
 
         # if we are on the plotting tab, update the plots there too
         if self._window.current_tab == 'plots':
-            if len(self._window._plotted_channels) > 0:
-                for names, data in self._window._plotted_channels.items():
-                    data['curve'].setData(self._x_values[names], 
-                                          self._y_values[names], 
+            for device_name, device in self._devices.items():
+                for channel_name, channel in device.channels.items():
+                    channel._plot_curve.setData(self._x_values[(channel.parent_device.name, channel_name)], 
+                                          self._y_values[(channel.parent_device.name, channel_name)], 
                                           clear=True, _callsync='off')
 
     @pyqtSlot(object, dict)
@@ -469,11 +472,18 @@ class ControlSystem():
             if self.debug:
                 print("Exception '{}' caught while communicating with RasPi server.".format(e))
 
+    # dialogs
+    @pyqtSlot()
+    def show_PlotChooseDialog(self):
+        _plotchoosedialog = PlotChooseDialog(self._devices, self._plotted_channels)
+        accept, chs = _plotchoosedialog.exec_()
+        self._plotted_channels = chs
+        self.update_gui_devices()
+
     def run(self):
         self.setup_communication_threads()
         self.update_gui_devices()
         self._window.show()
-
 
 def dummy_device(n, ard_id):
     # --- Set up the Dummy PS Controller 1 --- #

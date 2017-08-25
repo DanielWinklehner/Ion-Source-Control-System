@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel
                             QRadioButton, QLineEdit
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
+import pyqtgraph as pg
+
 class Channel(QWidget):
     _set_signal = pyqtSignal(object, object)
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
@@ -32,11 +34,21 @@ class Channel(QWidget):
 
         self._pages = ['overview']
         
+        # overview widget
         gb = QGroupBox(self._label)
         self._overview_widget = gb
-
         self._write_widget = None
         self._read_widget = None
+
+        # plot widget
+        gb_plot = QGroupBox()
+        plotwidget = pg.PlotWidget()
+        vbox = QVBoxLayout()
+        gb_plot.setLayout(vbox)
+        vbox.addWidget(plotwidget)
+        self._plot_widget = gb_plot
+
+        self._plot_curve = plotwidget.plot(pen='r')
         self.update()
 
     def update(self):
@@ -77,7 +89,6 @@ class Channel(QWidget):
                 hbox_read.addWidget(txtRead)
                 hbox_read.addWidget(lblUnit)
                 vbox_readwrite.addLayout(hbox_read)
-
 
     @pyqtSlot()
     def set_value_callback(self):
@@ -149,6 +160,8 @@ class Channel(QWidget):
     @parent_device.setter
     def parent_device(self, device):
         self._parent_device = device
+        if device is not None:
+            self._plot_widget.setTitle('{}/{}'.format(self._parent_device.label, self._label))
 
     @property
     def label(self):
