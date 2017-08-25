@@ -113,23 +113,23 @@ class Listener(QObject):
     @pyqtSlot()
     def listen(self):
         self.sig_status.emit('Listener started')
-        
+
         while True:
-            
+
             if self._listen_pipe.poll():
                 gui_message = self._listen_pipe.recv()
                 if gui_message[0] == "polling_rate":
                     self.sig_poll_rate.emit(gui_message[1])
                 elif gui_message[0] == "query_response":
                     self.sig_device_info.emit(gui_message[1])
-            
+
             app.processEvents()
             if self._terminate:
                 self.sig_status.emit('Listener terminating...')
                 break
-        
+
         self.sig_done.emit('Listener done')
-     
+
     def terminate(self):
         self.sig_status.emit('Listener received terminate signal')
         self._terminate = True
@@ -148,11 +148,11 @@ class ControlSystem():
         self._plot_timer = QTimer()
         self._plot_timer.timeout.connect(self.update_value_displays)
         self._plot_timer.start(20)
-                
+
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-                 
+
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -162,7 +162,7 @@ class ControlSystem():
         except Exception as e:
             print('Exception was: {}'.format(e))
             exit()
-        
+
         ## Get devices connected to server
         r = requests.get(self._server_url + 'device/active')
         if r.status_code == 200:
@@ -173,9 +173,9 @@ class ControlSystem():
                     device_info['identifyer'], device_id, device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        
+
         ## Set up communication pipes.
-        self._keep_communicating = False 
+        self._keep_communicating = False
         self._polling_rate = 15.0
         self._com_period = 1.0 / self._polling_rate
         self._pipe_gui, pipe_server = Pipe()
@@ -183,7 +183,7 @@ class ControlSystem():
         self._com_process = Process(target=query_server, args=(pipe_server,
                                                             self._server_url,
                                                             debug,))
-        
+
         ## Set up data dictionaries
         self._devices = {}
         self._device_name_arduino_id_map = {}
@@ -280,7 +280,7 @@ class ControlSystem():
         self._x_values[(device_name, channel_name)].append(timestamp)
         self._y_values[(device_name, channel_name)].append(
             self._devices[device_name].channels[channel_name].value)
-        
+
     @pyqtSlot()
     def update_value_displays(self):
         """ This function is called by a QTimer to ensure the GUI has a chance
@@ -296,7 +296,7 @@ class ControlSystem():
 
                     if channel.data_type in [int, float]:
                         channel._read_widget.setText(str(channel.value))
-               
+
         # update the pinned plot
         if self._pinned_plot_name != ():
             self._pinned_curve.setData(self._x_values[self._pinned_plot_name],
@@ -307,8 +307,8 @@ class ControlSystem():
         if self._window.current_tab == 'plots':
             for device_name, device in self._devices.items():
                 for channel_name, channel in device.channels.items():
-                    channel._plot_curve.setData(self._x_values[(channel.parent_device.name, channel_name)], 
-                                          self._y_values[(channel.parent_device.name, channel_name)], 
+                    channel._plot_curve.setData(self._x_values[(channel.parent_device.name, channel_name)],
+                                          self._y_values[(channel.parent_device.name, channel_name)],
                                           clear=True, _callsync='off')
 
     @pyqtSlot(object, dict)
@@ -327,7 +327,7 @@ class ControlSystem():
                         print('channel name already exists')
                         continue
                     # channel name is unique, so we update it in the device object
-                    obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name) 
+                    obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
                 elif type(obj) == Device and attr == 'name' and val != obj.name:
                     if val in self._devices.keys():
                         print('device name already exists')
@@ -409,12 +409,12 @@ class ControlSystem():
         for chname, ch in device.channels.items():
             ch._set_signal.connect(self.set_value_callback)
 
-        """ 
+        """
         # Add corresponding channels to the hdf5 log.
         for channel_name, channel in device.channels().items():
             if channel.mode() == "read" or channel.mode() == "both":
                 self._data_logger.add_channel(channel)
-    
+
 
         # Add the device to the settings page tree.
         device_iter = self._settings_page_tree_store.insert(None, (len(self._settings_page_tree_store) - 1),
@@ -491,16 +491,16 @@ def dummy_device(n, ard_id):
                             arduino_id=ard_id,
                             label="Dummy HV Power Supplies",
                             driver='Arduino')
-    
+
     ch = Channel(name="o2", label="Source HV On/Off",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
                  display_order=10,
                  mode="write")
-    
+
     ps_controller1.add_channel(ch)
-    
+
     ch = Channel(name="v2", label="Source HV Voltage",
                  upper_limit=20.0,
                  lower_limit=0.0,
@@ -510,9 +510,9 @@ def dummy_device(n, ard_id):
                  display_order=9,
                  unit="kV",
                  mode="both")
-    
+
     ps_controller1.add_channel(ch)
-    
+
     ch = Channel(name="i2", label="Source HV Current",
                  upper_limit=120.0,
                  lower_limit=0.0,
@@ -522,18 +522,18 @@ def dummy_device(n, ard_id):
                  display_order=8,
                  unit="mA",
                  mode="both")
-    
+
     ps_controller1.add_channel(ch)
-    
+
     ch = Channel(name="o1", label="Einzel Lens On/Off",
                  upper_limit=1,
                  lower_limit=0,
                  data_type=bool,
                  display_order=6,
                  mode="write")
-    
+
     ps_controller1.add_channel(ch)
-    
+
     ch = Channel(name="v1", label="Einzel Lens Voltage",
                  upper_limit=30.0,
                  lower_limit=0.0,
@@ -543,9 +543,9 @@ def dummy_device(n, ard_id):
                  display_order=5,
                  unit="kV",
                  mode="both")
-    
+
     ps_controller1.add_channel(ch)
-    
+
     ch = Channel(name="i1", label="Einzel Lens Current",
                  upper_limit=40.0,
                  lower_limit=0.0,
@@ -555,10 +555,10 @@ def dummy_device(n, ard_id):
                  display_order=4,
                  unit="mA",
                  mode="both")
-    
+
     ps_controller1.add_channel(ch)
     return ps_controller1
-    
+
 
 if __name__ == '__main__':
     app = QApplication([])
