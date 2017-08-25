@@ -18,9 +18,9 @@ from PyQt5.QtGui import QFont
 import pyqtgraph as pg
 
 from .ui_MainWindow import Ui_MainWindow
-from .dialogs.PlotChooseDialog import PlotChooseDialog 
-from .dialogs.ProcedureDialog import ProcedureDialog 
-from .dialogs.AboutDialog import AboutDialog 
+from .dialogs.PlotChooseDialog import PlotChooseDialog
+from .dialogs.ProcedureDialog import ProcedureDialog
+from .dialogs.AboutDialog import AboutDialog
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure
@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
 
         ## set up containers
         self._overview_layout = QHBoxLayout()
-        self._overview.setLayout(self._overview_layout) 
+        self._overview.setLayout(self._overview_layout)
         self._overview_layout.addStretch()
         #self._overview.setLayoutDirection(Qt.RightToLeft)
 
@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
         for device_name, device in devices.items():
             if 'overview' in device.pages and device._overview_widget.parent() == None:
                 self._overview_layout.insertLayout(0, device._overview_widget)
-        
+
     def set_polling_rate(self, text):
         self.ui.lblServPoll.setText('Server polling rate: ' + text + ' Hz')
 
@@ -130,11 +130,11 @@ class MainWindow(QMainWindow):
             newplottedchs = {}
             for ch in chs:
                 dev = ch.parent_device
-                newplottedchs[(dev.name, ch.name)] = {'channel': ch, 
+                newplottedchs[(dev.name, ch.name)] = {'channel': ch,
                                                       'curve': None,
                                                       'btnPin': None,
                                                       'color' : 'r'}
-            # TODO need to figure out a nice way to not redraw plots 
+            # TODO need to figure out a nice way to not redraw plots
             # if they haven't changed.
             if newplottedchs != self._plotted_channels:
                 self._plotted_channels = newplottedchs
@@ -156,7 +156,7 @@ class MainWindow(QMainWindow):
             if proc is not None:
                 # if we edited a procedure delete the old version before adding the new one
                 del self._procedures[proc.name]
-            self._procedures[rproc.name] = rproc 
+            self._procedures[rproc.name] = rproc
             self.update_procedures()
 
     def update_procedures(self):
@@ -303,11 +303,11 @@ class MainWindow(QMainWindow):
             lblTitle.setFont(font)
             self._devvbox.addWidget(lblTitle)
             gbox = QGridLayout()
-            
+
             lblArdId = QLabel('Arduino ID')
             lblLabel = QLabel('Label')
             lblName = QLabel('Name')
-            
+
             txtArdId = QLineEdit(ardid)
             txtLabel = QLineEdit(label)
             txtName = QLineEdit(name)
@@ -345,7 +345,7 @@ class MainWindow(QMainWindow):
             lblTitle.setFont(font)
             self._devvbox.addWidget(lblTitle)
             gbox = QGridLayout()
-            
+
             lblMode = QLabel('Read/Write')
             lblType = QLabel('Data Type')
             lblUnit = QLabel('Unit')
@@ -353,7 +353,7 @@ class MainWindow(QMainWindow):
             lblMaxVal = QLabel('Upper Limit')
             lblLabel = QLabel('Label')
             lblName = QLabel('Name')
-            
+
             cbType = QComboBox()
             cbType.addItems(['Int', 'Bool', 'Float'])
             cbMode = QComboBox()
@@ -440,7 +440,7 @@ class MainWindow(QMainWindow):
             gbox = self._devvbox.itemAt(1).layout()
             name = gbox.itemAt(1).widget().text()
             label = gbox.itemAt(5).widget().text()
-            
+
             ard_id = gbox.itemAt(3).widget().text()
 
             if type(obj) == Device:
@@ -449,7 +449,7 @@ class MainWindow(QMainWindow):
                 newvals = {'name': name, 'label': label, 'arduino_id': ard_id}
             else:
                 # we are adding a new device. No need to set newvals
-                newobj = Device(name, ard_id, label) 
+                newobj = Device(name, ard_id, label)
 
         else:
             gbox = self._devvbox.itemAt(1).layout()
@@ -529,7 +529,7 @@ class QLineEditX(QLineEdit):
             if value != max(self.ch.lower_limit, min(value, self.ch.upper_limit)):
                 raise ValueError('Value not within channel limits')
             data = {'channel': self.ch,
-                    'value': value, 
+                    'value': value,
                     'emitter':self.returnPressedX}
             self.returnPressedX.emit(data)
             self.setText(str(value))
