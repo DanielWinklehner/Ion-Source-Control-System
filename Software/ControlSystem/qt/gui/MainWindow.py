@@ -18,18 +18,13 @@ from PyQt5.QtGui import QFont
 import pyqtgraph as pg
 
 from .ui_MainWindow import Ui_MainWindow
-from .dialogs.ProcedureDialog import ProcedureDialog
 from .dialogs.AboutDialog import AboutDialog
+from .dialogs.ErrorDialog import ErrorDialog
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure
 
 class MainWindow(QMainWindow):
-    # signal to be emitted to main program when plots change on plotting page
-    sig_plots_changed = pyqtSignal(dict)
-
-    #signal to be emitted when procedures change
-    sig_procedures_changed = pyqtSignal(dict)
 
     # signal to be emitted when device/channel is changed
     sig_device_channel_changed = pyqtSignal(object, dict)
@@ -81,12 +76,7 @@ class MainWindow(QMainWindow):
         self.ui.fmDeviceSettings.setLayout(self._devvbox)
 
         # local copies of data
-        self._overview_devices = {}
         self._settings_devices = {}
-        self._plotted_channels = {}
-        self._procedures = {}
-
-        self._prevproc = None
 
     @property
     def current_tab(self):
@@ -381,7 +371,7 @@ class MainWindow(QMainWindow):
                 lower_limit = data_type(gbox.itemAt(7).widget().text())
                 upper_limit = data_type(gbox.itemAt(9).widget().text())
             except:
-                print('bad values for limits')
+                self.show_ErrorDialog('Bad value for limits.')
                 return
 
             cbMode = gbox.itemAt(13).widget()
@@ -413,6 +403,11 @@ class MainWindow(QMainWindow):
     def show_AboutDialog(self):
         _aboutdialog = AboutDialog()
         _aboutdialog.exec_()
+
+    @pyqtSlot()
+    def show_ErrorDialog(self, error_message='Error'):
+        _errordialog = ErrorDialog(error_message)
+        _errordialog.exec_()
 
     def set_polling_rate(self, text):
         self.ui.lblServPoll.setText('Server polling rate: ' + text + ' Hz')

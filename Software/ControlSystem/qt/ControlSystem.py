@@ -22,6 +22,7 @@ import numpy as np
 from gui import MainWindow
 from gui.dialogs.PlotChooseDialog import PlotChooseDialog
 from gui.dialogs.ProcedureDialog import ProcedureDialog
+from gui.dialogs.ErrorDialog import ErrorDialog
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure
@@ -243,7 +244,6 @@ class ControlSystem():
     def on_listener_status(self, data: str):
         """ update status bar with thread message """
         self._window.status_message(data)
-        print(data)
 
     @pyqtSlot(float)
     def on_listener_poll_rate(self, data: float):
@@ -322,27 +322,33 @@ class ControlSystem():
             elif isinstance(obj, Channel):
                 obj.parent_device.add_channel(obj)
         else:
+            for procedure_name, procedure in self._procedures.items():
+                used_devices, used_channels = procedure.devices_channels_used()
+                if obj.name in used_devices + used_channels:
+                    self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.')
+                    return
             for attr, val in vals.items():
                 # attempt to set attributes. Need to make sure we only have
                 # unique channel/device names, and arduino ids
-                if isinstance(obj, Channel) and attr == 'name' and val != obj.name:
-                    if val in obj.parent_device.channels.keys():
-                        print('channel name already exists')
-                        continue
-                    # channel name is unique, so we update it in the device object
-                    obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
-                elif isinstance(obj, Device) and attr == 'name' and val != obj.name:
-                    if val in self._devices.keys():
-                        print('device name already exists')
-                        continue
-                    # device name is unique, so update it in the Control System
-                    self._devices[val] = self._devices.pop(obj.name)
-                    for channel_name, channel in self._devices[val].channels.items():
-                        self._x_values[(val, channel_name)] = self._x_values.pop((obj.name, channel_name))
-                        self._y_values[(val, channel_name)] = self._y_values.pop((obj.name, channel_name))
+                if attr == 'name' and val != obj.name:
+                    if isinstance(obj, Channel):
+                        if val in obj.parent_device.channels.keys():
+                            self.show_ErrorDialog('Channel name is already used by another channel on this device. Choose a unique name for this channel.')
+                            continue
+                        # channel name is unique, so we update it in the device object
+                        obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
+                    elif isinstance(obj, Device):
+                        if val in self._devices.keys():
+                            self.show_ErrorDialog('Device name is already used by another device. Choose a unique name for this device.')
+                            continue
+                        # device name is unique, so update it in the Control System
+                        self._devices[val] = self._devices.pop(obj.name)
+                        for channel_name, channel in self._devices[val].channels.items():
+                            self._x_values[(val, channel_name)] = self._x_values.pop((obj.name, channel_name))
+                            self._y_values[(val, channel_name)] = self._y_values.pop((obj.name, channel_name))
                 elif isinstance(obj, Device) and attr == 'arduino_id' and val != obj.arduino_id:
                     if val in [x.arduino_id for name, x in self._devices.items()]:
-                        print('arduino id already assigned')
+                        self.show_ErrorDialog('Arduino ID has already been assigned to another device. Choose a unique arduino ID for this device')
                         continue
                 # use setattr to set obj properties by 'attr' which is a string
                 setattr(obj, attr, val)
@@ -500,6 +506,12 @@ class ControlSystem():
 
             self.add_procedure(rproc)
             self._window.update_procedures(self._procedures)
+
+    @pyqtSlot()
+    def show_ErrorDialog(self, error_message='Error'):
+        _errordialog = ErrorDialog(error_message)
+        _errordialog.exec_()
+        self.update_gui_devices()
 
     def run(self):
         #self.setup_communication_threads()

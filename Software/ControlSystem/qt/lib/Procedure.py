@@ -61,6 +61,19 @@ class Procedure(QWidget):
     def on_delete_clicked(self):
         self._delete_sig.emit(self)
 
+    def devices_channels_used(self):
+        devices = []
+        channels = []
+        for idx, rule in self._rules.items():
+            devices.append(rule['device'].name)
+            channels.append(rule['channel'].name)
+
+        for idx, action in self._actions.items():
+            devices.append(action['device'].name)
+            channels.append(action['channel'].name)
+
+        return (devices, channels)
+
     @property
     def name(self):
         return self._name
