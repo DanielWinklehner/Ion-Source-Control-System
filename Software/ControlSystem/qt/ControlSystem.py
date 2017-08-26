@@ -21,6 +21,7 @@ import numpy as np
 
 from gui import MainWindow
 from gui.dialogs.PlotChooseDialog import PlotChooseDialog
+from gui.dialogs.ProcedureDialog import ProcedureDialog
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure
@@ -140,8 +141,8 @@ class ControlSystem():
         self._window = MainWindow.MainWindow()
         self._window._btnquit.triggered.connect(self.on_quit_button)
         self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
+        self._window.ui.btnAddProcedure.clicked.connect(self.show_ProcedureDialog)
         self._window.sig_device_channel_changed.connect(self.on_device_channel_changed)
-        self._window.sig_procedures_changed.connect(self.on_procedures_changed)
 
         ## Plotting timer
         self._plot_timer = QTimer()
@@ -206,6 +207,7 @@ class ControlSystem():
         self._window.update_overview(self._devices)
         self._window.update_device_settings(self._devices)
         self._window.update_plots(self._devices, self._plotted_channels)
+        self._window.update_procedures(self._procedures)
 
     def setup_communication_threads(self):
         """ For each device, we create a thread to communicate with the corresponding Arduino. """
@@ -348,10 +350,6 @@ class ControlSystem():
         self.device_or_channel_changed()
         self.update_gui_devices()
 
-    @pyqtSlot(dict)
-    def on_procedures_changed(self, procs):
-        self._procedures = procs
-
     @pyqtSlot(str, str)
     def set_pinned_plot_callback(self, device, channel):
        # click button emits (device, channel)
@@ -476,6 +474,32 @@ class ControlSystem():
         accept, chs = _plotchoosedialog.exec_()
         self._plotted_channels = chs
         self.update_gui_devices()
+
+    def add_procedure(self, procedure):
+        self._procedures[procedure.name] = procedure
+        procedure._edit_sig.connect(self.edit_procedure)
+        procedure._delete_sig.connect(self.delete_procedure)
+
+    def edit_procedure(self, proc):
+        self.show_ProcedureDialog(False, proc = proc)
+
+    def delete_procedure(self, proc):
+        del self._procedures[proc.name]
+        self._window.update_procedures(self._procedures)
+
+    @pyqtSlot()
+    @pyqtSlot(Procedure)
+    def show_ProcedureDialog(self, btnbool, proc=None):
+        _proceduredialog = ProcedureDialog(self._devices, self._procedures.keys(), proc)
+        accept, rproc = _proceduredialog.exec_()
+
+        if rproc is not None:
+            if proc is not None:
+                # if we edited a procedure delete the old version before adding the new one
+                self.delete_procedure(proc)
+
+            self.add_procedure(rproc)
+            self._window.update_procedures(self._procedures)
 
     def run(self):
         #self.setup_communication_threads()

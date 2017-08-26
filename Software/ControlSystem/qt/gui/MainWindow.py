@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Thomas Wester <twester@mit.edu>
-# Handles dialog and widget creation
+# Handles widget creation in the main window
 
 import time
 import copy
@@ -48,8 +48,6 @@ class MainWindow(QMainWindow):
         self._gbpinnedplot = self.ui.gbPinnedPlot
         self._tabview = self.ui.tabMain
         self._btnquit = self.ui.btnQuit
-        self._btnplotchoose = self.ui.btnSetupDevicePlots
-        self._btnaddprocedure = self.ui.btnAddProcedure
 
         # add a right-aligned About tool bar button
         spc = QWidget()
@@ -59,9 +57,7 @@ class MainWindow(QMainWindow):
         self._btnAbout = QAction('About', None)
         self.ui.toolBar.addAction(self._btnAbout)
 
-        # dialog connections
-        #self._btnplotchoose.clicked.connect(self.show_PlotChooseDialog)
-        self._btnaddprocedure.clicked.connect(self.show_ProcedureDialog)
+        # dialog connection
         self._btnAbout.triggered.connect(self.show_AboutDialog)
 
         # tab changes
@@ -72,10 +68,9 @@ class MainWindow(QMainWindow):
         self._overview_layout = QHBoxLayout()
         self._overview.setLayout(self._overview_layout)
         self._overview_layout.addStretch()
-        #self._overview.setLayoutDirection(Qt.RightToLeft)
 
-        self._gbox = QGridLayout()
-        self._plots.setLayout(self._gbox)
+        self._plot_layout = QGridLayout()
+        self._plots.setLayout(self._plot_layout)
 
         # settings page
         self.ui.treeDevices.setHeaderLabels(['Label', 'Type'])
@@ -106,108 +101,22 @@ class MainWindow(QMainWindow):
         elif tabName == 'Plotting':
             self._current_tab = 'plots'
 
+    # ---- Tab Update Functions ----
     def update_overview(self, devices):
         #self.clearLayout(self._overview_layout)
         for device_name, device in devices.items():
             if 'overview' in device.pages and device._overview_widget.parent() == None:
                 self._overview_layout.insertLayout(0, device._overview_widget)
 
-    def set_polling_rate(self, text):
-        self.ui.lblServPoll.setText('Server polling rate: ' + text + ' Hz')
-
-    def status_message(self, text):
-        self._statusbar.showMessage(text)
-        self._messagelog.append(time.strftime('[%Y-%m-%d %H:%M:%S] ', time.localtime()) + text)
-
-    def show_PlotChooseDialog(self, devices):
-        _plotchoosedialog = PlotChooseDialog(devices, self._plotted_channels)
-        # dialog returns a tuple (bool, list), bool is true if closed via 'Done' button
-        # list contains channel objects to be plotted
-        accept, chs = _plotchoosedialog.exec_()
-        if accept:
-            # update plotted channels
-            newplottedchs = {}
-            for ch in chs:
-                dev = ch.parent_device
-                newplottedchs[(dev.name, ch.name)] = {'channel': ch,
-                                                      'curve': None,
-                                                      'btnPin': None,
-                                                      'color' : 'r'}
-            # TODO need to figure out a nice way to not redraw plots
-            # if they haven't changed.
-            if newplottedchs != self._plotted_channels:
-                self._plotted_channels = newplottedchs
-                self.update_plots()
-
-    @pyqtSlot()
-    @pyqtSlot(Procedure)
-    # can be called with no arguments, or a Procedure argument
-    # a bool argument gets passed from the button click without the decorators, which we don't want
-    def show_ProcedureDialog(self, proc=None):
-        devdict = {}
-        for devname, data in self._overview_devices.items():
-            devdict[devname] = data['device']
-
-        _proceduredialog = ProcedureDialog(devdict, self._procedures.keys(), proc)
-        accept, rproc = _proceduredialog.exec_()
-
-        if rproc is not None:
-            if proc is not None:
-                # if we edited a procedure delete the old version before adding the new one
-                del self._procedures[proc.name]
-            self._procedures[rproc.name] = rproc
-            self.update_procedures()
-
-    def update_procedures(self):
-        # Add procedures to the procedures tab
-        self.clearLayout(self.ui.vboxProcedures)
-        for name, proc in self._procedures.items():
-            title = ''
-            if proc.critical:
-                title = '(Critical) {}'.format(proc.name)
-            else:
-                title = proc.name
-            gb = QGroupBox(title)
-            vbox = QVBoxLayout()
-            gb.setLayout(vbox)
-            lblProc = QLabel(proc.info)
-            vbox.addWidget(lblProc)
-            hbox = QHBoxLayout()
-            hbox.addStretch()
-            btnEdit = QPushButtonObj('Edit', proc)
-            btnDelete = QPushButtonObj('Delete', proc)
-            btnEdit.clicked_.connect(self.edit_procedure)
-            btnDelete.clicked_.connect(self.delete_procedure)
-            hbox.addWidget(btnEdit)
-            hbox.addWidget(btnDelete)
-            vbox.addLayout(hbox)
-
-            self.ui.vboxProcedures.addWidget(gb)
-
-        self.ui.vboxProcedures.addStretch()
-
-    @pyqtSlot(Procedure)
-    def delete_procedure(self, proc):
-        del self._procedures[proc.name]
-        self.update_procedures()
-
-    @pyqtSlot(Procedure)
-    def edit_procedure(self, proc):
-        self.show_ProcedureDialog(proc = proc)
-
-    def show_AboutDialog(self):
-        _aboutdialog = AboutDialog()
-        _aboutdialog.exec_()
-
     def update_plots(self, devices, plotted_channels):
         """ Draw the plotted channels, as specified by the PlotChooseDialog """
-        self.clearLayout(self._gbox)
+        self.clearLayout(self._plot_layout)
         row = 0
         col = 0
         for device_name, device in devices.items():
             for channel_name, channel in device.channels.items():
                 if channel._plot_widget is not None and channel.data_type == float and channel in plotted_channels:
-                    self._gbox.addWidget(channel._plot_widget, row, col)
+                    self._plot_layout.addWidget(channel._plot_widget, row, col)
                     row += 1
                     if row == 2:
                         row = 0
@@ -236,6 +145,14 @@ class MainWindow(QMainWindow):
 
         self.ui.treeDevices.expandAll()
 
+    def update_procedures(self, procedures):
+        # Add procedures to the procedures tab
+        self.clearLayout(self.ui.vboxProcedures)
+        for procedure_name, procedure in procedures.items():
+            self.ui.vboxProcedures.addWidget(procedure._widget)
+        self.ui.vboxProcedures.addStretch()
+
+    # ---- Settings page functions ----
     def on_settings_row_changed(self, item):
         """ Creates the edit controls when selecting rows in the tree view """
         if item == None:
@@ -491,6 +408,18 @@ class MainWindow(QMainWindow):
 
         self.clearLayout(self._devvbox)
         self.sig_device_channel_changed.emit(newobj, newvals)
+
+    # ---- Misc functions ---
+    def show_AboutDialog(self):
+        _aboutdialog = AboutDialog()
+        _aboutdialog.exec_()
+
+    def set_polling_rate(self, text):
+        self.ui.lblServPoll.setText('Server polling rate: ' + text + ' Hz')
+
+    def status_message(self, text):
+        self._statusbar.showMessage(text)
+        self._messagelog.append(time.strftime('[%Y-%m-%d %H:%M:%S] ', time.localtime()) + text)
 
     def clearLayout(self ,layout):
         """ Recursively removes all items from a QLayout. Does not delete the item """

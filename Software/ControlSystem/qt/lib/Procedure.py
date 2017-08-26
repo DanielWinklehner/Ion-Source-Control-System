@@ -6,9 +6,18 @@
 
 import operator
 
-class Procedure:
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, \
+                            QGroupBox, QWidget
+from PyQt5.QtCore import pyqtSignal
+
+class Procedure(QWidget):
+
+    _edit_sig = pyqtSignal(object)
+    _delete_sig = pyqtSignal(object)
+
     def __init__(self, name, rules, actions, critical=False, email='', sms=''):
 
+        super().__init__()
         # Rules dict:
         # key = arduino_id, device, channel, comparison, value
 
@@ -23,6 +32,34 @@ class Procedure:
         # these will trigger sending email/sms if not blank
         self._email = email
         self._sms = sms
+        
+        title = ''
+        if self._critical:
+            title = '(Critical) {}'.format(self._name)
+        else:
+            title = self._name
+        gb = QGroupBox(title)
+        vbox = QVBoxLayout()
+        gb.setLayout(vbox)
+        self._lblInfo = QLabel(self.info)
+        vbox.addWidget(self._lblInfo)
+        hbox = QHBoxLayout()
+        hbox.addStretch()
+        self._btnEdit = QPushButton('Edit', self)
+        self._btnDelete = QPushButton('Delete', self)
+        self._btnEdit.clicked.connect(self.on_edit_clicked)
+        self._btnDelete.clicked.connect(self.on_delete_clicked)
+        hbox.addWidget(self._btnEdit)
+        hbox.addWidget(self._btnDelete)
+        vbox.addLayout(hbox)
+
+        self._widget = gb 
+
+    def on_edit_clicked(self):
+        self._edit_sig.emit(self)
+
+    def on_delete_clicked(self):
+        self._delete_sig.emit(self)
 
     @property
     def name(self):

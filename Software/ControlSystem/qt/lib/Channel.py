@@ -58,9 +58,7 @@ class Channel(QWidget):
         self._plot_widget = gb_plot
 
         self._plot_curve = plotwidget.plot(pen='r')
-        self.update()
-
-    def update(self):
+        
         if self._data_type == bool:
             hbox_radio = QHBoxLayout()
             self._overview_widget.setLayout(hbox_radio)
@@ -99,6 +97,10 @@ class Channel(QWidget):
                 hbox_read.addWidget(lblUnit)
                 vbox_readwrite.addLayout(hbox_read)
 
+    def update(self):
+        if self._parent_device is not None:
+            self._plot_widget.setTitle('{}/{}'.format(self._parent_device.label, self._label))
+            
     @pyqtSlot()
     def set_value_callback(self):
         if self._data_type != bool:
@@ -173,8 +175,7 @@ class Channel(QWidget):
     @parent_device.setter
     def parent_device(self, device):
         self._parent_device = device
-        if device is not None:
-            self._plot_widget.setTitle('{}/{}'.format(self._parent_device.label, self._label))
+        self.update()
 
     @property
     def label(self):
@@ -185,6 +186,7 @@ class Channel(QWidget):
         self._label = value
         if self._overview_widget.title() != self._label:
             self._overview_widget.setTitle(self._label)
+            self.update()
 
     @property
     def name(self):

@@ -114,6 +114,8 @@ class Device:
         self._label = value
         if self._gblayout.parent().title() != self._label:
             self._gblayout.parent().setTitle(self._label)
+            for channel_name, channel in self.channels.items():
+                channel.update()
 
 
     @property
