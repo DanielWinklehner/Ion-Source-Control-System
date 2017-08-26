@@ -2,13 +2,18 @@ import json
 from scipy.interpolate import interp1d
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel, \
-                            QRadioButton, QLineEdit
+                            QRadioButton, QLineEdit, QPushButton
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 import pyqtgraph as pg
 
 class Channel(QWidget):
+    # emits itself and the new value
     _set_signal = pyqtSignal(object, object)
+
+    # emits device and channel
+    _pin_signal = pyqtSignal(object, object)
+
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
                  scaling=1.0, scaling_read=None, mode="both", display_order=0, displayformat="f",
                  precision=2, default_value=0.0):
@@ -25,8 +30,9 @@ class Channel(QWidget):
         self._value = default_value
         self._mode = mode
         self._display_order = display_order
-        #self._arduino_id = None
-        self._parent_device = None  # The device this channel belongs to will be set during add_channel().
+        
+        # The device this channel belongs to will be set during add_channel().
+        self._parent_device = None  
         self._displayformat = ".{}{}".format(precision, displayformat)
         self._precision = precision
 
@@ -45,7 +51,10 @@ class Channel(QWidget):
         plotwidget = pg.PlotWidget()
         vbox = QVBoxLayout()
         gb_plot.setLayout(vbox)
+        btnPin = QPushButton('Pin')
+        btnPin.clicked.connect(self.set_pin_callback)
         vbox.addWidget(plotwidget)
+        vbox.addWidget(btnPin)
         self._plot_widget = gb_plot
 
         self._plot_curve = plotwidget.plot(pen='r')
@@ -103,6 +112,10 @@ class Channel(QWidget):
             self._set_signal.emit(self, val)
         else:
             self._set_signal.emit(self, self._write_widget.isChecked())
+
+    @pyqtSlot()
+    def set_pin_callback(self):
+        self._pin_signal.emit(self.parent_device, self)
 
     @property
     def precision(self):

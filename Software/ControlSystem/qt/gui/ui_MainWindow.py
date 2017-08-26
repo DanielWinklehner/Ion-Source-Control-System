@@ -316,7 +316,7 @@ class Ui_MainWindow(object):
         self.btnStop.setText(_translate("MainWindow", "Emergency Stop"))
         self.gbPinnedPlot.setTitle(_translate("MainWindow", "Pinned Plot"))
         self.groupBox.setTitle(_translate("MainWindow", "Information"))
-        self.lblServPoll.setText(_translate("MainWindow", "Information"))
+        self.lblServPoll.setText(_translate("MainWindow", "Server polling rate: 15 Hz"))
         self.tabMain.setTabText(self.tabMain.indexOf(self.overview), _translate("MainWindow", "Overview"))
         self.treeDevices.setSortingEnabled(True)
         self.btnExpand.setText(_translate("MainWindow", "Expand All"))

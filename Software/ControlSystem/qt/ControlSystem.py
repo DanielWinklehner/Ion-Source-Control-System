@@ -43,7 +43,7 @@ def query_server(com_pipe, server_url, debug=False):
             elif _in_message[0] == "device_or_channel_changed":
                 _device_dict_list = _in_message[1]
 
-        if _device_dict_list is not None and len(_device_dict_list) > 0:
+        if _device_dict_list is not None and _device_dict_list:
             poll_count += 1
             _url = server_url + "device/query"
             _data = {'data': json.dumps(_device_dict_list)}
@@ -141,7 +141,6 @@ class ControlSystem():
         self._window._btnquit.triggered.connect(self.on_quit_button)
         self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
         self._window.sig_device_channel_changed.connect(self.on_device_channel_changed)
-        self._window.sig_plots_changed.connect(self.on_plots_changed)
         self._window.sig_procedures_changed.connect(self.on_procedures_changed)
 
         ## Plotting timer
@@ -153,6 +152,7 @@ class ControlSystem():
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
 
+        """
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -173,6 +173,7 @@ class ControlSystem():
                     device_info['identifyer'], device_id, device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
+        """
 
         ## Set up communication pipes.
         self._keep_communicating = False
@@ -314,21 +315,21 @@ class ControlSystem():
     @pyqtSlot(object, dict)
     def on_device_channel_changed(self, obj, vals):
         if vals == {}:
-            if type(obj) == Device:
+            if isinstance(obj, Device):
                 self.add_device(obj)
-            elif type(obj) == Channel:
+            elif isinstance(obj, Channel):
                 obj.parent_device.add_channel(obj)
         else:
             for attr, val in vals.items():
                 # attempt to set attributes. Need to make sure we only have
                 # unique channel/device names, and arduino ids
-                if type(obj) == Channel and attr == 'name' and val != obj.name:
+                if isinstance(obj, Channel) and attr == 'name' and val != obj.name:
                     if val in obj.parent_device.channels.keys():
                         print('channel name already exists')
                         continue
                     # channel name is unique, so we update it in the device object
                     obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
-                elif type(obj) == Device and attr == 'name' and val != obj.name:
+                elif isinstance(obj, Device) and attr == 'name' and val != obj.name:
                     if val in self._devices.keys():
                         print('device name already exists')
                         continue
@@ -337,7 +338,7 @@ class ControlSystem():
                     for channel_name, channel in self._devices[val].channels.items():
                         self._x_values[(val, channel_name)] = self._x_values.pop((obj.name, channel_name))
                         self._y_values[(val, channel_name)] = self._y_values.pop((obj.name, channel_name))
-                elif type(obj) == Device and attr == 'arduino_id' and val != obj.arduino_id:
+                elif isinstance(obj, Device) and attr == 'arduino_id' and val != obj.arduino_id:
                     if val in [x.arduino_id for name, x in self._devices.items()]:
                         print('arduino id already assigned')
                         continue
@@ -348,20 +349,15 @@ class ControlSystem():
         self.update_gui_devices()
 
     @pyqtSlot(dict)
-    def on_plots_changed(self, plottedchs):
-        self._plotted_channels = plottedchs
-        for names, data in self._plotted_channels.items():
-            data['btnPin'].connect(self.on_pin_plot_button)
-
-    @pyqtSlot(dict)
     def on_procedures_changed(self, procs):
         self._procedures = procs
 
-    @pyqtSlot(tuple)
-    def on_pin_plot_button(self, data):
+    @pyqtSlot(str, str)
+    def set_pinned_plot_callback(self, device, channel):
        # click button emits (device, channel)
-       self._pinned_plot_name = (data[0].name, data[1].name)
-       self._window._gbpinnedplot.setTitle(data[0].label + ' / ' + data[1].label)
+       key = (device.name, channel.name)
+       self._pinned_plot_name = key 
+       self._window._gbpinnedplot.setTitle('{}.{}'.format(device.label, channel.label))
 
     @pyqtSlot()
     def on_quit_button(self):
@@ -408,6 +404,7 @@ class ControlSystem():
 
         for chname, ch in device.channels.items():
             ch._set_signal.connect(self.set_value_callback)
+            ch._pin_signal.connect(self.set_pinned_plot_callback)
 
         """
         # Add corresponding channels to the hdf5 log.
@@ -481,7 +478,7 @@ class ControlSystem():
         self.update_gui_devices()
 
     def run(self):
-        self.setup_communication_threads()
+        #self.setup_communication_threads()
         self.update_gui_devices()
         self._window.show()
 

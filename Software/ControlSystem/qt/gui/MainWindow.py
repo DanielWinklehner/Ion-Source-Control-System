@@ -18,7 +18,6 @@ from PyQt5.QtGui import QFont
 import pyqtgraph as pg
 
 from .ui_MainWindow import Ui_MainWindow
-from .dialogs.PlotChooseDialog import PlotChooseDialog
 from .dialogs.ProcedureDialog import ProcedureDialog
 from .dialogs.AboutDialog import AboutDialog
 from lib.Device import Device
@@ -175,10 +174,10 @@ class MainWindow(QMainWindow):
             vbox.addWidget(lblProc)
             hbox = QHBoxLayout()
             hbox.addStretch()
-            btnEdit = QPushButtonProc('Edit', proc)
-            btnDelete = QPushButtonProc('Delete', proc)
-            btnEdit.clickedX.connect(self.edit_procedure)
-            btnDelete.clickedX.connect(self.delete_procedure)
+            btnEdit = QPushButtonObj('Edit', proc)
+            btnDelete = QPushButtonObj('Delete', proc)
+            btnEdit.clicked_.connect(self.edit_procedure)
+            btnDelete.clicked_.connect(self.delete_procedure)
             hbox.addWidget(btnEdit)
             hbox.addWidget(btnDelete)
             vbox.addLayout(hbox)
@@ -201,8 +200,8 @@ class MainWindow(QMainWindow):
         _aboutdialog.exec_()
 
     def update_plots(self, devices, plotted_channels):
+        """ Draw the plotted channels, as specified by the PlotChooseDialog """
         self.clearLayout(self._gbox)
-        print(plotted_channels)
         row = 0
         col = 0
         for device_name, device in devices.items():
@@ -213,25 +212,9 @@ class MainWindow(QMainWindow):
                     if row == 2:
                         row = 0
                         col += 1
-            """
-            ch = data['channel']
-            chbox = QGroupBox(ch.parent_device.label + " / " + ch.label)
-            vbox = QVBoxLayout()
-            chbox.setLayout(vbox)
-            self._gbox.addWidget(chbox, row, col)
-            pltBox = pg.PlotWidget()
-            vbox.addWidget(pltBox)
-            self._plotted_channels[(ch.parent_device.name, ch.name)]['curve'] = pltBox.plot(pen=data['color'])
-            pinbutton = QPushButtonX('Pin', ch)
-            self._plotted_channels[(ch.parent_device.name, ch.name)]['btnPin'] = pinbutton.clickedX
-            vbox.addWidget(pinbutton)
-            row += 1
-            if row == 2:
-                row = 0
-                col += 1
-        self.sig_plots_changed.emit(self._plotted_channels)
-            """
+
     def update_device_settings(self, devices):
+        """ Populates the treeview on the devices tab """
         self.ui.treeDevices.clear()
         for device_name, device in devices.items():
             devrow = QTreeWidgetItem(self.ui.treeDevices)
@@ -254,6 +237,7 @@ class MainWindow(QMainWindow):
         self.ui.treeDevices.expandAll()
 
     def on_settings_row_changed(self, item):
+        """ Creates the edit controls when selecting rows in the tree view """
         if item == None:
             # if nothing is selected, do nothing
             return
@@ -284,9 +268,9 @@ class MainWindow(QMainWindow):
                             break
 
 
-        if parent is None: #type(obj) == Device or 'device' in item.text(0).lower():
+        if parent is None:
             # set up device entry form
-            label = ''
+            label = 'New Device'
             name = ''
             ardid = ''
 
@@ -294,8 +278,6 @@ class MainWindow(QMainWindow):
                 label = obj.label
                 name = obj.name
                 ardid = obj.arduino_id
-            else:
-                label = 'New Device'
 
             lblTitle = QLabel(label)
             font = QFont()
@@ -327,14 +309,23 @@ class MainWindow(QMainWindow):
                 btnSave = QPushButtonObj('Save Changes', obj)
             else:
                 btnSave = QPushButtonObj('Save Changes', 'device')
-            btnSave.clickedX.connect(self.on_save_changes_click)
+            btnSave.clicked_.connect(self.on_save_changes_click)
             hbox.addWidget(btnSave)
             hbox.addStretch()
 
             self._devvbox.addLayout(hbox)
 
             self._devvbox.addStretch()
-        else: # type(obj) == Channel or 'channel' in item.text(0).lower():
+
+            if obj is not None:
+                hbox = QHBoxLayout()
+                hbox.addStretch()
+                btnDel = QPushButtonObj('Delete Device', obj)
+                hbox.addWidget(btnDel)
+                hbox.addStretch()
+                self._devvbox.addLayout(hbox)
+                
+        else:
             # set up channel entry form
             title = '{}/{}'.format(parent.label,'New Channel')
             if obj is not None:
@@ -414,7 +405,7 @@ class MainWindow(QMainWindow):
                 btnSave = QPushButtonObj('Save Changes', obj)
             else:
                 btnSave = QPushButtonObj('Save Changes', ('channel', parent))
-            btnSave.clickedX.connect(self.on_save_changes_click)
+            btnSave.clicked_.connect(self.on_save_changes_click)
             hbox.addWidget(btnSave)
             hbox.addStretch()
 
@@ -432,7 +423,7 @@ class MainWindow(QMainWindow):
     def on_save_changes_click(self, obj):
         newobj = None
         newvals = {}
-        if type(obj) == Device or (type(obj) == str and 'device' in obj.lower()):
+        if isinstance(obj, Device) or (isinstance(obj, str) and 'device' in obj.lower()):
             # TODO This is hard-coded to avoid passing references to all the controls around
             # probably not the best solution.
 
@@ -443,7 +434,7 @@ class MainWindow(QMainWindow):
 
             ard_id = gbox.itemAt(3).widget().text()
 
-            if type(obj) == Device:
+            if isinstance(obj, Device):
                 # we are modifying a device
                 newobj = obj
                 newvals = {'name': name, 'label': label, 'arduino_id': ard_id}
@@ -460,7 +451,7 @@ class MainWindow(QMainWindow):
             unit = gbox.itemAt(5).widget().text()
 
             cbType = gbox.itemAt(11).widget()
-            # int, bool, float
+            # order is: int, bool, float
             data_type = None
             if cbType.currentIndex() == 0:
                 data_type = int
@@ -477,7 +468,7 @@ class MainWindow(QMainWindow):
                 return
 
             cbMode = gbox.itemAt(13).widget()
-            # read, write, both
+            # order is: read, write, both
             mode = ''
             if cbMode.currentIndex() == 0:
                 mode = 'read'
@@ -486,7 +477,7 @@ class MainWindow(QMainWindow):
             else:
                 mode = 'both'
 
-            if type(obj) == Channel:
+            if isinstance(obj, Channel):
                 # modifying a channel. Set newobj and newvals
                 newobj = obj
                 newvals = {'label': label, 'unit': unit, 'data_type': data_type,
@@ -494,12 +485,11 @@ class MainWindow(QMainWindow):
                            'mode': mode, 'name': name}
             else:
                 # adding a new channel, only set newobj
-                parent = obj[1]
+                parent = obj[1] # if we are here, we are passed a tuple with the parent device
                 newobj = Channel(name, label, upper_limit, lower_limit, data_type, unit)
                 newobj.parent_device = parent
 
         self.clearLayout(self._devvbox)
-        #self.clearLayout(self._overview_layout)
         self.sig_device_channel_changed.emit(newobj, newvals)
 
     def clearLayout(self ,layout):
@@ -512,48 +502,9 @@ class MainWindow(QMainWindow):
                 self.clearLayout(child)
 
 # ----- Custom Controls ----- #
-class QLineEditX(QLineEdit):
-    """ QLineEdit which returns a dict of channel info on returnPressed """
-    returnPressedX = pyqtSignal(dict)
-
-    def __init__(self, channel):
-        super().__init__()
-        self.ch = channel
-        self.setText(str(self.ch.value))
-        self.returnPressed.connect(self.on_return_pressed)
-
-    @pyqtSlot()
-    def on_return_pressed(self):
-        try:
-            value = self.ch.data_type(self.text()) #will fail here if input is bad
-            if value != max(self.ch.lower_limit, min(value, self.ch.upper_limit)):
-                raise ValueError('Value not within channel limits')
-            data = {'channel': self.ch,
-                    'value': value,
-                    'emitter':self.returnPressedX}
-            self.returnPressedX.emit(data)
-            self.setText(str(value))
-        except:
-            print("bad input")
-
-class QPushButtonX(QPushButton):
-    """ QPushButton which returns a dict of channel info on clicked """
-    clickedX = pyqtSignal(tuple)
-
-    def __init__(self, text, channel):
-        super().__init__()
-        self.ch = channel
-        self.setText(text)
-        self.clicked.connect(self.on_clicked)
-
-    @pyqtSlot()
-    def on_clicked(self):
-        data = (self.ch.parent_device, self.ch)
-        self.clickedX.emit(data)
-
 class QPushButtonObj(QPushButton):
     """ QPushButton which returns an object on click """
-    clickedX = pyqtSignal(object)
+    clicked_ = pyqtSignal(object)
 
     def __init__(self, text, obj):
         super().__init__()
@@ -563,44 +514,4 @@ class QPushButtonObj(QPushButton):
 
     @pyqtSlot()
     def on_clicked(self):
-        self.clickedX.emit(self.obj)
-
-class QPushButtonProc(QPushButton):
-    """ QPushButton which returns a dict of channel info on clicked """
-    clickedX = pyqtSignal(Procedure)
-
-    def __init__(self, text, proc):
-        super().__init__()
-        self._proc = proc
-        self.setText(text)
-        self.clicked.connect(self.on_clicked)
-
-    @pyqtSlot()
-    def on_clicked(self):
-        data = self._proc
-        self.clickedX.emit(data)
-
-class QRadioButtonX(QRadioButton):
-    """ QRadioButton which returns a dict of channel info on toggled """
-    toggledX = pyqtSignal(dict)
-
-    def __init__(self, text, channel):
-        super().__init__()
-        self.ch = channel
-        self.setText(text)
-        self.toggled.connect(self.on_toggled)
-
-    def on_toggled(self):
-        value = float(self.isChecked())
-        data = {'channel': self.ch,
-                'value' : value,
-                'emitted': self.toggledX}
-        self.toggledX.emit(data)
-
-if __name__ == '__main__':
-    import sys
-    app = QApplication(sys.argv)
-    mainwindow = MainWindow()
-    mainwindow.show()
-
-    sys.exit(app.exec_())
+        self.clicked_.emit(self.obj)

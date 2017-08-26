@@ -145,7 +145,7 @@
                </font>
               </property>
               <property name="text">
-               <string>Information</string>
+               <string>Server polling rate: 15 Hz</string>
               </property>
              </widget>
             </item>
