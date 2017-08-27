@@ -48,13 +48,18 @@ class Channel(QWidget):
 
         # plot widget
         gb_plot = QGroupBox()
+        gb_plot.setMinimumSize(350, 300)
         plotwidget = pg.PlotWidget()
         vbox = QVBoxLayout()
         gb_plot.setLayout(vbox)
+        hbox = QHBoxLayout()
+        hbox.addStretch()
         btnPin = QPushButton('Pin')
         btnPin.clicked.connect(self.set_pin_callback)
+        hbox.addWidget(btnPin)
+        hbox.addStretch()
         vbox.addWidget(plotwidget)
-        vbox.addWidget(btnPin)
+        vbox.addLayout(hbox)
         self._plot_widget = gb_plot
 
         self._plot_curve = plotwidget.plot(pen='r')
@@ -264,7 +269,7 @@ class Channel(QWidget):
                       'display_order': self._display_order
                       }
 
-        return json.dumps(properties)
+        return properties #json.dumps(properties)
     
     @staticmethod
     def load_from_json(channel_json):

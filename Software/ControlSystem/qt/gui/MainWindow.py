@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
                             QWidget, QSizePolicy, QAction, QTreeWidgetItem, \
                             QComboBox
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QPixmap, QIcon
 
 import pyqtgraph as pg
 
@@ -51,6 +51,12 @@ class MainWindow(QMainWindow):
         self.ui.toolBar.addWidget(spc)
         self._btnAbout = QAction('About', None)
         self.ui.toolBar.addAction(self._btnAbout)
+
+        # icons
+        self._btnquit.setIcon(QIcon(QPixmap('gui/images/icons/process-stop.png')))
+        self._btnAbout.setIcon(QIcon(QPixmap('gui/images/icons/help-browser.png')))
+        self.ui.btnExpand.setIcon(QIcon(QPixmap('gui/images/icons/list-add.png')))
+        self.ui.btnCollapse.setIcon(QIcon(QPixmap('gui/images/icons/list-remove.png')))
 
         # dialog connection
         self._btnAbout.triggered.connect(self.show_AboutDialog)

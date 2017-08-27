@@ -155,17 +155,16 @@ class Device:
         return self._locked
 
     def get_json(self):
-        properties = {"name": self._name,
-                      "label": self._label,
-                      "arduino_id": self._arduino_id,
-                      "on_overview_page": self._on_overview_page,
-                      "channels": {}
+        properties = {'name': self._name,
+                      'label': self._label,
+                      'arduino_id': self._arduino_id,
+                      'channels': {}
                       }
 
         for channel_name, channel in self._channels.items():
             properties['channels'][channel_name] = channel.get_json()
 
-        return json.dumps(properties)
+        return properties #json.dumps(properties)
 
     def write_json(self, filename):
         myjson = self.get_json()

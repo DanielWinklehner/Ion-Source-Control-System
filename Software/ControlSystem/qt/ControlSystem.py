@@ -14,7 +14,7 @@ from multiprocessing import Process, Pipe
 from collections import deque
 
 from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QFileDialog
 
 import pyqtgraph as pg
 import numpy as np
@@ -140,7 +140,10 @@ class ControlSystem():
     def __init__(self, server_ip='127.0.0.1', server_port=80, debug=False):
         ## Set up Qt UI and connect UI signals
         self._window = MainWindow.MainWindow()
+        
+        self._window.ui.btnSave.triggered.connect(self.on_save_button)
         self._window._btnquit.triggered.connect(self.on_quit_button)
+
         self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
         self._window.ui.btnAddProcedure.clicked.connect(self.show_ProcedureDialog)
         self._window.sig_device_channel_changed.connect(self.on_device_channel_changed)
@@ -321,6 +324,7 @@ class ControlSystem():
                 self.add_device(obj)
             elif isinstance(obj, Channel):
                 obj.parent_device.add_channel(obj)
+                self.add_channel_to_gui(obj)
         else:
             for procedure_name, procedure in self._procedures.items():
                 used_devices, used_channels = procedure.devices_channels_used()
@@ -398,6 +402,21 @@ class ControlSystem():
         pipe_message = ["device_or_channel_changed", device_dict_list]
         self._pipe_gui.send(pipe_message)
 
+    def add_channel_to_gui(self, channel):
+        if channel.parent_device is None:
+            print('Attempt to add channel with no parent device to gui')
+            return
+
+        key = (channel.parent_device.name, channel.name)
+        channel._set_signal.connect(self.set_value_callback)
+        channel._pin_signal.connect(self.set_pinned_plot_callback)
+        self._x_values[key] = deque(np.linspace(time.time() - 5.0, time.time(),
+                                                self._retain_last_n_values),
+                                                maxlen=self._retain_last_n_values)
+        self._y_values[key] = deque(np.zeros(self._retain_last_n_values),
+                                             maxlen=self._retain_last_n_values)
+
+
     def add_device(self, device):
         """ Adds a device to the control system """
         device.parent = self
@@ -407,8 +426,7 @@ class ControlSystem():
         self._device_name_arduino_id_map[device.arduino_id] = device.name
 
         for chname, ch in device.channels.items():
-            ch._set_signal.connect(self.set_value_callback)
-            ch._pin_signal.connect(self.set_pinned_plot_callback)
+            self.add_channel_to_gui(ch)
 
         """
         # Add corresponding channels to the hdf5 log.
@@ -422,15 +440,6 @@ class ControlSystem():
                                                             [device.label(), "Device", "edit_device", device.name(),
                                                              device.name()])
         """
-        for channel_name, channel in device.channels.items():
-            # Add to "values".
-            # Initialize with current time and 0.0 this will eventually flush out of the deque
-            self._x_values[(device.name, channel_name)] = deque(np.linspace(time.time() - 5.0,
-                                                                              time.time(),
-                                                                              self._retain_last_n_values),
-                                                                  maxlen=self._retain_last_n_values)
-            self._y_values[(device.name, channel_name)] = deque(np.zeros(self._retain_last_n_values),
-                                                                  maxlen=self._retain_last_n_values)
 
     @pyqtSlot(Channel, object)
     def set_value_callback(self, ch, val):
@@ -474,6 +483,17 @@ class ControlSystem():
                 print("Exception '{}' caught while communicating with RasPi server.".format(e))
 
     # dialogs
+    def on_save_button(self):
+        fileName, _ = QFileDialog.getSaveFileName(self._window,
+                            "Save Devices as JSON","","Text Files (*.txt)")
+
+        with open(fileName, 'w') as f:
+            output = {}
+            for device_name, device in self._devices.items():
+                output[device_name] = device.get_json()
+
+            json.dump(output, f, sort_keys=True, indent=4, separators=(', ', ': '))
+
     @pyqtSlot()
     def show_PlotChooseDialog(self):
         _plotchoosedialog = PlotChooseDialog(self._devices, self._plotted_channels)
