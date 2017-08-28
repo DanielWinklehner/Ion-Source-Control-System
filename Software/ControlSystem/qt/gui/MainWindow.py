@@ -99,10 +99,11 @@ class MainWindow(QMainWindow):
 
     # ---- Tab Update Functions ----
     def update_overview(self, devices):
-        #self.clearLayout(self._overview_layout)
+        self.clearLayout(self._overview_layout)
         for device_name, device in devices.items():
-            if 'overview' in device.pages and device._overview_widget.parent() == None:
-                self._overview_layout.insertLayout(0, device._overview_widget)
+            if 'overview' in device.pages:
+                self._overview_layout.insertWidget(0, device._overview_widget)
+        self._overview_layout.addStretch()
 
     def update_plots(self, devices, plotted_channels):
         """ Draw the plotted channels, as specified by the PlotChooseDialog """
@@ -422,13 +423,13 @@ class MainWindow(QMainWindow):
         self._statusbar.showMessage(text)
         self._messagelog.append(time.strftime('[%Y-%m-%d %H:%M:%S] ', time.localtime()) + text)
 
-    def clearLayout(self ,layout):
-        """ Recursively removes all items from a QLayout. Does not delete the item """
+    def clearLayout(self, layout):
+        """ Removes all widgets from a QLayout. Does not delete the widget """
         while layout.count():
             child = layout.takeAt(0)
             if child.widget():
                 child.widget().setParent(None)
-            if child.layout():
+            elif child.layout():
                 self.clearLayout(child)
 
 # ----- Custom Controls ----- #

@@ -1,7 +1,7 @@
 import json
 import time
 
-from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLabel
+from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLabel, QFrame
 
 from .Channel import Channel
 
@@ -24,7 +24,9 @@ class Device:
         self._pages = ['overview']
 
         # create gui representation
+        fr = QFrame()
         vbox_main = QVBoxLayout()
+        fr.setLayout(vbox_main)
         gb = QGroupBox(self._label)
         vbox_main.addWidget(gb)
         vbox_main.addStretch()
@@ -33,7 +35,7 @@ class Device:
         gb.setLayout(vbox_gb)
 
         self._gblayout = vbox_gb
-        self._overview_widget = vbox_main
+        self._overview_widget = fr
         self._error_message = ''
         self._hasError = False
     
@@ -63,12 +65,12 @@ class Device:
             if not self._hasError:
                 self._hasError = True
                 txtError = QLabel('<font color="red">{}</font>'.format(self._error_message))
-                self._overview_widget.insertWidget(0, txtError)
+                self._overview_widget.layout().insertWidget(0, txtError)
                 self._gblayout.parent().setEnabled(False)
         else:
             if self._hasError:
                 self._hasError = False
-                txtError = self._overview_widget.takeAt(0).widget()
+                txtError = self._overview_widget.layout().takeAt(0).widget()
                 txtError.deleteLater()
                 self._gblayout.parent().setEnabled(True)
       
@@ -155,6 +157,7 @@ class Device:
         return self._locked
 
     def get_json(self):
+        """ Gets a serializable representation of this device """
         properties = {'name': self._name,
                       'label': self._label,
                       'arduino_id': self._arduino_id,
@@ -173,7 +176,7 @@ class Device:
             f.write(myjson)
 
     @staticmethod
-    def load_from_json(filename):
+    def load_from_json(string):
         with open(filename, "rb") as f:
             data = json.load(f)
 

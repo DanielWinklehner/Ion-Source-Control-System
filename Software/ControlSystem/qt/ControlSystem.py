@@ -34,6 +34,7 @@ def query_server(com_pipe, server_url, debug=False):
     _device_dict_list = None
     poll_count = 0
     poll_time = timeit.default_timer()
+    _paused = False
 
     while _keep_communicating:
         # Do the timing of this process:
@@ -44,8 +45,10 @@ def query_server(com_pipe, server_url, debug=False):
                 _com_period = _in_message[1]
             elif _in_message[0] == "device_or_channel_changed":
                 _device_dict_list = _in_message[1]
+            elif _in_message[0] == "pause_query":
+                _paused = not _paused 
 
-        if _device_dict_list is not None and _device_dict_list:
+        if _device_dict_list is not None and _device_dict_list and not _paused:
             poll_count += 1
             _url = server_url + "device/query"
             _data = {'data': json.dumps(_device_dict_list)}
@@ -162,6 +165,7 @@ class ControlSystem():
 
         self._window.ui.btnStartPause.clicked.connect(self.on_start_pause_click)
         self._window.ui.btnStop_2.clicked.connect(self.on_stop_click)
+        self._window.ui.btnStop_2.setEnabled(False)
 
         self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
         self._window.ui.btnAddProcedure.clicked.connect(self.show_ProcedureDialog)
@@ -231,11 +235,14 @@ class ControlSystem():
         if btn.text() == 'Start':
             self.setup_communication_threads()
             btn.setText('Pause')
+            self._window.ui.btnStop_2.setEnabled(True)
         elif btn.text() == 'Pause':
+            self._pipe_gui.send(('pause_query',))
             self._keep_communicating = False
             self._listener.isRunning = False
             btn.setText('Resume')
         else:
+            self._pipe_gui.send(('pause_query',))
             self._keep_communicating = True
             self._listener.isRunning = True
             btn.setText('Pause')
@@ -243,19 +250,24 @@ class ControlSystem():
     def on_stop_click(self):
         self.shutdown_communication_threads()
         self._window.ui.btnStartPause.setText('Start')
+        self._window.ui.btnStop_2.setEnabled(False)
         try:
             self._listener.terminate()
         except AttributeError:
+            # if server has not been started, _listener won't exist
             pass
+
         # flush the deques
         for xs, ys in zip(self._x_values.items(), self._y_values.items()):
             xs[1].clear()
             ys[1].clear()
+        
         for device_name, device in self._devices.items():
+            device.error_message = ''
             for channel_name, channel in device.channels.items():
                 channel._plot_widget.layout().itemAt(0).widget().setData(0,0)
-        self._plotted_channels = {}
-        self.update_gui_devices()
+        #self._plotted_channels = {}
+        #self.update_gui_devices()
 
     def setup_communication_threads(self):
         """ For each device, we create a thread to communicate with the corresponding Arduino. """
@@ -409,6 +421,8 @@ class ControlSystem():
                             continue
                         # device name is unique, so update it in the Control System
                         self._devices[val] = self._devices.pop(obj.name)
+                        if obj.name in self._pinned_plot_name:
+                            self._pinned_plot_name = (val, self._pinned_plot_name[1])
                         for channel_name, channel in self._devices[val].channels.items():
                             self._x_values[(val, channel_name)] = self._x_values.pop((obj.name, channel_name))
                             self._y_values[(val, channel_name)] = self._y_values.pop((obj.name, channel_name))
@@ -457,7 +471,12 @@ class ControlSystem():
                          mych.mode in ['read', 'both']]) == 0)]
 
         pipe_message = ["device_or_channel_changed", device_dict_list]
-        self._pipe_gui.send(pipe_message)
+        try:
+            self._pipe_gui.send(pipe_message)
+        except AttributeError:
+            # _pipe_gui will not exist if the server has not been started
+            # at least once. If it hasn't, no need to send this message
+            pass
 
     def add_channel_to_gui(self, channel):
         if channel.parent_device is None:
@@ -476,6 +495,10 @@ class ControlSystem():
 
     def add_device(self, device):
         """ Adds a device to the control system """
+        if device.name in self._devices.keys():
+            self.show_ErrorDialog('Device with the same name already loaded')
+            return False
+
         device.parent = self
 
         # Add device to the list of devices in the control system
@@ -484,6 +507,8 @@ class ControlSystem():
 
         for chname, ch in device.channels.items():
             self.add_channel_to_gui(ch)
+
+        return True
 
         """
         # Add corresponding channels to the hdf5 log.
@@ -543,7 +568,10 @@ class ControlSystem():
     def on_save_button(self):
         fileName, _ = QFileDialog.getSaveFileName(self._window,
                             "Save Devices as JSON","","Text Files (*.txt)")
-
+        
+        if fileName == '':
+            return
+        
         with open(fileName, 'w') as f:
             output = {}
             for device_name, device in self._devices.items():
@@ -552,8 +580,12 @@ class ControlSystem():
             json.dump(output, f, sort_keys=True, indent=4, separators=(', ', ': '))
 
     def on_load_button(self):
+        successes = 0
         fileName, _ = QFileDialog.getOpenFileName(self._window,
                             "Load devices from JSON","","Text Files (*.txt)")
+
+        if fileName == '':
+            return
 
         with open(fileName, 'r') as f:
             try:
@@ -577,9 +609,12 @@ class ControlSystem():
 
                 device.add_channel(ch)
 
-            self.add_device(device)
+            if self.add_device(device):
+                successes += 1
 
-        self.update_gui_devices()
+        if successes > 0:
+            self.update_gui_devices()
+            self._window.status_message('Loaded {} devices from JSON.'.format(successes))
 
     @pyqtSlot()
     def show_PlotChooseDialog(self):
