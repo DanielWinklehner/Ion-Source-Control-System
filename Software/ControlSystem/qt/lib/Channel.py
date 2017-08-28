@@ -104,7 +104,11 @@ class Channel(QWidget):
 
     def update(self):
         if self._parent_device is not None:
-            self._plot_widget.setTitle('{}/{}'.format(self._parent_device.label, self._label))
+            if self._parent_device.error_message == '':
+                self._plot_widget.setTitle('{}/{}'.format(self._parent_device.label, self._label))
+            else:
+                self._plot_widget.setTitle('(Error) {}/{}'.format(self._parent_device.label, self._label))
+
             
     @pyqtSlot()
     def set_value_callback(self):

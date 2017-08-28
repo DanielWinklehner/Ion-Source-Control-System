@@ -341,6 +341,10 @@ class ControlSystem():
                         device.error_message = ''
                     for channel_name, value in parsed_response[arduino_id].items():
                         channel = device.get_channel_by_name(channel_name)
+                        if channel is None:
+                            device.error_message = 'Could not find channel with name {}.'.format(channel_name)
+                            continue
+
                         # Scale value back to channel
                         channel.value = value / channel.scaling
                         self.update_stored_values(device_name, channel_name, timestamp)
@@ -415,6 +419,8 @@ class ControlSystem():
                             continue
                         # channel name is unique, so we update it in the device object
                         obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
+                        self._x_values[(obj.parent_device.name, val)] = self._x_values.pop((obj.parent_device.name, obj.name))
+                        self._y_values[(obj.parent_device.name, val)] = self._y_values.pop((obj.parent_device.name, obj.name))
                     elif isinstance(obj, Device):
                         if val in self._devices.keys():
                             self.show_ErrorDialog('Device name is already used by another device. Choose a unique name for this device.')
@@ -471,6 +477,7 @@ class ControlSystem():
                          mych.mode in ['read', 'both']]) == 0)]
 
         pipe_message = ["device_or_channel_changed", device_dict_list]
+
         try:
             self._pipe_gui.send(pipe_message)
         except AttributeError:
@@ -496,7 +503,7 @@ class ControlSystem():
     def add_device(self, device):
         """ Adds a device to the control system """
         if device.name in self._devices.keys():
-            self.show_ErrorDialog('Device with the same name already loaded')
+            self.show_ErrorDialog('Device with the same name already loaded.')
             return False
 
         device.parent = self

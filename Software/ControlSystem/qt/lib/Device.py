@@ -67,12 +67,16 @@ class Device:
                 txtError = QLabel('<font color="red">{}</font>'.format(self._error_message))
                 self._overview_widget.layout().insertWidget(0, txtError)
                 self._gblayout.parent().setEnabled(False)
+                for name, ch in self.channels.items():
+                    ch.update()
         else:
             if self._hasError:
                 self._hasError = False
                 txtError = self._overview_widget.layout().takeAt(0).widget()
                 txtError.deleteLater()
                 self._gblayout.parent().setEnabled(True)
+                for name, ch in self.channels.items():
+                    ch.update()
       
 
     @property
@@ -132,7 +136,10 @@ class Device:
         return self._channels
 
     def get_channel_by_name(self, channel_name):
-        return self._channels[channel_name]
+        try:
+            return self._channels[channel_name]
+        except:
+            return None
 
     def add_channel(self, channel):
         channel.arduino_id = self._arduino_id
