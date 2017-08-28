@@ -111,26 +111,41 @@ class Listener(QObject):
         super().__init__()
         self._terminate = False # flag to stop listening process
         self._listen_pipe = listen_pipe
+        self._keep_communicating = True
+
+    @property
+    def isRunning(self):
+        return self._keep_communicating
+
+    @isRunning.setter
+    def isRunning(self, val):
+        self._keep_communicating = val
 
     @pyqtSlot()
     def listen(self):
         self.sig_status.emit('Listener started')
 
         while True:
+            # wrap this in a "while True" because self._keep_communicating 
+            # will change. Want to resume if it becomes true again.
+            while self._keep_communicating:
+                if self._listen_pipe.poll():
+                    gui_message = self._listen_pipe.recv()
+                    if gui_message[0] == "polling_rate":
+                        self.sig_poll_rate.emit(gui_message[1])
+                    elif gui_message[0] == "query_response":
+                        self.sig_device_info.emit(gui_message[1])
 
-            if self._listen_pipe.poll():
-                gui_message = self._listen_pipe.recv()
-                if gui_message[0] == "polling_rate":
-                    self.sig_poll_rate.emit(gui_message[1])
-                elif gui_message[0] == "query_response":
-                    self.sig_device_info.emit(gui_message[1])
+                app.processEvents()
+                if self._terminate:
+                    break
 
-            app.processEvents()
             if self._terminate:
                 self.sig_status.emit('Listener terminating...')
                 break
 
-        self.sig_done.emit('Listener done')
+
+        self.sig_done.emit('Listener stopped')
 
     def terminate(self):
         self.sig_status.emit('Listener received terminate signal')
@@ -142,7 +157,11 @@ class ControlSystem():
         self._window = MainWindow.MainWindow()
         
         self._window.ui.btnSave.triggered.connect(self.on_save_button)
+        self._window.ui.btnLoad.triggered.connect(self.on_load_button)
         self._window._btnquit.triggered.connect(self.on_quit_button)
+
+        self._window.ui.btnStartPause.clicked.connect(self.on_start_pause_click)
+        self._window.ui.btnStop_2.clicked.connect(self.on_stop_click)
 
         self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
         self._window.ui.btnAddProcedure.clicked.connect(self.show_ProcedureDialog)
@@ -157,7 +176,7 @@ class ControlSystem():
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
 
-        """
+        
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -172,23 +191,17 @@ class ControlSystem():
         r = requests.get(self._server_url + 'device/active')
         if r.status_code == 200:
             devices = json.loads(r.text)
-            print(devices.items())
             for device_id, device_info in devices.items():
                 self._window.status_message('Found {} with ID {} on port {}.'.format(
                     device_info['identifyer'], device_id, device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        """
+        
 
         ## Set up communication pipes.
         self._keep_communicating = False
         self._polling_rate = 15.0
         self._com_period = 1.0 / self._polling_rate
-        self._pipe_gui, pipe_server = Pipe()
-
-        self._com_process = Process(target=query_server, args=(pipe_server,
-                                                            self._server_url,
-                                                            debug,))
 
         ## Set up data dictionaries
         self._devices = {}
@@ -213,8 +226,45 @@ class ControlSystem():
         self._window.update_plots(self._devices, self._plotted_channels)
         self._window.update_procedures(self._procedures)
 
+    def on_start_pause_click(self):
+        btn = self._window.ui.btnStartPause
+        if btn.text() == 'Start':
+            self.setup_communication_threads()
+            btn.setText('Pause')
+        elif btn.text() == 'Pause':
+            self._keep_communicating = False
+            self._listener.isRunning = False
+            btn.setText('Resume')
+        else:
+            self._keep_communicating = True
+            self._listener.isRunning = True
+            btn.setText('Pause')
+
+    def on_stop_click(self):
+        self.shutdown_communication_threads()
+        self._window.ui.btnStartPause.setText('Start')
+        try:
+            self._listener.terminate()
+        except AttributeError:
+            pass
+        # flush the deques
+        for xs, ys in zip(self._x_values.items(), self._y_values.items()):
+            xs[1].clear()
+            ys[1].clear()
+        for device_name, device in self._devices.items():
+            for channel_name, channel in device.channels.items():
+                channel._plot_widget.layout().itemAt(0).widget().setData(0,0)
+        self._plotted_channels = {}
+        self.update_gui_devices()
+
     def setup_communication_threads(self):
         """ For each device, we create a thread to communicate with the corresponding Arduino. """
+        self._pipe_gui, pipe_server = Pipe()
+
+        self._com_process = Process(target=query_server, args=(pipe_server,
+                                                            self._server_url,
+                                                            False,))
+
         self._threads = []
         self._keep_communicating = True
 
@@ -230,18 +280,29 @@ class ControlSystem():
 
         # Create listener object, and start listener process
         # Also connect all Qt signals/slots
-        listener = Listener(self._pipe_gui)
+        self._listener = Listener(self._pipe_gui)
         query_thread = QThread()
         query_thread.setObjectName('listener_thread')
-        self._threads.append((query_thread, listener))
-        listener.moveToThread(query_thread)
+        self._threads.append((query_thread, self._listener))
+        self._listener.moveToThread(query_thread)
 
-        listener.sig_status.connect(self.on_listener_status)
-        listener.sig_poll_rate.connect(self.on_listener_poll_rate)
-        listener.sig_device_info.connect(self.on_listener_device_info)
-        query_thread.started.connect(listener.listen)
+        self._listener.sig_status.connect(self.on_listener_status)
+        self._listener.sig_poll_rate.connect(self.on_listener_poll_rate)
+        self._listener.sig_device_info.connect(self.on_listener_device_info)
+        query_thread.started.connect(self._listener.listen)
 
         query_thread.start()
+
+    def shutdown_communication_threads(self):
+        self._keep_communicating = False
+        try:
+            self._com_process.terminate()
+            self._com_process.join()
+        except:
+            pass
+        if self._threads:
+            for thread, listener in self._threads:
+                thread.quit()
 
     @pyqtSlot(str)
     def on_listener_status(self, data: str):
@@ -316,6 +377,7 @@ class ControlSystem():
                     channel._plot_curve.setData(self._x_values[(channel.parent_device.name, channel_name)],
                                           self._y_values[(channel.parent_device.name, channel_name)],
                                           clear=True, _callsync='off')
+        app.processEvents()
 
     @pyqtSlot(object, dict)
     def on_device_channel_changed(self, obj, vals):
@@ -370,12 +432,7 @@ class ControlSystem():
     @pyqtSlot()
     def on_quit_button(self):
         # shut down communication threads
-        self._keep_communicating = False
-        self._com_process.terminate()
-        self._com_process.join()
-        for thread, listener in self._threads:
-            thread.quit()
-
+        self.shutdown_communication_threads()
         self._window.close()
 
     def device_or_channel_changed(self):
@@ -493,6 +550,36 @@ class ControlSystem():
                 output[device_name] = device.get_json()
 
             json.dump(output, f, sort_keys=True, indent=4, separators=(', ', ': '))
+
+    def on_load_button(self):
+        fileName, _ = QFileDialog.getOpenFileName(self._window,
+                            "Load devices from JSON","","Text Files (*.txt)")
+
+        with open(fileName, 'r') as f:
+            try:
+                data = json.loads(f.read())
+            except:
+                self.show_ErrorDialog('Unable to read JSON file')
+                return
+
+        for device_name, device_data in data.items():
+            filtered_params = {}
+            for key, value in device_data.items():
+                if not key == "channels":
+                    filtered_params[key] = value
+
+            device = Device(**filtered_params)
+
+            for channel_name, channel_data in device_data['channels'].items():
+                data_type_str = channel_data['data_type']
+                channel_data['data_type'] = eval(data_type_str.split("'")[1])
+                ch = Channel(**channel_data)
+
+                device.add_channel(ch)
+
+            self.add_device(device)
+
+        self.update_gui_devices()
 
     @pyqtSlot()
     def show_PlotChooseDialog(self):
@@ -619,8 +706,8 @@ if __name__ == '__main__':
 
     mydebug = False
 
-    cs.add_device(dummy_device(1, "95432313837351706152"))
-    cs.add_device(dummy_device(2, "95433343933351B012C2"))
+    #cs.add_device(dummy_device(1, "95432313837351706152"))
+    #cs.add_device(dummy_device(2, "95433343933351B012C2"))
 
     cs.run()
     sys.exit(app.exec_())
