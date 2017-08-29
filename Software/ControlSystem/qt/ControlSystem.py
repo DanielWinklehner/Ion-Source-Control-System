@@ -595,6 +595,9 @@ class ControlSystem():
         if fileName == '':
             return
         
+        if fileName[-4:] != '.txt':
+            fileName += '.txt'
+
         with open(fileName, 'w') as f:
             output = {}
             for device_name, device in self._devices.items():
