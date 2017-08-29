@@ -101,7 +101,8 @@ def query_server(com_pipe, server_url, debug=False):
             time.sleep(_sleepy_time)
 
 class Listener(QObject):
-    """ Gets info from server pipe & passes it to main thread, so that GUI updates are thread-safe """
+    """ Gets info from server pipe & passes it to main thread, 
+        so that GUI updates are thread-safe """
     # status message and ending signals
     sig_status = pyqtSignal(str)
     sig_done = pyqtSignal(str)
@@ -180,7 +181,7 @@ class ControlSystem():
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
 
-        
+            
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -200,7 +201,7 @@ class ControlSystem():
                     device_info['identifyer'], device_id, device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        
+         
 
         ## Set up communication pipes.
         self._keep_communicating = False
@@ -270,7 +271,7 @@ class ControlSystem():
         #self.update_gui_devices()
 
     def setup_communication_threads(self):
-        """ For each device, we create a thread to communicate with the corresponding Arduino. """
+        """ Create gui/server pipe pair, start listener """
         self._pipe_gui, pipe_server = Pipe()
 
         self._com_process = Process(target=query_server, args=(pipe_server,
@@ -390,20 +391,25 @@ class ControlSystem():
         if self._window.current_tab == 'plots':
             for device_name, device in self._devices.items():
                 for channel_name, channel in device.channels.items():
-                    channel._plot_curve.setData(self._x_values[(channel.parent_device.name, channel_name)],
-                                          self._y_values[(channel.parent_device.name, channel_name)],
-                                          clear=True, _callsync='off')
+                    channel._plot_curve.setData(
+                            self._x_values[(channel.parent_device.name, channel_name)],
+                            self._y_values[(channel.parent_device.name, channel_name)],
+                            clear=True, _callsync='off')
         app.processEvents()
 
     @pyqtSlot(object, dict)
     def on_device_channel_changed(self, obj, vals):
+        """ Called when user presses Save Changes button on the settings page """
+
         if vals == {}:
+            # We are adding a device/channel
             if isinstance(obj, Device):
                 self.add_device(obj)
             elif isinstance(obj, Channel):
                 obj.parent_device.add_channel(obj)
                 self.add_channel_to_gui(obj)
         else:
+            # We are editing a device/channel
             for procedure_name, procedure in self._procedures.items():
                 used_devices, used_channels = procedure.devices_channels_used()
                 if obj.name in used_devices + used_channels:
@@ -417,25 +423,34 @@ class ControlSystem():
                         if val in obj.parent_device.channels.keys():
                             self.show_ErrorDialog('Channel name is already used by another channel on this device. Choose a unique name for this channel.')
                             continue
+
                         # channel name is unique, so we update it in the device object
                         obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
-                        self._x_values[(obj.parent_device.name, val)] = self._x_values.pop((obj.parent_device.name, obj.name))
-                        self._y_values[(obj.parent_device.name, val)] = self._y_values.pop((obj.parent_device.name, obj.name))
+                        self._x_values[(obj.parent_device.name, val)] = \
+                                self._x_values.pop((obj.parent_device.name, obj.name))
+                        self._y_values[(obj.parent_device.name, val)] = \
+                                self._y_values.pop((obj.parent_device.name, obj.name))
+
                     elif isinstance(obj, Device):
                         if val in self._devices.keys():
                             self.show_ErrorDialog('Device name is already used by another device. Choose a unique name for this device.')
                             continue
+
                         # device name is unique, so update it in the Control System
                         self._devices[val] = self._devices.pop(obj.name)
                         if obj.name in self._pinned_plot_name:
                             self._pinned_plot_name = (val, self._pinned_plot_name[1])
                         for channel_name, channel in self._devices[val].channels.items():
-                            self._x_values[(val, channel_name)] = self._x_values.pop((obj.name, channel_name))
-                            self._y_values[(val, channel_name)] = self._y_values.pop((obj.name, channel_name))
+                            self._x_values[(val, channel_name)] = \
+                                    self._x_values.pop((obj.name, channel_name))
+                            self._y_values[(val, channel_name)] = \
+                                    self._y_values.pop((obj.name, channel_name))
+
                 elif isinstance(obj, Device) and attr == 'arduino_id' and val != obj.arduino_id:
                     if val in [x.arduino_id for name, x in self._devices.items()]:
                         self.show_ErrorDialog('Arduino ID has already been assigned to another device. Choose a unique arduino ID for this device')
                         continue
+                    
                 # use setattr to set obj properties by 'attr' which is a string
                 setattr(obj, attr, val)
 
@@ -531,9 +546,8 @@ class ControlSystem():
         """
 
     @pyqtSlot(Channel, object)
-    def set_value_callback(self, ch, val):
+    def set_value_callback(self, channel, val):
         """ Gets updated channel info from GUI, creates a message to send to server """
-        channel = ch
         values = None
         if channel.data_type == float:
             values = val * channel.scaling
@@ -541,7 +555,9 @@ class ControlSystem():
             values = float(val)
         if self.debug:
             print('Set value callback was called with widget {}, '
-                  'type {}, and scaled value {}.'.format(channel, channel.data_type, channel.value))
+                  'type {}, and scaled value {}.'.format(channel, 
+                                                         channel.data_type, 
+                                                         channel.value))
 
         _data = {'device_driver': channel.parent_device.driver,
                  'device_id': channel.parent_device.arduino_id,
@@ -571,7 +587,7 @@ class ControlSystem():
             if self.debug:
                 print("Exception '{}' caught while communicating with RasPi server.".format(e))
 
-    # dialogs
+    # ---- dialogs ----
     def on_save_button(self):
         fileName, _ = QFileDialog.getSaveFileName(self._window,
                             "Save Devices as JSON","","Text Files (*.txt)")
@@ -666,6 +682,8 @@ class ControlSystem():
         #self.setup_communication_threads()
         self.update_gui_devices()
         self._window.show()
+
+# ---- End control system class ----
 
 def dummy_device(n, ard_id):
     # --- Set up the Dummy PS Controller 1 --- #

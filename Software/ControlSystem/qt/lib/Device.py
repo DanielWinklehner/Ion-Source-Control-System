@@ -168,6 +168,7 @@ class Device:
         properties = {'name': self._name,
                       'label': self._label,
                       'arduino_id': self._arduino_id,
+                      'driver': self._driver,
                       'channels': {}
                       }
 

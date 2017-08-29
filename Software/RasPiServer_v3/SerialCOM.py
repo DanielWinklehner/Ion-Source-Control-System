@@ -49,7 +49,13 @@ class SerialCOM(object):
         try:
 
             self._ser.write(message)
-            response = self._ser.readline()
+            
+            response = b''
+            while True:
+                resp = self._ser.read(1)
+                if resp in [b'\n', b'\r', b'\r\n']:
+                    break
+                response += bytes(resp)
 
             if len(response) != 0:
                 return response

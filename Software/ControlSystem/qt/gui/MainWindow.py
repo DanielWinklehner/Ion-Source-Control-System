@@ -187,11 +187,13 @@ class MainWindow(QMainWindow):
             label = 'New Device'
             name = ''
             ardid = ''
+            driver = 'Arduino'
 
             if obj is not None:
                 label = obj.label
                 name = obj.name
                 ardid = obj.arduino_id
+                driver = obj.driver
 
             lblTitle = QLabel(label)
             font = QFont()
@@ -203,10 +205,15 @@ class MainWindow(QMainWindow):
             lblArdId = QLabel('Arduino ID')
             lblLabel = QLabel('Label')
             lblName = QLabel('Name')
+            lblDriver = QLabel('Driver')
 
             txtArdId = QLineEdit(ardid)
             txtLabel = QLineEdit(label)
             txtName = QLineEdit(name)
+            cbDriver = QComboBox()
+            cbDriver.addItems(['Arduino', 'FT232R'])
+            if driver != 'Arduino':
+                cbDriver.setCurrentIndex(1)
 
             gbox.addWidget(lblName, 0, 0)
             gbox.addWidget(txtName, 0, 1)
@@ -214,6 +221,8 @@ class MainWindow(QMainWindow):
             gbox.addWidget(txtArdId, 1, 1)
             gbox.addWidget(lblLabel, 2, 0)
             gbox.addWidget(txtLabel, 2, 1)
+            gbox.addWidget(lblDriver, 3, 0)
+            gbox.addWidget(cbDriver, 3, 1)
 
             self._devvbox.addLayout(gbox)
 
@@ -347,6 +356,7 @@ class MainWindow(QMainWindow):
             label = gbox.itemAt(5).widget().text()
 
             ard_id = gbox.itemAt(3).widget().text()
+            driver = gbox.itemAt(7).widget().currentText()
 
             if isinstance(obj, Device):
                 # we are modifying a device
@@ -354,7 +364,7 @@ class MainWindow(QMainWindow):
                 newvals = {'name': name, 'label': label, 'arduino_id': ard_id}
             else:
                 # we are adding a new device. No need to set newvals
-                newobj = Device(name, ard_id, label)
+                newobj = Device(name, ard_id, label, driver=driver)
 
         else:
             gbox = self._devvbox.itemAt(1).layout()
@@ -400,7 +410,7 @@ class MainWindow(QMainWindow):
             else:
                 # adding a new channel, only set newobj
                 parent = obj[1] # if we are here, we are passed a tuple with the parent device
-                newobj = Channel(name, label, upper_limit, lower_limit, data_type, unit)
+                newobj = Channel(name, label, upper_limit, lower_limit, data_type, unit, mode=mode)
                 newobj.parent_device = parent
 
         self.clearLayout(self._devvbox)

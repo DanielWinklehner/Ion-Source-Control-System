@@ -321,6 +321,7 @@ def set_value_on_device():
     device_data['device_id'] = device_id
 
     msg = driver.translate_gui_to_device(device_data)
+
     device_data['device_id'] = old_device_id
 
     if _mydebug:
@@ -330,7 +331,8 @@ def set_value_on_device():
         # print(port_id)
         # print(_serial_comms[port_id])
 
-        device_response = _serial_comms[port_id].send_message(msg[0])
+        for cmd in msg:
+            device_response = _serial_comms[port_id].send_message(cmd)
 
     except Exception as e:
 
@@ -478,7 +480,8 @@ def listen_to_pipe():
                 _baud_rate = driver_mapping[_port_info["identifyer"]]["baud_rate"]
                 _serial_comms[_key] = manager().SerialCOM(arduino_id=_key,
                                                           port_name=_port_info["port"],
-                                                          baud_rate=_baud_rate)
+                                                          baud_rate=_baud_rate,
+                                                          timeout=1.0)
 
     if _keep_communicating:
         threading.Timer(0.5, listen_to_pipe).start()

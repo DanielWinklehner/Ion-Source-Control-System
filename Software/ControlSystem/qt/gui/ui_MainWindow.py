@@ -54,6 +54,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(14)
         self.btnStop.setFont(font)
+        self.btnStop.setStyleSheet("background-color: red")
         self.btnStop.setObjectName("btnStop")
         self.verticalLayout_5.addWidget(self.btnStop)
         self.splitter_3 = QtWidgets.QSplitter(self.frame_3)

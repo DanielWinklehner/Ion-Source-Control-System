@@ -15,8 +15,8 @@ class Channel(QWidget):
     _pin_signal = pyqtSignal(object, object)
 
     def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
-                 scaling=1.0, scaling_read=None, mode="both", display_order=0, displayformat="f",
-                 precision=2, default_value=0.0):
+                 scaling=1.0, scaling_read=None, mode="both", display_order=0, 
+                 displayformat="f", precision=2, default_value=0.0):
 
         super().__init__()
         self._name = name
@@ -105,9 +105,11 @@ class Channel(QWidget):
     def update(self):
         if self._parent_device is not None:
             if self._parent_device.error_message == '':
-                self._plot_widget.setTitle('{}/{}'.format(self._parent_device.label, self._label))
+                self._plot_widget.setTitle('{}/{}'.format(
+                                    self._parent_device.label, self._label))
             else:
-                self._plot_widget.setTitle('(Error) {}/{}'.format(self._parent_device.label, self._label))
+                self._plot_widget.setTitle('(Error) {}/{}'.format(
+                                    self._parent_device.label, self._label))
 
             
     @pyqtSlot()
