@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLabel, QFrame
 from .Channel import Channel
 
 class Device:
-    def __init__(self, name, arduino_id, label="", channels=None, driver='Arduino'):
+    def __init__(self, name='', device_id='', label='', channels=None, driver='Arduino'):
 
         self._name = name
         self._label = label
@@ -15,7 +15,7 @@ class Device:
         if channels is not None:
             self._channels = channels
 
-        self._arduino_id = arduino_id
+        self._device_id = device_id
         self._driver = driver
 
         self._parent = None
@@ -40,23 +40,30 @@ class Device:
         self._hasError = False
     
     @staticmethod
+    def driver_list():
+        return ['Arduino', 'RS485', 'FT232R', 'Teensy']
+
+    @staticmethod
     def user_edit_properties():
         """ Returns list of properties that should be user-editable 
             key name must match a propertyi of this class """
             
-        return {'name':     {'display_name': 'Name', 'display_order': 1},
-                'id':       {'display_name': 'Device ID', 'display_order': 2},
-                'label':    {'display_name': 'Label', 'display_order': 3},
-                'driver':   {'display_name': 'Driver', 'display_order': 4},
+        return {'name': {'display_name': 'Name', 'display_order': 1},
+                'device_id': {'display_name': 'Device ID', 'display_order': 2},
+                'label': {'display_name': 'Label', 'display_order': 3},
+                'driver': {'display_name': 'Driver', 'display_order': 4},
                 }
 
 
     def update(self):
+        # reorder the channels
         chlist = [ch for chname, ch in reversed(sorted(self._channels.items(), 
                                                         key=lambda x: x[1].display_order))]
         for idx, ch in enumerate(chlist):
-            if ch._overview_widget.parent() != self._gblayout.parent():
-                self._gblayout.insertWidget(idx, ch._overview_widget)
+            ch._overview_widget.setParent(None)
+
+        for idx, ch in enumerate(chlist):
+            self._gblayout.insertWidget(idx, ch._overview_widget)
 
     @property
     def error_message(self):
@@ -85,12 +92,12 @@ class Device:
       
 
     @property
-    def arduino_id(self):
-        return self._arduino_id
+    def device_id(self):
+        return self._device_id
 
-    @arduino_id.setter
-    def arduino_id(self, value):
-        self._arduino_id = value
+    @device_id.setter
+    def device_id(self, value):
+        self._device_id = value
 
     @property
     def driver(self):
@@ -147,7 +154,7 @@ class Device:
             return None
 
     def add_channel(self, channel):
-        channel.arduino_id = self._arduino_id
+        channel.device_id = self._device_id
         channel.parent_device = self
         self._channels[channel.name] = channel
         self.update()
@@ -172,7 +179,7 @@ class Device:
         """ Gets a serializable representation of this device """
         properties = {'name': self._name,
                       'label': self._label,
-                      'arduino_id': self._arduino_id,
+                      'device_id': self._device_id,
                       'driver': self._driver,
                       'channels': {}
                       }

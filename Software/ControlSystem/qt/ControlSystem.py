@@ -181,7 +181,7 @@ class ControlSystem():
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
 
-            
+        """        
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -201,7 +201,7 @@ class ControlSystem():
                     device_info['identifyer'], device_id, device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-         
+         """
 
         ## Set up communication pipes.
         self._keep_communicating = False
@@ -210,7 +210,7 @@ class ControlSystem():
 
         ## Set up data dictionaries
         self._devices = {}
-        self._device_name_arduino_id_map = {}
+        self._device_name_id_map = {}
         self._read_textboxes = {} # textboxes on overview page to update
         self._x_values = {}
         self._y_values = {}
@@ -226,6 +226,8 @@ class ControlSystem():
         self._window.status_message('Initialization complete.')
 
     def update_gui_devices(self):
+        for name, device in self._devices.items():
+            device.update()
         self._window.update_overview(self._devices)
         self._window.update_device_settings(self._devices)
         self._window.update_plots(self._devices, self._plotted_channels)
@@ -339,12 +341,12 @@ class ControlSystem():
         timestamp = parsed_response["timestamp"]
 
         for device_name, device in self._devices.items():
-            arduino_id = device.arduino_id
-            if not device.locked and arduino_id in parsed_response.keys():
-                if "ERROR" not in parsed_response[arduino_id]:
+            device_id = device.device_id
+            if not device.locked and device_id in parsed_response.keys():
+                if "ERROR" not in parsed_response[device_id]:
                     if device.error_message != '':
                         device.error_message = ''
-                    for channel_name, value in parsed_response[arduino_id].items():
+                    for channel_name, value in parsed_response[device_id].items():
                         channel = device.get_channel_by_name(channel_name)
                         if channel is None:
                             device.error_message = 'Could not find channel with name {}.'.format(channel_name)
@@ -360,8 +362,8 @@ class ControlSystem():
                             if self.debug:
                                 print("Exception '{}' caught while trying to log data.".format(e))
                 else:
-                    if device.error_message != parsed_response[arduino_id]:
-                        device.error_message = parsed_response[arduino_id]
+                    if device.error_message != parsed_response[device_id]:
+                        device.error_message = parsed_response[device_id]
 
     def update_stored_values(self, device_name, channel_name, timestamp):
         # update the stored data dictionaries
@@ -450,9 +452,9 @@ class ControlSystem():
                             self._y_values[(val, channel_name)] = \
                                     self._y_values.pop((obj.name, channel_name))
 
-                elif isinstance(obj, Device) and attr == 'arduino_id' and val != obj.arduino_id:
-                    if val in [x.arduino_id for name, x in self._devices.items()]:
-                        self.show_ErrorDialog('Arduino ID has already been assigned to another device. Choose a unique arduino ID for this device')
+                elif isinstance(obj, Device) and attr == 'device_id' and val != obj.device_id:
+                    if val in [x.device_id for name, x in self._devices.items()]:
+                        self.show_ErrorDialog('Device ID has already been assigned to another device. Choose a unique device ID for this device')
                         continue
                     
                 # use setattr to set obj properties by 'attr' which is a string
@@ -478,7 +480,7 @@ class ControlSystem():
         """ Sends a device changed request to the pipe """
         device_dict_list = [{
             'device_driver': device.driver,
-            'device_id': device.arduino_id,
+            'device_id': device.device_id,
             'locked_by_server': False,
             'channel_ids': [name for name, mych in device.channels.items() if
                          mych.mode in ['read', 'both']],
@@ -517,6 +519,7 @@ class ControlSystem():
                                                 maxlen=self._retain_last_n_values)
         self._y_values[key] = deque(np.zeros(self._retain_last_n_values),
                                              maxlen=self._retain_last_n_values)
+        channel.parent_device.update()
 
 
     def add_device(self, device):
@@ -529,7 +532,7 @@ class ControlSystem():
 
         # Add device to the list of devices in the control system
         self._devices[device.name] = device
-        self._device_name_arduino_id_map[device.arduino_id] = device.name
+        self._device_name_id_map[device.device_id] = device.name
 
         for chname, ch in device.channels.items():
             self.add_channel_to_gui(ch)
@@ -564,7 +567,7 @@ class ControlSystem():
                                                          channel.value))
 
         _data = {'device_driver': channel.parent_device.driver,
-                 'device_id': channel.parent_device.arduino_id,
+                 'device_id': channel.parent_device.device_id,
                  'locked_by_server': False,
                  'channel_ids': [channel.name],
                  'precisions': [None],
@@ -696,7 +699,7 @@ class ControlSystem():
 def dummy_device(n, ard_id):
     # --- Set up the Dummy PS Controller 1 --- #
     ps_controller1 = Device("ps_controller" + str(n),
-                            arduino_id=ard_id,
+                            device_id=ard_id,
                             label="Dummy HV Power Supplies",
                             driver='Arduino')
 

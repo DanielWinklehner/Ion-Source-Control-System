@@ -14,7 +14,7 @@ class Channel(QWidget):
     # emits device and channel
     _pin_signal = pyqtSignal(object, object)
 
-    def __init__(self, name, label, upper_limit, lower_limit, data_type, unit="",
+    def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, data_type=float, unit="",
                  scaling=1.0, scaling_read=None, mode="both", display_order=0, 
                  displayformat="f", precision=2, default_value=0.0):
 
@@ -43,6 +43,7 @@ class Channel(QWidget):
         # overview widget
         gb = QGroupBox(self._label)
         self._overview_widget = gb
+        self._unit_labels = []
         self._write_widget = None
         self._read_widget = None
 
@@ -82,6 +83,7 @@ class Channel(QWidget):
                 # add first row
                 hbox_write = QHBoxLayout()
                 lblUnit = QLabel(self._unit)
+                self._unit_labels.append(lblUnit)
                 txtWrite = QLineEdit(str(self._lower_limit))
                 txtWrite.returnPressed.connect(self.set_value_callback)
                 self._write_widget = txtWrite
@@ -94,6 +96,7 @@ class Channel(QWidget):
                 # add readonly second row
                 hbox_read = QHBoxLayout()
                 lblUnit = QLabel(self._unit)
+                self._unit_labels.append(lblUnit)
                 txtRead = QLineEdit()
                 txtRead.setDisabled(True)
                 self._read_widget = txtRead
@@ -102,7 +105,25 @@ class Channel(QWidget):
                 hbox_read.addWidget(lblUnit)
                 vbox_readwrite.addLayout(hbox_read)
 
+    @staticmethod
+    def user_edit_properties():
+        return {'name': {'display_name': 'Name', 'display_order': 1},
+                'label': {'display_name': 'Label', 'display_order': 2},
+                'unit': {'display_name': 'Unit', 'display_order': 3},
+                'scaling': {'display_name': 'Scaling', 'display_order': 4},
+                'lower_limit': {'display_name': 'Lower Limit', 'display_order': 5},
+                'upper_limit': {'display_name': 'Upper Limit', 'display_order': 6},
+                'data_type': {'display_name': 'Data Type', 'display_order': 7},
+                'mode': {'display_name': 'Mode', 'display_order': 8},
+                'display_order': {'display_name': 'Display Order', 'display_order': 9},
+               }
+
+
     def update(self):
+        self._overview_widget.setTitle(self._label)
+        for lbl in self._unit_labels:
+            lbl.setText(self._unit)
+
         if self._parent_device is not None:
             if self._parent_device.error_message == '':
                 self._plot_widget.setTitle('{}/{}'.format(
@@ -155,12 +176,12 @@ class Channel(QWidget):
         return self._locked
 
     @property
-    def arduino_id(self):
-        return self._arduino_id
+    def device_id(self):
+        return self._device_id
 
-    @arduino_id.setter
-    def arduino_id(self, arduino_id):
-        self._arduino_id = arduino_id
+    @device_id.setter
+    def device_id(self, device_id):
+        self._device_id = device_id
 
     @property
     def value(self):
@@ -178,6 +199,10 @@ class Channel(QWidget):
     @property
     def display_order(self):
         return self._display_order
+
+    @display_order.setter
+    def display_order(self, value):
+        self._display_order = value
 
     @property
     def parent_device(self):
@@ -246,6 +271,10 @@ class Channel(QWidget):
     @property
     def scaling(self):
         return self._scaling
+
+    @scaling.setter
+    def scaling(self, value):
+        self._scaling = value
 
     def scaling_read(self):
         return self._scaling_read
