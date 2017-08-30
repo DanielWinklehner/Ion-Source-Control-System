@@ -88,12 +88,12 @@ class MFCDriver:
 
         if value is not None and msg_type:
             # Handle the numerical values
-            if data_type == "<type 'bool'>":
+            if data_type in ["<class 'bool'>", "<type 'bool'>"]:
                 if value == 1.0:
                     msg += 'ON'
                 else:
                     msg += 'OFF'
-            elif data_type == "<type 'float'>":
+            elif data_type in ["<class 'float'>", "<type 'float'>"]:
                 msg += "{}".format(value)
             else:
                 # (int) maybe?

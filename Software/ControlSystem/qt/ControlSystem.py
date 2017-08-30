@@ -631,6 +631,7 @@ class ControlSystem():
             for channel_name, channel_data in device_data['channels'].items():
                 data_type_str = channel_data['data_type']
                 channel_data['data_type'] = eval(data_type_str.split("'")[1])
+
                 ch = Channel(**channel_data)
 
                 device.add_channel(ch)
@@ -765,7 +766,7 @@ def dummy_device(n, ard_id):
 
 if __name__ == '__main__':
     app = QApplication([])
-    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
 
     mydebug = False
 

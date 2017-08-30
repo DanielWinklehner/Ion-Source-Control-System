@@ -53,14 +53,21 @@ class SerialCOM(object):
 
             self._ser.write(message)
 
+            # Our own 'readline()' function
             response = b''
-
-            while True:
+            start_time = time.time()
+            while True and not (time.time() - start_time) > self._timeout:
                 resp = self._ser.read(1)
                 if resp:
                     response += bytes(resp)
                     if resp in [b'\n', b'\r']:
                         break
+                    elif resp == b';':
+                        # Handle MFC Readout (read in two more bytes for checksum and break)
+                        response += bytes(self._ser.read(2))
+                        break
+
+            print(message, response)
 
             if len(response) != 0:
                 return response
