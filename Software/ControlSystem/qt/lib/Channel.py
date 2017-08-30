@@ -143,6 +143,7 @@ class Channel(QWidget):
         for lbl in self._unit_labels:
             lbl.setText(self._unit)
 
+        self._plot_widget.layout().itemAt(0).widget().setLabel('left', '{} [{}]'.format(self._label, self._unit))
         if self._parent_device is not None:
             if self._parent_device.error_message == '':
                 self._plot_widget.setTitle('{}/{}'.format(
