@@ -12,10 +12,10 @@ driver_mapping = {'Arduino': {'driver': ArduinoDriver,
                   'RS485': {'driver': MFCDriver,
                             'baud_rate': 9600
                             },
-		  'Teensy': {'driver': ArduinoDriver,
-			    'baud_rate': 115200
-			    },
-		  'FT232R': {'driver': TDKDriver,
-			     'baud_rate': 19200
+		          'Teensy': {'driver': ArduinoDriver,
+            			     'baud_rate': 115200
+            			    },
+            	  'FT232R': {'driver': TDKDriver,
+            			     'baud_rate': 19200
                             },
                   }
