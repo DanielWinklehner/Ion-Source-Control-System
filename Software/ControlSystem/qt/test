@@ -1,8 +1,0 @@
-{
-    "psu": {
-        "arduino_id": "A5051Z0G", 
-        "channels": {}, 
-        "label": "Power Supply", 
-        "name": "psu"
-    }
-}

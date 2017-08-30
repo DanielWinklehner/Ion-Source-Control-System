@@ -252,16 +252,20 @@ class ControlSystem():
         self.shutdown_communication_threads()
         self._window.ui.btnStartPause.setText('Start')
         self._window.ui.btnStop_2.setEnabled(False)
+
         try:
+            # if server has not been started, _listener won't exist
             self._listener.terminate()
         except AttributeError:
-            # if server has not been started, _listener won't exist
             pass
 
-        # flush the deques
-        for xs, ys in zip(self._x_values.items(), self._y_values.items()):
-            xs[1].clear()
-            ys[1].clear()
+        try:
+            # deques might not exist. If not, then don't do anything.
+            for xs, ys in zip(self._x_values.items(), self._y_values.items()):
+                xs[1].clear()
+                ys[1].clear()
+        except:
+            pass
         
         for device_name, device in self._devices.items():
             device.error_message = ''
@@ -771,7 +775,7 @@ if __name__ == '__main__':
     mydebug = False
 
     #cs.add_device(dummy_device(1, "95432313837351706152"))
-    #cs.add_device(dummy_device(2, "95433343933351B012C2"))
+    cs.add_device(dummy_device(2, "95433343933351B012C2"))
 
     cs.run()
     sys.exit(app.exec_())

@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
             txtLabel = QLineEdit(label)
             txtName = QLineEdit(name)
             cbDriver = QComboBox()
-            cbDriver.addItems(['Arduino', 'FT232R'])
+            cbDriver.addItems(['Arduino', 'RS485', 'FT232R', 'Teensy'])
             if driver != 'Arduino':
                 cbDriver.setCurrentIndex(1)
 

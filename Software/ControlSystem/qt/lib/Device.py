@@ -39,14 +39,19 @@ class Device:
         self._error_message = ''
         self._hasError = False
     
-    def update(self):
-        """
-        if self._error_message != '':
-            lblError = QLabel('<font color="red">{}</font>'.format(self._error_message))
-            self._gblayout.addWidget(lblError)
-            gb.setDisabled(True)
-        """
+    @staticmethod
+    def user_edit_properties():
+        """ Returns list of properties that should be user-editable 
+            key name must match a propertyi of this class """
+            
+        return {'name':     {'display_name': 'Name', 'display_order': 1},
+                'id':       {'display_name': 'Device ID', 'display_order': 2},
+                'label':    {'display_name': 'Label', 'display_order': 3},
+                'driver':   {'display_name': 'Driver', 'display_order': 4},
+                }
 
+
+    def update(self):
         chlist = [ch for chname, ch in reversed(sorted(self._channels.items(), 
                                                         key=lambda x: x[1].display_order))]
         for idx, ch in enumerate(chlist):
