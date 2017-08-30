@@ -333,6 +333,8 @@ class Channel(QWidget):
                       'scaling': self._scaling,
                       'scaling_read': self._scaling_read,
                       'mode': self._mode,
+                      'precision': self._precision,
+                      'display_mode': self._display_mode,
                       'displayformat': self._displayformat,
                       'display_order': self._display_order
                       }
