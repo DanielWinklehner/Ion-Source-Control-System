@@ -111,11 +111,12 @@ class Channel(QWidget):
                 'label': {'display_name': 'Label', 'display_order': 2},
                 'unit': {'display_name': 'Unit', 'display_order': 3},
                 'scaling': {'display_name': 'Scaling', 'display_order': 4},
-                'lower_limit': {'display_name': 'Lower Limit', 'display_order': 5},
-                'upper_limit': {'display_name': 'Upper Limit', 'display_order': 6},
-                'data_type': {'display_name': 'Data Type', 'display_order': 7},
-                'mode': {'display_name': 'Mode', 'display_order': 8},
-                'display_order': {'display_name': 'Display Order', 'display_order': 9},
+                'precision': {'display_name': 'Precision', 'display_order': 5},
+                'lower_limit': {'display_name': 'Lower Limit', 'display_order': 6},
+                'upper_limit': {'display_name': 'Upper Limit', 'display_order': 7},
+                'data_type': {'display_name': 'Data Type', 'display_order': 8},
+                'mode': {'display_name': 'Mode', 'display_order': 9},
+                'display_order': {'display_name': 'Display Order', 'display_order': 10},
                }
 
 
@@ -158,6 +159,11 @@ class Channel(QWidget):
     @precision.setter
     def precision(self, precision):
         self._precision = precision
+        self._displayformat = '.{}{}'.format(self._precision, 'f')
+
+    @property
+    def displayformat(self):
+        return self._displayformat
 
     def lock(self):
         if not self._locked:

@@ -385,7 +385,8 @@ class ControlSystem():
                         continue
 
                     if channel.data_type in [int, float]:
-                        channel._read_widget.setText(str(channel.value))
+                        fmt = '%' + channel.displayformat
+                        channel._read_widget.setText(str(fmt % (channel.value)))
 
         # update the pinned plot
         if self._pinned_plot_name != ():
@@ -777,7 +778,7 @@ if __name__ == '__main__':
 
     mydebug = False
 
-    # cs.add_device(dummy_device(1, "95432313837351706152"))
+    cs.add_device(dummy_device(1, "95432313837351706152"))
     # cs.add_device(dummy_device(2, "95433343933351B012C2"))
 
     cs.run()

@@ -372,7 +372,7 @@ class MainWindow(QMainWindow):
                             except:
                                 print('bad values for limits')
                                 return
-                        elif prop[0] == 'display_order':
+                        elif prop[0] in ['display_order', 'precision']:
                             try:
                                 val = int(val)
                             except:
@@ -397,7 +397,7 @@ class MainWindow(QMainWindow):
                         val = gbox.itemAt(2 * i + 1).widget().text()
                         if prop[0] in ['upper_limit', 'lower_limit']:
                             pass
-                        elif prop[0] == 'display_order':
+                        elif prop[0] in ['display_order', 'precision']:
                             try:
                                 val = int(val)
                             except:
