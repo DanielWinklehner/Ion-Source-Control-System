@@ -1,0 +1,75 @@
+{
+    "genysis": {
+        "arduino_id": "A5051Z0G", 
+        "channels": {
+            "MC": {
+                "data_type": "<class 'float'>", 
+                "display_order": 0, 
+                "displayformat": ".2f", 
+                "label": "Read Current", 
+                "lower_limit": 0.0, 
+                "mode": "read", 
+                "name": "MC", 
+                "scaling": 1.0, 
+                "scaling_read": null, 
+                "unit": "A", 
+                "upper_limit": 300.0
+            }, 
+            "MV": {
+                "data_type": "<class 'float'>", 
+                "display_order": 0, 
+                "displayformat": ".2f", 
+                "label": "Read Voltage", 
+                "lower_limit": 0.0, 
+                "mode": "read", 
+                "name": "MV", 
+                "scaling": 1.0, 
+                "scaling_read": null, 
+                "unit": "V", 
+                "upper_limit": 8.0
+            }, 
+            "OUT": {
+                "data_type": "<class 'bool'>", 
+                "display_order": 0, 
+                "displayformat": ".2f", 
+                "label": "On/Off", 
+                "lower_limit": true, 
+                "mode": "write", 
+                "name": "OUT", 
+                "scaling": 1.0, 
+                "scaling_read": null, 
+                "unit": "", 
+                "upper_limit": true
+            }, 
+            "PC": {
+                "data_type": "<class 'float'>", 
+                "display_order": 0, 
+                "displayformat": ".2f", 
+                "label": "Current", 
+                "lower_limit": 0.0, 
+                "mode": "both", 
+                "name": "PC", 
+                "scaling": 1.0, 
+                "scaling_read": null, 
+                "unit": "A", 
+                "upper_limit": 300.0
+            }, 
+            "PV": {
+                "data_type": "<class 'float'>", 
+                "display_order": 0, 
+                "displayformat": ".2f", 
+                "label": "Voltage", 
+                "lower_limit": 0.0, 
+                "mode": "both", 
+                "name": "PV", 
+                "scaling": 1.0, 
+                "scaling_read": null, 
+                "unit": "V", 
+                "upper_limit": 8.0
+            }
+        }, 
+        "driver": "FT232R", 
+        "label": "Genysis PSU", 
+        "name": "genysis"
+    }
+}

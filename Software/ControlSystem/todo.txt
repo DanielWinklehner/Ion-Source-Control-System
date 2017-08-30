@@ -1,0 +1,32 @@
+Procedures
+
+ - User can define procedures, with access to channels
+    e.g. "if channel goes over this value, do X"
+ - Idea: Drop down combobox w/ channels, put in max/min values
+ - Idea: Pop up screen with active channels and variable names, example script, user writes simple if statements
+
+Error Handling
+
+ - Between raspberry pi and gui, between raspberry pi and devices
+    currently sends back ERR[0-9]
+ - Timeouts between GUI and raspberry pi, if arduino goes offline
+    Displaying polling rate in GUI, falls back to polling rate of slowest arduino
+
+General
+
+ - Front page overview, can set overview present when channel is created
+ - Decide which panels we want on the front page, currently everything is on the front page
+ - Python3 ready
+ - Move to QT?
+
+USB
+
+ - Driver for new power supply
+
+Arduino
+
+ - Arduino IDE installed, go to libraries folder, create a folder for the communications library
+    Create a symlink to libraries folder
+ - Test Arduino using serial plotter from Arduino IDE
+ - Has a function for querying value of specific channel, and listing channels available
+    sends 'i' or 'c', sends back list of channel names, use to determine which channels to fill

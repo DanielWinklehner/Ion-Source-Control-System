@@ -1,0 +1,25 @@
+# python headers, for pip
+sudo apt-get install python3-dev
+
+pip install...
+numpy
+scipy
+matplotlib
+pyqtgraph
+h5py
+cairocffi
+
+## gi
+sudo apt-get install python3-gi python3-gi-cairo
+# for virtualenv, create a symbolic link to the library
+ln -s /usr/lib/python3/dist-packages/gi /dir/to/venv/lib/python3.x/site-packages/
+ln -s /usr/lib/python3/dist-packages/cairo /dir/to/venv/lib/python3.x/site-packages/
+
+## QT
+sudo apt-get install python3-pyqt5
+# for virtualenv, create a symbolic link to the library
+ln -s /usr/lib/python3/dist-packages/PyQt5 /dir/to/venv/lib/python3.x/site-packages/
+
+## SIP, required by PyQtGraph. I was not able to get the pip version working, so here is a workaround:
+sudo apt-get install python3-sip
+cp /usr/lib/python3/dist-packages/sip***.so /dir/to/venv/lib.python3.x/site-packages/.

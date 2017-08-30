@@ -100,7 +100,7 @@ class AddDevicesDialog(Gtk.Dialog):
             arduino_id = arduino_id_entry.get_text()
             overview_page_presence = overview_page_checkbox.get_active()
 
-            print "Got a new device!"
+            print("Got a new device!")
 
             new_device = Device(name=device_name, label=device_label, arduino_id=arduino_id)
             new_device.set_overview_page_presence(overview_page_presence)
@@ -109,7 +109,7 @@ class AddDevicesDialog(Gtk.Dialog):
 
 
         else:
-            print "Cancelled!"
+            print("Cancelled!")
 
         dialog.destroy()
 
@@ -151,7 +151,7 @@ class AddDevicesDialog(Gtk.Dialog):
             else:
                 device_label = ""
         except ValueError as e:
-            print e
+            print(e)
             device_label = ""
 
         if len(device_label) > 0:
@@ -259,7 +259,7 @@ class AddDevicesDialog(Gtk.Dialog):
                 self.add_new_device_dialog()
             else:
                 # Dynamically load entries that allow the user to add a channel.
-                print "Loading 'Add-Channel' module."
+                print("Loading 'Add-Channel' module.")
                 self.load_add_channel_box(device_name)
 
     def initialize(self):
@@ -360,7 +360,7 @@ class EditDevicesDialog(Gtk.Dialog):
             else:
                 device_label = ""
         except ValueError as e:
-            print e
+            print(e)
             device_label = ""
 
         if len(device_label) > 0:
@@ -500,7 +500,7 @@ class EditDevicesDialog(Gtk.Dialog):
             device_name, device_label = model[tree_iter][:2]
 
             # Dynamically load entries that allow the user to add a channel.
-            print "Loading 'Add-Channel' module."
+            print("Loading 'Add-Channel' module.")
             # self.load_add_channel_box(device_name)
             self.load_edit_device_box(device_name)
 
@@ -519,15 +519,14 @@ class PlottingChannelsDialog(Gtk.Dialog):
                              ))
 
         self.set_default_size(450, 700)
-
         self._tree_store = tree_store
         self._box = self.get_content_area()
-        self._selections = copy.deepcopy(selections)
+        self._selections = copy.deepcopy(list(selections))
 
         self.setup_tree_view()
         self.setup_display()
 
-        print "The selection is", self._selections
+        print("The selection is", self._selections)
 
         self._box.show_all()
 
@@ -573,7 +572,7 @@ class PlottingChannelsDialog(Gtk.Dialog):
             else:
                 channel_name = store.get_value(store.get_iter(path), 4)
 
-                print "toggled for ", device_name, channel_name
+                print("toggled for ", device_name, channel_name)
 
                 if store[it][0]:
                     # self.show_plotting_frame(device_name, channel_name)
@@ -581,11 +580,11 @@ class PlottingChannelsDialog(Gtk.Dialog):
                 else:
                     # self.remove_plotting_frame(device_name, channel_name)
 
-                    print (device_name, channel_name), (device_name, channel_name) in self._selections, self._selections
+                    print((device_name, channel_name), (device_name, channel_name) in self._selections, self._selections)
 
                     if (device_name, channel_name) in self._selections:
                         index = self._selections.index((device_name, channel_name))
-                        print index
+                        print(index)
                         del self._selections[index]
 
         self._tree_view.show_all()

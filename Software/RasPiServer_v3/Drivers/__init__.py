@@ -1,5 +1,6 @@
 from ArduinoDriver import *
 from MFCDriver import *
+from TDKDriver import *
 
 """
 The driver mapping contains the information needed for the DeviceDriver class and the RasPiServer to
@@ -10,5 +11,11 @@ driver_mapping = {'Arduino': {'driver': ArduinoDriver,
                               },
                   'RS485': {'driver': MFCDriver,
                             'baud_rate': 9600
-                            }
+                            },
+		  'Teensy': {'driver': ArduinoDriver,
+			    'baud_rate': 115200
+			    },
+		  'FT232R': {'driver': TDKDriver,
+			     'baud_rate': 19200
+                            },
                   }

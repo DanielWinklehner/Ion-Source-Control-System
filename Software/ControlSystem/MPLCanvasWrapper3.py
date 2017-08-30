@@ -453,7 +453,7 @@ class MPLCanvasWrapper3(Gtk.VBox):
     def reset_secondary_axes(self):
         """
         """
-        print self.figure.axes
+        print(self.figure.axes)
 
         self.figure.delaxes(self.secondary_axis)
         self.figure.delaxes(self.dummy_axis)
@@ -470,7 +470,7 @@ class MPLCanvasWrapper3(Gtk.VBox):
         self.dummy_axis.set_xticks([])
         self.set_dummy_xlim()
 
-        print self.figure.axes
+        print(self.figure.axes)
 
         return 0
 

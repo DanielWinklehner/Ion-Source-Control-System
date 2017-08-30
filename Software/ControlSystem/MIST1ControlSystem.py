@@ -151,7 +151,7 @@ class MIST1ControlSystem:
         # --- Paint the stop button red! --- #
         style_provider = Gtk.CssProvider()
 
-        css = """
+        css = b"""
         GtkButton#stop_button {
             color: #000000;
             font-size: 18pt;
@@ -172,7 +172,7 @@ class MIST1ControlSystem:
         self._server_port = server_port
         self._server_url = "http://{}:{}/".format(server_ip, server_port)
         self._server_infobar = None
-
+        """         
         try:
             # Send the initialize command to the server
             r = requests.get(self._server_url + "initialize/")
@@ -209,7 +209,7 @@ class MIST1ControlSystem:
             if self.debug:
                 print("{}: {}".format(r.status_code, r.text))
         # ---------------------------- #
-
+        """
         # --- The main device dict --- #
         self._devices = {}
         self._device_name_arduino_id_map = {}
@@ -1733,13 +1733,13 @@ if __name__ == "__main__":
     mydebug = False
 
     # # 95432313837351E00271
-    control_system = MIST1ControlSystem(server_ip="10.77.0.2", server_port=5000, debug=mydebug)
+    control_system = MIST1ControlSystem(server_ip="10.77.0.3", server_port=5000, debug=mydebug)
     # control_system = MIST1ControlSystem(server_ip="127.0.0.1", server_port=5000, debug=mydebug)
 
     # Setup data logging.
     current_time = time.strftime('%a-%d-%b-%Y_%H-%M-%S-EST', time.localtime())
     control_system.register_data_logging_file(filename="log/{}.h5".format(current_time))
-
+    """
     # ************************************** Actual Running Devices: ************************************************* #
     # --- Set up ion gauge --- #
     ion_gauge_controller = Device("ig_controller",
@@ -2076,161 +2076,162 @@ if __name__ == "__main__":
     solenoid_controller.set_overview_page_presence(True)
     control_system.add_device(solenoid_controller)
     # **************************************************************************************************************** #
-
+    """
     # ************************************* Dummy Devices in Daniel's Office ***************************************** #
     # --- Set up the Dummy PS Controller 1 --- #
-    # ps_controller1 = Device("ps_controller1",
-    #                         arduino_id="95432313837351706152",
-    #                         label="Dummy HV Power Supplies",
-    #                         debug=mydebug,
-    #                         driver='Arduino')
-    #
-    # ch = Channel(name="o2", label="Source HV On/Off",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              display_order=10,
-    #              mode="write")
-    #
-    # ps_controller1.add_channel(ch)
-    #
-    # ch = Channel(name="v2", label="Source HV Voltage",
-    #              upper_limit=20.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=10.0/20.0,
-    #              display_order=9,
-    #              unit="kV",
-    #              mode="both")
-    #
-    # ps_controller1.add_channel(ch)
-    #
-    # ch = Channel(name="i2", label="Source HV Current",
-    #              upper_limit=120.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=10.0/120.0,
-    #              display_order=8,
-    #              unit="mA",
-    #              mode="both")
-    #
-    # ps_controller1.add_channel(ch)
-    #
-    # ch = Channel(name="o1", label="Einzel Lens On/Off",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              display_order=6,
-    #              mode="write")
-    #
-    # ps_controller1.add_channel(ch)
-    #
-    # ch = Channel(name="v1", label="Einzel Lens Voltage",
-    #              upper_limit=30.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=10.0/30.0,
-    #              display_order=5,
-    #              unit="kV",
-    #              mode="both")
-    #
-    # ps_controller1.add_channel(ch)
-    #
-    # ch = Channel(name="i1", label="Einzel Lens Current",
-    #              upper_limit=40.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=10.0/40.0,
-    #              display_order=4,
-    #              unit="mA",
-    #              mode="both")
-    #
-    # ps_controller1.add_channel(ch)
-    #
-    # ps_controller1.set_overview_page_presence(True)
-    # control_system.add_device(ps_controller1)
-    #
-    # # Dummy Filament Power Supplies
-    # ps_controller2 = Device("ps_controller2",
-    #                         arduino_id="95432313837351E00271",
-    #                         label="Dummy Filament Power Supplies",
-    #                         debug=mydebug,
-    #                         driver='Arduino')
-    #
-    # ch = Channel(name="o1", label="Filament Heating On/Off",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              display_order=10,
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="v1", label="Filament Heating Voltage",
-    #              upper_limit=7.5,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=5.0/7.5,
-    #              display_order=9,
-    #              unit="V",
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="i1", label="Filament Heating Current",
-    #              upper_limit=300.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=0.1/300.0,
-    #              display_order=8,
-    #              unit="A",
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="o2", label="Discharge On/Off",
-    #              upper_limit=1,
-    #              lower_limit=0,
-    #              data_type=bool,
-    #              display_order=6,
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="v2", label="Discharge Voltage",
-    #              upper_limit=100.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=10.0/100.0,
-    #              display_order=5,
-    #              unit="V",
-    #              mode="write")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ch = Channel(name="i2", label="Discharge Current",
-    #              upper_limit=10.0,
-    #              lower_limit=0.0,
-    #              data_type=float,
-    #              precision=2,
-    #              scaling=10.0/10.0,
-    #              display_order=4,
-    #              unit="A",
-    #              mode="both")
-    #
-    # ps_controller2.add_channel(ch)
-    #
-    # ps_controller2.set_overview_page_presence(True)
-    # control_system.add_device(ps_controller2)
+    ps_controller1 = Device("ps_controller1",
+                            arduino_id="95432313837351706152",
+                            label="Dummy HV Power Supplies",
+                            debug=mydebug,
+                            driver='Arduino')
+    
+    ch = Channel(name="o2", label="Source HV On/Off",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 display_order=10,
+                 mode="write")
+    
+    ps_controller1.add_channel(ch)
+    
+    ch = Channel(name="v2", label="Source HV Voltage",
+                 upper_limit=20.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0/20.0,
+                 display_order=9,
+                 unit="kV",
+                 mode="both")
+    
+    ps_controller1.add_channel(ch)
+    
+    ch = Channel(name="i2", label="Source HV Current",
+                 upper_limit=120.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0/120.0,
+                 display_order=8,
+                 unit="mA",
+                 mode="both")
+    
+    ps_controller1.add_channel(ch)
+    
+    ch = Channel(name="o1", label="Einzel Lens On/Off",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 display_order=6,
+                 mode="write")
+    
+    ps_controller1.add_channel(ch)
+    
+    ch = Channel(name="v1", label="Einzel Lens Voltage",
+                 upper_limit=30.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0/30.0,
+                 display_order=5,
+                 unit="kV",
+                 mode="both")
+    
+    ps_controller1.add_channel(ch)
+    
+    ch = Channel(name="i1", label="Einzel Lens Current",
+                 upper_limit=40.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0/40.0,
+                 display_order=4,
+                 unit="mA",
+                 mode="both")
+    
+    ps_controller1.add_channel(ch)
+    
+    ps_controller1.set_overview_page_presence(True)
+    control_system.add_device(ps_controller1)
+    
+    
+    # Dummy Filament Power Supplies
+    ps_controller2 = Device("ps_controller2",
+                            arduino_id="95433343933351B012C2",
+                            label="Dummy Filament Power Supplies",
+                            debug=mydebug,
+                            driver='Arduino')
+    
+    ch = Channel(name="o1", label="Filament Heating On/Off",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 display_order=10,
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="v1", label="Filament Heating Voltage",
+                 upper_limit=7.5,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=5.0/7.5,
+                 display_order=9,
+                 unit="V",
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="i1", label="Filament Heating Current",
+                 upper_limit=300.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=0.1/300.0,
+                 display_order=8,
+                 unit="A",
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="o2", label="Discharge On/Off",
+                 upper_limit=1,
+                 lower_limit=0,
+                 data_type=bool,
+                 display_order=6,
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="v2", label="Discharge Voltage",
+                 upper_limit=100.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0/100.0,
+                 display_order=5,
+                 unit="V",
+                 mode="write")
+    
+    ps_controller2.add_channel(ch)
+    
+    ch = Channel(name="i2", label="Discharge Current",
+                 upper_limit=10.0,
+                 lower_limit=0.0,
+                 data_type=float,
+                 precision=2,
+                 scaling=10.0/10.0,
+                 display_order=4,
+                 unit="A",
+                 mode="both")
+    
+    ps_controller2.add_channel(ch)
+    
+    ps_controller2.set_overview_page_presence(True)
+    control_system.add_device(ps_controller2)
     # **************************************************************************************************************** #
-
+    
     # Run the control system, this has to be last as it does
     # all the initializations and adding to the GUI.
     control_system.run()
