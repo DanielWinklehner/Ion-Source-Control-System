@@ -67,8 +67,6 @@ class SerialCOM(object):
                         response += bytes(self._ser.read(2))
                         break
 
-            print(message, response)
-
             if len(response) != 0:
                 return response
 
