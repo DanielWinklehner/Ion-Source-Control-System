@@ -262,7 +262,6 @@ class MainWindow(QMainWindow):
             property_list = sorted([(name, x) for name, x in Channel.user_edit_properties().items()], 
                                    key=lambda y: y[1]['display_order'])
 
-
             for i, prop in enumerate(property_list):
                 lbl = QLabel(prop[1]['display_name'])
                 gbox.addWidget(lbl, i, 0)
@@ -292,6 +291,10 @@ class MainWindow(QMainWindow):
                         cb.setCurrentIndex(0)
 
                 else:
+                    if str(val) == 'True':
+                        val = 1
+                    elif str(val) == 'False':
+                        val = 0
                     txt = QLineEdit(str(val))
                     gbox.addWidget(txt, i, 1)
 
@@ -323,33 +326,26 @@ class MainWindow(QMainWindow):
         newobj = None
         newvals = {}
         if isinstance(obj, Device) or (isinstance(obj, str) and 'device' in obj.lower()):
-            # TODO This is hard-coded to avoid passing references to all the controls around
-            # probably not the best solution.
-
-            # order is: name, arduino_id, label -> (1, 3, 5)
             gbox = self._devvbox.itemAt(1).layout()
 
             property_list = sorted([(name, x) for name, x in Device.user_edit_properties().items()], 
                                    key=lambda y: y[1]['display_order'])
             
             if isinstance(obj, Device):
-                # we are modifying a device
                 newobj = obj
-                newvals = {}
-                for i, prop in enumerate(property_list):
-                    if prop[0] != 'driver':
-                        val = gbox.itemAt(2 * i + 1).widget().text()
-                    else:
-                        val = gbox.itemAt(2 * i + 1).widget().currentText()
-                    newvals[prop[0]] = val
             else:
-                # we are adding a new device. No need to set newvals
                 newobj = Device()
-                for i, prop in enumerate(property_list):
-                    if prop[0] != 'driver':
-                        setattr(newobj, prop[0], gbox.itemAt(2 * i + 1).widget().text())
-                    else:
-                        setattr(newobj, prop[0], gbox.itemAt(2 * i + 1).widget().currentText())
+
+            for i, prop in enumerate(property_list):
+                if prop[0] != 'driver':
+                    val = gbox.itemAt(2 * i + 1).widget().text()
+                else:
+                    val = gbox.itemAt(2 * i + 1).widget().currentText()
+                
+                if isinstance(obj, Device):
+                    newvals[prop[0]] = val
+                else:
+                    setattr(newobj, prop[0], val)
 
         else:
             gbox = self._devvbox.itemAt(1).layout()
@@ -357,64 +353,52 @@ class MainWindow(QMainWindow):
             property_list = sorted([(name, x) for name, x in Channel.user_edit_properties().items()], 
                                    key=lambda y: y[1]['display_order'])
             
+            data_type = type
             types = {'Float': float, 'Int': int, 'Bool': bool}
+            for i, prop in enumerate(property_list):
+                if prop[0] == 'data_type':
+                    data_type = types[gbox.itemAt(2 * i + 1).widget().currentText()]
+                    break
 
             if isinstance(obj, Channel):
-                # modifying a channel. Set newobj and newvals
                 newobj = obj
-                newvals = {}
-                for i, prop in enumerate(property_list):
-                    if prop[0] not in ['mode', 'data_type']:
-                        val = gbox.itemAt(2 * i + 1).widget().text()
-                        if prop[0] in ['upper_limit', 'lower_limit']:
-                            try: 
-                                val = obj.data_type(val)
-                            except:
-                                print('bad values for limits')
-                                return
-                        elif prop[0] in ['display_order', 'precision']:
-                            try:
-                                val = int(val)
-                            except:
-                                print('display_order must be an int')
-                                return
-                        elif prop[0] == 'scaling':
-                            try:
-                                val = float(val)
-                            except:
-                                print('scaling must be a float')
-                                return
-                    else:
-                        val = gbox.itemAt(2 * i + 1).widget().currentText()
-                        if prop[0] == 'data_type':
-                            val = types[val]
-                    newvals[prop[0]] = val
             else:
-                # adding a new channel, only set newobj
                 newobj = Channel()
-                for i, prop in enumerate(property_list):
-                    if prop[0] not in ['mode', 'data_type']:
-                        val = gbox.itemAt(2 * i + 1).widget().text()
-                        if prop[0] in ['upper_limit', 'lower_limit']:
-                            pass
-                        elif prop[0] in ['display_order', 'precision']:
-                            try:
-                                val = int(val)
-                            except:
-                                print('display_order must be an int')
-                                return
-                        elif prop[0] == 'scaling':
-                            try:
-                                val = float(val)
-                            except:
-                                print('scaling must be a float')
-                                return
-                    else:
-                        val = gbox.itemAt(2 * i + 1).widget().currentText()
-                        if prop[0] == 'data_type':
-                            val = types[val]
+
+            for i, prop in enumerate(property_list):
+                if prop[0] not in ['mode', 'data_type']:
+                    val = gbox.itemAt(2 * i + 1).widget().text()
+                    if prop[0] in ['upper_limit', 'lower_limit']:
+                        try: 
+                            val = data_type(val)
+                        except:
+                            print('bad values for limits')
+                            return
+                    elif prop[0] in ['display_order', 'precision']:
+                        try:
+                            val = int(val)
+                        except:
+                            print('display_order must be an int')
+                            return
+                    elif prop[0] == 'scaling':
+                        try:
+                            val = float(val)
+                        except:
+                            print('scaling must be a float')
+                            return
+                else:
+                    val = gbox.itemAt(2 * i + 1).widget().currentText()
+                    if prop[0] == 'data_type':
+                        val = types[val]
+                    elif prop[0] == 'mode':
+                        val = val.lower()
+
+                if isinstance(obj, Channel):
+                    newvals[prop[0]] = val
+                else:
                     setattr(newobj, prop[0], val)
 
+            if not isinstance(obj, Channel):
                 parent = obj[1] # if we are here, we are passed a tuple with the parent device
                 newobj.parent_device = parent
 
