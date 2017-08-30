@@ -325,9 +325,9 @@ class MainWindow(QMainWindow):
     def on_save_changes_click(self, obj):
         newobj = None
         newvals = {}
+        gbox = self._devvbox.itemAt(1).layout()
         if isinstance(obj, Device) or (isinstance(obj, str) and 'device' in obj.lower()):
-            gbox = self._devvbox.itemAt(1).layout()
-
+            # saving changes for a device
             property_list = sorted([(name, x) for name, x in Device.user_edit_properties().items()], 
                                    key=lambda y: y[1]['display_order'])
             
@@ -338,9 +338,9 @@ class MainWindow(QMainWindow):
 
             for i, prop in enumerate(property_list):
                 if prop[0] != 'driver':
-                    val = gbox.itemAt(2 * i + 1).widget().text()
+                    val = gbox.itemAt(2 * i + 1).widget().text().strip()
                 else:
-                    val = gbox.itemAt(2 * i + 1).widget().currentText()
+                    val = gbox.itemAt(2 * i + 1).widget().currentText().strip()
                 
                 if isinstance(obj, Device):
                     newvals[prop[0]] = val
@@ -348,13 +348,12 @@ class MainWindow(QMainWindow):
                     setattr(newobj, prop[0], val)
 
         else:
-            gbox = self._devvbox.itemAt(1).layout()
-
-            property_list = sorted([(name, x) for name, x in Channel.user_edit_properties().items()], 
-                                   key=lambda y: y[1]['display_order'])
+            # saving changes for a channel
+            property_list = sorted([(name, x) for name, x in Channel.user_edit_properties().items()], key=lambda y: y[1]['display_order'])
             
             data_type = type
             types = {'Float': float, 'Int': int, 'Bool': bool}
+            # find the user-selected data type
             for i, prop in enumerate(property_list):
                 if prop[0] == 'data_type':
                     data_type = types[gbox.itemAt(2 * i + 1).widget().currentText()]
@@ -367,24 +366,18 @@ class MainWindow(QMainWindow):
 
             for i, prop in enumerate(property_list):
                 if prop[0] not in ['mode', 'data_type']:
-                    val = gbox.itemAt(2 * i + 1).widget().text()
+                    val = gbox.itemAt(2 * i + 1).widget().text().strip()
                     if prop[0] in ['upper_limit', 'lower_limit']:
                         try: 
                             val = data_type(val)
                         except:
                             print('bad values for limits')
                             return
-                    elif prop[0] in ['display_order', 'precision']:
+                    else:
                         try:
-                            val = int(val)
+                            val = prop[1]['type'](val)
                         except:
-                            print('display_order must be an int')
-                            return
-                    elif prop[0] == 'scaling':
-                        try:
-                            val = float(val)
-                        except:
-                            print('scaling must be a float')
+                            print('Bad value for {}'.format(prop[1]['display_name']))
                             return
                 else:
                     val = gbox.itemAt(2 * i + 1).widget().currentText()

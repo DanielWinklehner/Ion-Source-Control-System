@@ -107,16 +107,16 @@ class Channel(QWidget):
 
     @staticmethod
     def user_edit_properties():
-        return {'name': {'display_name': 'Name', 'display_order': 1},
-                'label': {'display_name': 'Label', 'display_order': 2},
-                'unit': {'display_name': 'Unit', 'display_order': 3},
-                'scaling': {'display_name': 'Scaling', 'display_order': 4},
-                'precision': {'display_name': 'Precision', 'display_order': 5},
-                'lower_limit': {'display_name': 'Lower Limit', 'display_order': 6},
-                'upper_limit': {'display_name': 'Upper Limit', 'display_order': 7},
-                'data_type': {'display_name': 'Data Type', 'display_order': 8},
-                'mode': {'display_name': 'Mode', 'display_order': 9},
-                'display_order': {'display_name': 'Display Order', 'display_order': 10},
+        return {'name': {'display_name': 'Name', 'display_order': 1, 'type': str},
+                'label': {'display_name': 'Label', 'display_order': 2, 'type': str},
+                'unit': {'display_name': 'Unit', 'display_order': 3, 'type': str},
+                'scaling': {'display_name': 'Scaling', 'display_order': 4, 'type': float},
+                'precision': {'display_name': 'Precision', 'display_order': 5, 'type': int},
+                'lower_limit': {'display_name': 'Lower Limit', 'display_order': 6, 'type': None},
+                'upper_limit': {'display_name': 'Upper Limit', 'display_order': 7, 'type': None},
+                'data_type': {'display_name': 'Data Type', 'display_order': 8, 'type': type},
+                'mode': {'display_name': 'Mode', 'display_order': 9, 'type': str},
+                'display_order': {'display_name': 'Display Order', 'display_order': 10, 'type': int},
                }
 
 
