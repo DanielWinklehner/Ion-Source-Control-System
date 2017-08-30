@@ -289,6 +289,15 @@ class MainWindow(QMainWindow):
                         cb.setCurrentIndex(mode_list.index(val.title()))
                     else:
                         cb.setCurrentIndex(0)
+                elif prop[0] == 'display_mode':
+                    cb = QComboBox()
+                    display_mode_list = ['Float', 'Scientific']
+                    cb.addItems(display_mode_list)
+                    gbox.addWidget(cb, i, 1)
+                    if val == 'e':
+                        cb.setCurrentIndex(1)
+                    else:
+                        cb.setCurrentIndex(0)
 
                 else:
                     if str(val) == 'True':
@@ -297,7 +306,6 @@ class MainWindow(QMainWindow):
                         val = 0
                     txt = QLineEdit(str(val))
                     gbox.addWidget(txt, i, 1)
-
 
             self._devvbox.addLayout(gbox)
 
@@ -365,7 +373,7 @@ class MainWindow(QMainWindow):
                 newobj = Channel()
 
             for i, prop in enumerate(property_list):
-                if prop[0] not in ['mode', 'data_type']:
+                if prop[0] not in ['mode', 'data_type', 'display_mode']:
                     val = gbox.itemAt(2 * i + 1).widget().text().strip()
                     if prop[0] in ['upper_limit', 'lower_limit']:
                         try: 
@@ -385,6 +393,11 @@ class MainWindow(QMainWindow):
                         val = types[val]
                     elif prop[0] == 'mode':
                         val = val.lower()
+                    elif prop[0] == 'display_mode':
+                        if val == 'Scientific':
+                            val = 'e'
+                        else:
+                            val = 'f'
 
                 if isinstance(obj, Channel):
                     newvals[prop[0]] = val

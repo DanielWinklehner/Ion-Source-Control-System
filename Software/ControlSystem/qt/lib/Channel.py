@@ -35,6 +35,7 @@ class Channel(QWidget):
         self._parent_device = None  
         self._displayformat = ".{}{}".format(precision, displayformat)
         self._precision = precision
+        self._display_mode = displayformat
 
         self._locked = False
 
@@ -107,18 +108,35 @@ class Channel(QWidget):
 
     @staticmethod
     def user_edit_properties():
-        return {'name': {'display_name': 'Name', 'display_order': 1, 'type': str},
-                'label': {'display_name': 'Label', 'display_order': 2, 'type': str},
-                'unit': {'display_name': 'Unit', 'display_order': 3, 'type': str},
-                'scaling': {'display_name': 'Scaling', 'display_order': 4, 'type': float},
-                'precision': {'display_name': 'Precision', 'display_order': 5, 'type': int},
-                'lower_limit': {'display_name': 'Lower Limit', 'display_order': 6, 'type': None},
-                'upper_limit': {'display_name': 'Upper Limit', 'display_order': 7, 'type': None},
-                'data_type': {'display_name': 'Data Type', 'display_order': 8, 'type': type},
-                'mode': {'display_name': 'Mode', 'display_order': 9, 'type': str},
-                'display_order': {'display_name': 'Display Order', 'display_order': 10, 'type': int},
+        # this function tells the gui which properties can be edited
+        # during run time. Any key in this list needs to have a getter 
+        # and setter method, and must be decorated with 
+        # @property and @<name>.setter
+        
+        return {
+                'name':          {'display_name': 'Name', 
+                                  'display_order': 1, 'type': str},
+                'label':         {'display_name': 'Label', 
+                                  'display_order': 2, 'type': str},
+                'unit':          {'display_name': 'Unit', 
+                                  'display_order': 3, 'type': str},
+                'scaling':       {'display_name': 'Scaling', 
+                                  'display_order': 4, 'type': float},
+                'precision':     {'display_name': 'Precision', 
+                                  'display_order': 5, 'type': int},
+                'display_mode':  {'display_name': 'Display Mode', 
+                                  'display_order': 6, 'type': str},
+                'lower_limit':   {'display_name': 'Lower Limit', 
+                                  'display_order': 7, 'type': None},
+                'upper_limit':   {'display_name': 'Upper Limit', 
+                                  'display_order': 8, 'type': None},
+                'data_type':     {'display_name': 'Data Type', 
+                                  'display_order': 9, 'type': type},
+                'mode':          {'display_name': 'Mode', 
+                                  'display_order': 10, 'type': str},
+                'display_order': {'display_name': 'Display Order', 
+                                  'display_order': 11, 'type': int},
                }
-
 
     def update(self):
         self._overview_widget.setTitle(self._label)
@@ -132,8 +150,7 @@ class Channel(QWidget):
             else:
                 self._plot_widget.setTitle('(Error) {}/{}'.format(
                                     self._parent_device.label, self._label))
-
-            
+                
     @pyqtSlot()
     def set_value_callback(self):
         if self._data_type != bool:
@@ -159,10 +176,20 @@ class Channel(QWidget):
     @precision.setter
     def precision(self, precision):
         self._precision = precision
-        self._displayformat = '.{}{}'.format(self._precision, 'f')
+        self._displayformat = '.{}{}'.format(self._precision, self._display_mode)
+
+    @property
+    def display_mode(self):
+        return self._display_mode
+
+    @display_mode.setter
+    def display_mode(self, value):
+        self._display_mode = value
+        self._displayformat = '.{}{}'.format(self._precision, self._display_mode)
 
     @property
     def displayformat(self):
+        # should not be edited directly. Changed when precision is changed
         return self._displayformat
 
     def lock(self):

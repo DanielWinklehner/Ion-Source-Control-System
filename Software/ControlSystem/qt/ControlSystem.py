@@ -385,8 +385,9 @@ class ControlSystem():
                         continue
 
                     if channel.data_type in [int, float]:
-                        fmt = '%' + channel.displayformat
-                        channel._read_widget.setText(str(fmt % (channel.value)))
+                        fmt = '{:' + channel.displayformat + '}'
+                        val = str(fmt.format(channel.value))
+                        channel._read_widget.setText(val)
 
         # update the pinned plot
         if self._pinned_plot_name != ():
