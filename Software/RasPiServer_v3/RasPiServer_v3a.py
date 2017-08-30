@@ -415,6 +415,8 @@ def query_device():
                         raw_output_message, device_data)
 
                 except Exception as e:
+                    print("Exception happened, message data was {}, response from Arduino was {}".format(message_data,
+                                                                                                         response))
                     devices_responses[device_data['device_id']] = "ERROR: " + str(e)
 
     except Exception as e:

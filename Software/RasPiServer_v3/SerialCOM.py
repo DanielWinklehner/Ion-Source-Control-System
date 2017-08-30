@@ -48,24 +48,25 @@ class SerialCOM(object):
 
         try:
 
+            self._ser.reset_input_buffer()
+            self._ser.reset_output_buffer()
+
             self._ser.write(message)
-            
+
             response = b''
+
             while True:
                 resp = self._ser.read(1)
-                if resp in [b'\n', b'\r', b'\r\n']:
-                    break
-                response += bytes(resp)
+                if resp:
+                    response += bytes(resp)
+                    if resp in [b'\n', b'\r']:
+                        break
 
             if len(response) != 0:
                 return response
 
-        except serial.SerialException as e:
-            raise Exception("Something's wrong! I cannot send any messages!" + str(e))
-        except IOError as e2:
-            raise Exception("Something's wrong! I cannot send any messages!" + str(e2))
-        except Exception as e3:
-            raise Exception("Something's wrong! I cannot send any messages!" + str(e3))
+        except Exception as e:
+            raise Exception("Something's wrong! Exception in SerialCOM: {}".format(e))
 
         return ""
 
