@@ -28,9 +28,10 @@ class Channel(QWidget):
 
     _settings_signal = pyqtSignal(object)
 
-    def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, data_type=float, unit="",
-        scaling=1.0, scaling_read=None, mode="both", display_order=0, 
-        display_mode="f", precision=2, default_value=0.0):
+    def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, 
+                 data_type=float, unit="", scaling=1.0, scaling_read=None, 
+                 mode="both", display_order=0, display_mode="f", precision=2, 
+                 default_value=0.0, plot_settings = None):
 
         super().__init__()
         self._name = name
@@ -77,11 +78,15 @@ class Channel(QWidget):
         self._plot_widget = gb_plot
 
         self._plot_curve = self._plotitem.plot(pen='#FF0000')
-        self._plot_settings = {
-                'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': None},
-                'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': None},
-                'widget': {'color': '#FF0000'}
-                }
+        if plot_settings is None:
+            self._plot_settings = {
+                    'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False},
+                    'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False},
+                    'widget': {'color': '#FF0000'}
+                    }
+        else:
+            self._plot_settings = plot_settings
+            self.update_plot_settings()
 
         # overview widget
         gb = QGroupBox(self._label)
@@ -205,7 +210,10 @@ class Channel(QWidget):
     @plotsettings.setter
     def plotsettings(self, newsettings):
         self._plot_settings = newsettings
+        self.update_plot_settings()
 
+
+    def update_plot_settings(self):
         autorangeaxes = ''
         if self._plot_settings['x']['mode'] != 'auto':
             self._plotitem.setXRange(self._plot_settings['x']['min'],
@@ -228,6 +236,7 @@ class Channel(QWidget):
                                   y=self._plot_settings['y']['log'])
 
         self._plot_curve.setData(pen = self._plot_settings['widget']['color'])
+
 
     @property
     def precision(self):
@@ -395,7 +404,8 @@ class Channel(QWidget):
             'mode': self._mode,
             'precision': self._precision,
             'display_mode': self._display_mode,
-            'display_order': self._display_order
+            'display_order': self._display_order,
+            'plot_settings': self._plot_settings
             }
 
         return properties #json.dumps(properties)

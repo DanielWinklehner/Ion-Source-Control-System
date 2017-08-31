@@ -792,7 +792,7 @@ if __name__ == '__main__':
 
     mydebug = False
 
-    cs.add_device(dummy_device(1, "95432313837351706152"))
+    #cs.add_device(dummy_device(1, "95432313837351706152"))
     #cs.add_device(dummy_device(2, "95433343933351B012C2"))
 
     cs.run()
