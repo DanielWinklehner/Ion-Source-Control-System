@@ -21,6 +21,7 @@ import numpy as np
 
 from gui import MainWindow
 from gui.dialogs.PlotChooseDialog import PlotChooseDialog
+from gui.dialogs.PlotSettingsDialog import PlotSettingsDialog
 from gui.dialogs.ProcedureDialog import ProcedureDialog
 from gui.dialogs.ErrorDialog import ErrorDialog
 from lib.Device import Device
@@ -472,6 +473,17 @@ class ControlSystem():
        self._pinned_plot_name = key 
        self._window._gbpinnedplot.setTitle('{}.{}'.format(device.label, channel.label))
 
+    @pyqtSlot(Channel)
+    def set_plot_settings_callback(self, ch):
+        rng = ch._plotitem.viewRange()
+        ch._plot_settings['x']['min'] = rng[0][0]
+        ch._plot_settings['x']['max'] = rng[0][1]
+        ch._plot_settings['y']['min'] = rng[1][0]
+        ch._plot_settings['y']['max'] = rng[1][1]
+
+        _plotsettingsdialog = PlotSettingsDialog(ch)
+        _plotsettingsdialog.exec_()
+
     @pyqtSlot()
     def on_quit_button(self):
         # shut down communication threads
@@ -516,6 +528,7 @@ class ControlSystem():
         key = (channel.parent_device.name, channel.name)
         channel._set_signal.connect(self.set_value_callback)
         channel._pin_signal.connect(self.set_pinned_plot_callback)
+        channel._settings_signal.connect(self.set_plot_settings_callback)
         self._x_values[key] = deque(np.linspace(time.time() - 5.0, time.time(),
                                                 self._retain_last_n_values),
                                                 maxlen=self._retain_last_n_values)
@@ -779,8 +792,8 @@ if __name__ == '__main__':
 
     mydebug = False
 
-    #cs.add_device(dummy_device(1, "95432313837351706152"))
-    cs.add_device(dummy_device(2, "95433343933351B012C2"))
+    cs.add_device(dummy_device(1, "95432313837351706152"))
+    #cs.add_device(dummy_device(2, "95433343933351B012C2"))
 
     cs.run()
     sys.exit(app.exec_())

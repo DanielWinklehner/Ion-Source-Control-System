@@ -26,6 +26,8 @@ class Channel(QWidget):
     # emits device and channel
     _pin_signal = pyqtSignal(object, object)
 
+    _settings_signal = pyqtSignal(object)
+
     def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, data_type=float, unit="",
         scaling=1.0, scaling_read=None, mode="both", display_order=0, 
         display_mode="f", precision=2, default_value=0.0):
@@ -53,33 +55,40 @@ class Channel(QWidget):
 
         self._pages = ['overview']
 
+        # plot widget
+        gb_plot = QGroupBox()
+        gb_plot.setMinimumSize(350, 300)
+        
+        dateaxis = DateTimeAxis(orientation='bottom')
+        self._plotitem = pg.PlotWidget(axisItems={'bottom': dateaxis})
+
+        vbox = QVBoxLayout()
+        gb_plot.setLayout(vbox)
+        hbox = QHBoxLayout()
+        btnPin = QPushButton('Pin')
+        btnSettings = QPushButton('Settings')
+        btnPin.clicked.connect(self.set_pin_callback)
+        btnSettings.clicked.connect(self.settings_callback)
+        hbox.addWidget(btnSettings)
+        hbox.addStretch()
+        hbox.addWidget(btnPin)
+        vbox.addWidget(self._plotitem)
+        vbox.addLayout(hbox)
+        self._plot_widget = gb_plot
+
+        self._plot_curve = self._plotitem.plot(pen='#FF0000')
+        self._plot_settings = {
+                'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': None},
+                'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': None},
+                'widget': {'color': '#FF0000'}
+                }
+
         # overview widget
         gb = QGroupBox(self._label)
         self._overview_widget = gb
         self._unit_labels = []
         self._write_widget = None
         self._read_widget = None
-
-        # plot widget
-        gb_plot = QGroupBox()
-        gb_plot.setMinimumSize(350, 300)
-        
-        dateaxis = DateTimeAxis(orientation='bottom')
-        plotwidget = pg.PlotWidget(axisItems={'bottom': dateaxis})
-
-        vbox = QVBoxLayout()
-        gb_plot.setLayout(vbox)
-        hbox = QHBoxLayout()
-        hbox.addStretch()
-        btnPin = QPushButton('Pin')
-        btnPin.clicked.connect(self.set_pin_callback)
-        hbox.addWidget(btnPin)
-        hbox.addStretch()
-        vbox.addWidget(plotwidget)
-        vbox.addLayout(hbox)
-        self._plot_widget = gb_plot
-
-        self._plot_curve = plotwidget.plot(pen='r', axisItems={'bottom': dateaxis})
 
         if self._data_type == bool:
             hbox_radio = QHBoxLayout()
@@ -184,6 +193,41 @@ class Channel(QWidget):
     @pyqtSlot()
     def set_pin_callback(self):
         self._pin_signal.emit(self.parent_device, self)
+
+    @pyqtSlot()
+    def settings_callback(self):
+        self._settings_signal.emit(self)
+
+    @property
+    def plotsettings(self):
+        return self._plot_settings
+
+    @plotsettings.setter
+    def plotsettings(self, newsettings):
+        self._plot_settings = newsettings
+
+        autorangeaxes = ''
+        if self._plot_settings['x']['mode'] != 'auto':
+            self._plotitem.setXRange(self._plot_settings['x']['min'],
+                                     self._plot_settings['x']['max'],
+                                     padding=0.0)
+        else:
+            autorangeaxes += 'x'
+
+        if self._plot_settings['y']['mode'] != 'auto':
+            self._plotitem.setYRange(self._plot_settings['y']['min'],
+                                     self._plot_settings['y']['max'],
+                                     padding=0.0)
+        else:
+            autorangeaxes += 'y'
+
+        if autorangeaxes != '':
+            self._plotitem.enableAutoRange(axis = autorangeaxes)
+
+        self._plotitem.setLogMode(x=self._plot_settings['x']['log'],
+                                  y=self._plot_settings['y']['log'])
+
+        self._plot_curve.setData(pen = self._plot_settings['widget']['color'])
 
     @property
     def precision(self):
