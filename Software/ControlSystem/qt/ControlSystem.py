@@ -10,6 +10,7 @@ import json
 import timeit
 import time
 import threading
+import copy
 from multiprocessing import Process, Pipe
 from collections import deque
 
@@ -468,10 +469,15 @@ class ControlSystem():
 
     @pyqtSlot(str, str)
     def set_pinned_plot_callback(self, device, channel):
-       # click button emits (device, channel)
-       key = (device.name, channel.name)
-       self._pinned_plot_name = key 
-       self._window._gbpinnedplot.setTitle('{}.{}'.format(device.label, channel.label))
+        # click button emits (device, channel)
+        key = (device.name, channel.name)
+        self._pinned_plot_name = key 
+        
+        # update plot settings
+        x = self._window._gbpinnedplot.layout().itemAt(0).widget()
+        x.setLabel('left', '{} [{}]'.format(channel.label, channel.unit))
+        Channel.update_plot_settings(x, self._pinned_curve, channel.plotsettings) 
+        self._window._gbpinnedplot.setTitle('{}.{}'.format(device.label, channel.label))
 
     @pyqtSlot(Channel)
     def set_plot_settings_callback(self, ch):

@@ -86,7 +86,7 @@ class Channel(QWidget):
                     }
         else:
             self._plot_settings = plot_settings
-            self.update_plot_settings()
+            self.update_plot_settings(self._plotitem, self._plot_curve, self._plot_settings)
 
         # overview widget
         gb = QGroupBox(self._label)
@@ -210,32 +210,33 @@ class Channel(QWidget):
     @plotsettings.setter
     def plotsettings(self, newsettings):
         self._plot_settings = newsettings
-        self.update_plot_settings()
+        self.update_plot_settings(self._plotitem, self._plot_curve, self._plot_settings)
 
-
-    def update_plot_settings(self):
+    @staticmethod
+    # has to be static because this is called for the pinned plot as well
+    def update_plot_settings(widget, curve, settings):
         autorangeaxes = ''
-        if self._plot_settings['x']['mode'] != 'auto':
-            self._plotitem.setXRange(self._plot_settings['x']['min'],
-                                     self._plot_settings['x']['max'],
+        if settings['x']['mode'] != 'auto':
+            widget.setXRange(settings['x']['min'],
+                                     settings['x']['max'],
                                      padding=0.0)
         else:
             autorangeaxes += 'x'
 
-        if self._plot_settings['y']['mode'] != 'auto':
-            self._plotitem.setYRange(self._plot_settings['y']['min'],
-                                     self._plot_settings['y']['max'],
+        if settings['y']['mode'] != 'auto':
+            widget.setYRange(settings['y']['min'],
+                                     settings['y']['max'],
                                      padding=0.0)
         else:
             autorangeaxes += 'y'
 
         if autorangeaxes != '':
-            self._plotitem.enableAutoRange(axis = autorangeaxes)
+            widget.enableAutoRange(axis = autorangeaxes)
 
-        self._plotitem.setLogMode(x=self._plot_settings['x']['log'],
-                                  y=self._plot_settings['y']['log'])
+        widget.setLogMode(x=settings['x']['log'],
+                                  y=settings['y']['log'])
 
-        self._plot_curve.setData(pen = self._plot_settings['widget']['color'])
+        curve.setData(pen = settings['widget']['color'])
 
 
     @property

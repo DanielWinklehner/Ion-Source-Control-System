@@ -21,7 +21,7 @@ from .ui_MainWindow import Ui_MainWindow
 from .dialogs.AboutDialog import AboutDialog
 from .dialogs.ErrorDialog import ErrorDialog
 from lib.Device import Device
-from lib.Channel import Channel
+from lib.Channel import Channel, DateTimeAxis 
 from lib.Procedure import Procedure
 
 class MainWindow(QMainWindow):
@@ -39,10 +39,16 @@ class MainWindow(QMainWindow):
         self._messagelog = self.ui.txtMessageLog
         self._overview = self.ui.fmOverview
         self._plots = self.ui.fmPlots
-        self._pinnedplot = self.ui.pltPinned
+        #self._pinnedplot = self.ui.pltPinned
         self._gbpinnedplot = self.ui.gbPinnedPlot
         self._tabview = self.ui.tabMain
         self._btnquit = self.ui.btnQuit
+
+        # set up pinned plot
+        dateaxis = DateTimeAxis(orientation='bottom')
+        self._pinnedplot = pg.PlotWidget(axisItems={'bottom': dateaxis})
+        self._gbpinnedplot.layout().itemAt(0).widget().deleteLater()
+        self._gbpinnedplot.layout().addWidget(self._pinnedplot, 0 ,0)
 
         # add a right-aligned About tool bar button
         spc = QWidget()
