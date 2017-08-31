@@ -181,7 +181,7 @@ class ControlSystem():
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
 
-        """        
+                
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -201,7 +201,7 @@ class ControlSystem():
                     device_info['identifyer'], device_id, device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-         """
+        
 
         ## Set up communication pipes.
         self._keep_communicating = False
@@ -642,7 +642,6 @@ class ControlSystem():
                 channel_data['data_type'] = eval(data_type_str.split("'")[1])
 
                 ch = Channel(**channel_data)
-
                 device.add_channel(ch)
 
             if self.add_device(device):
@@ -775,12 +774,13 @@ def dummy_device(n, ard_id):
 
 if __name__ == '__main__':
     app = QApplication([])
-    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
+
+    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
 
     mydebug = False
 
-    cs.add_device(dummy_device(1, "95432313837351706152"))
-    # cs.add_device(dummy_device(2, "95433343933351B012C2"))
+    #cs.add_device(dummy_device(1, "95432313837351706152"))
+    cs.add_device(dummy_device(2, "95433343933351B012C2"))
 
     cs.run()
     sys.exit(app.exec_())

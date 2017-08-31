@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
         col = 0
         for device_name, device in devices.items():
             for channel_name, channel in device.channels.items():
-                if channel._plot_widget is not None and channel.data_type == float and channel in plotted_channels:
+                if channel._plot_widget is not None and channel in plotted_channels:
                     self._plot_layout.addWidget(channel._plot_widget, row, col)
                     row += 1
                     if row == 2:
@@ -379,13 +379,16 @@ class MainWindow(QMainWindow):
                         try: 
                             val = data_type(val)
                         except:
-                            print('bad values for limits')
+                            self.show_ErrorDialog('Bad values for limits.')
                             return
                     else:
                         try:
                             val = prop[1]['type'](val)
                         except:
-                            print('Bad value for {}'.format(prop[1]['display_name']))
+                            prp = prop[1]['display_name']
+                            typ = str(prop[1]['type']).split("'")[1]
+                            self.show_ErrorDialog('Bad value for {}. '
+                                    'Must be type "{}".'.format(prp, typ))
                             return
                 else:
                     val = gbox.itemAt(2 * i + 1).widget().currentText()

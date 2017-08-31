@@ -1,11 +1,23 @@
 import json
+import datetime
 from scipy.interpolate import interp1d
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel, \
-                            QRadioButton, QLineEdit, QPushButton
+    QRadioButton, QLineEdit, QPushButton
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 import pyqtgraph as pg
+
+class DateTimeAxis(pg.AxisItem):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def tickStrings(self, values, scale, spacing):
+        strings = []
+        for v in values:
+            val = datetime.datetime.fromtimestamp(v).strftime('%H:%M:%S')
+            strings.append(val)
+        return strings
 
 class Channel(QWidget):
     # emits itself and the new value
@@ -15,8 +27,8 @@ class Channel(QWidget):
     _pin_signal = pyqtSignal(object, object)
 
     def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, data_type=float, unit="",
-                 scaling=1.0, scaling_read=None, mode="both", display_order=0, 
-                 displayformat="f", precision=2, default_value=0.0):
+        scaling=1.0, scaling_read=None, mode="both", display_order=0, 
+        display_mode="f", precision=2, default_value=0.0):
 
         super().__init__()
         self._name = name
@@ -30,17 +42,17 @@ class Channel(QWidget):
         self._value = default_value
         self._mode = mode
         self._display_order = display_order
-        
+
         # The device this channel belongs to will be set during add_channel().
         self._parent_device = None  
-        self._displayformat = ".{}{}".format(precision, displayformat)
+        self._displayformat = ".{}{}".format(precision, display_mode)
         self._precision = precision
-        self._display_mode = displayformat
+        self._display_mode = display_mode
 
         self._locked = False
 
         self._pages = ['overview']
-        
+
         # overview widget
         gb = QGroupBox(self._label)
         self._overview_widget = gb
@@ -51,7 +63,10 @@ class Channel(QWidget):
         # plot widget
         gb_plot = QGroupBox()
         gb_plot.setMinimumSize(350, 300)
-        plotwidget = pg.PlotWidget()
+        
+        dateaxis = DateTimeAxis(orientation='bottom')
+        plotwidget = pg.PlotWidget(axisItems={'bottom': dateaxis})
+
         vbox = QVBoxLayout()
         gb_plot.setLayout(vbox)
         hbox = QHBoxLayout()
@@ -64,8 +79,8 @@ class Channel(QWidget):
         vbox.addLayout(hbox)
         self._plot_widget = gb_plot
 
-        self._plot_curve = plotwidget.plot(pen='r')
-        
+        self._plot_curve = plotwidget.plot(pen='r', axisItems={'bottom': dateaxis})
+
         if self._data_type == bool:
             hbox_radio = QHBoxLayout()
             self._overview_widget.setLayout(hbox_radio)
@@ -81,7 +96,7 @@ class Channel(QWidget):
             vbox_readwrite = QVBoxLayout()
             self._overview_widget.setLayout(vbox_readwrite)
             if self._mode in ['write', 'both']:
-                # add first row
+            # add first row
                 hbox_write = QHBoxLayout()
                 lblUnit = QLabel(self._unit)
                 self._unit_labels.append(lblUnit)
@@ -108,35 +123,35 @@ class Channel(QWidget):
 
     @staticmethod
     def user_edit_properties():
-        # this function tells the gui which properties can be edited
-        # during run time. Any key in this list needs to have a getter 
-        # and setter method, and must be decorated with 
-        # @property and @<name>.setter
-        
+    # this function tells the gui which properties can be edited
+    # during run time. Any key in this list needs to have a getter 
+    # and setter method, and must be decorated with 
+    # @property and @<name>.setter
+
         return {
-                'name':          {'display_name': 'Name', 
-                                  'display_order': 1, 'type': str},
-                'label':         {'display_name': 'Label', 
-                                  'display_order': 2, 'type': str},
-                'unit':          {'display_name': 'Unit', 
-                                  'display_order': 3, 'type': str},
-                'scaling':       {'display_name': 'Scaling', 
-                                  'display_order': 4, 'type': float},
-                'precision':     {'display_name': 'Precision', 
-                                  'display_order': 5, 'type': int},
-                'display_mode':  {'display_name': 'Display Mode', 
-                                  'display_order': 6, 'type': str},
-                'lower_limit':   {'display_name': 'Lower Limit', 
-                                  'display_order': 7, 'type': None},
-                'upper_limit':   {'display_name': 'Upper Limit', 
-                                  'display_order': 8, 'type': None},
-                'data_type':     {'display_name': 'Data Type', 
-                                  'display_order': 9, 'type': type},
-                'mode':          {'display_name': 'Mode', 
-                                  'display_order': 10, 'type': str},
-                'display_order': {'display_name': 'Display Order', 
-                                  'display_order': 11, 'type': int},
-               }
+            'name':          {'display_name': 'Name', 
+                'display_order': 1, 'type': str},
+            'label':         {'display_name': 'Label', 
+                'display_order': 2, 'type': str},
+            'unit':          {'display_name': 'Unit', 
+                'display_order': 3, 'type': str},
+            'scaling':       {'display_name': 'Scaling', 
+                'display_order': 4, 'type': float},
+            'precision':     {'display_name': 'Precision', 
+                'display_order': 5, 'type': int},
+            'display_mode':  {'display_name': 'Display Mode', 
+                'display_order': 6, 'type': str},
+            'lower_limit':   {'display_name': 'Lower Limit', 
+                'display_order': 7, 'type': None},
+            'upper_limit':   {'display_name': 'Upper Limit', 
+                'display_order': 8, 'type': None},
+            'data_type':     {'display_name': 'Data Type', 
+                'display_order': 9, 'type': type},
+            'mode':          {'display_name': 'Mode', 
+                'display_order': 10, 'type': str},
+            'display_order': {'display_name': 'Display Order', 
+                'display_order': 11, 'type': int},
+            }
 
     def update(self):
         self._overview_widget.setTitle(self._label)
@@ -147,11 +162,11 @@ class Channel(QWidget):
         if self._parent_device is not None:
             if self._parent_device.error_message == '':
                 self._plot_widget.setTitle('{}/{}'.format(
-                                    self._parent_device.label, self._label))
+                    self._parent_device.label, self._label))
             else:
                 self._plot_widget.setTitle('(Error) {}/{}'.format(
-                                    self._parent_device.label, self._label))
-                
+                    self._parent_device.label, self._label))
+
     @pyqtSlot()
     def set_value_callback(self):
         if self._data_type != bool:
@@ -159,7 +174,7 @@ class Channel(QWidget):
                 val = self._data_type(self._write_widget.text())
             except:
                 print('bad value entered')
-                return
+            return
 
             self._write_widget.setText(str(self._data_type(val)))
             self._set_signal.emit(self, val)
@@ -197,13 +212,13 @@ class Channel(QWidget):
         if not self._locked:
             if not self._overview_page_display.locked():
                 self._overview_page_display.lock()
-            self._locked = True
+                self._locked = True
 
     def unlock(self):
         if self._locked:
             if self._overview_page_display.locked():
                 self._overview_page_display.unlock()
-            self._locked = False
+                self._locked = False
 
     @property
     def locked(self):
@@ -326,30 +341,29 @@ class Channel(QWidget):
     def get_json(self):
 
         properties = {'name': self._name,
-                      'label': self._label,
-                      'upper_limit': self._upper_limit,
-                      'lower_limit': self._lower_limit,
-                      'data_type': str(self._data_type),
-                      'unit': self._unit,
-                      'scaling': self._scaling,
-                      'scaling_read': self._scaling_read,
-                      'mode': self._mode,
-                      'precision': self._precision,
-                      'display_mode': self._display_mode,
-                      'displayformat': self._displayformat,
-                      'display_order': self._display_order
-                      }
+            'label': self._label,
+            'upper_limit': self._upper_limit,
+            'lower_limit': self._lower_limit,
+            'data_type': str(self._data_type),
+            'unit': self._unit,
+            'scaling': self._scaling,
+            'scaling_read': self._scaling_read,
+            'mode': self._mode,
+            'precision': self._precision,
+            'display_mode': self._display_mode,
+            'display_order': self._display_order
+            }
 
         return properties #json.dumps(properties)
-    
+
     @staticmethod
     def load_from_json(channel_json):
 
-        properties = json.loads(channel_json)
+       properties = json.loads(channel_json)
 
-        data_type_str = properties['data_type']
+       data_type_str = properties['data_type']
 
-        properties['data_type'] = eval(data_type_str.split("'")[1])
+       properties['data_type'] = eval(data_type_str.split("'")[1])
 
-        return Channel(**properties)
+       return Channel(**properties)
 

@@ -52,7 +52,8 @@ class SerialCOM(object):
             self._ser.reset_output_buffer()
 
             self._ser.write(message)
-
+            response = self._ser.readline()
+            
             # Our own 'readline()' function
             response = b''
             start_time = time.time()
@@ -66,7 +67,7 @@ class SerialCOM(object):
                         # Handle MFC Readout (read in two more bytes for checksum and break)
                         response += bytes(self._ser.read(2))
                         break
-
+            
             if len(response) != 0:
                 return response
 
