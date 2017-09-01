@@ -395,8 +395,8 @@ class ControlSystem():
     @pyqtSlot(object, dict)
     def on_device_channel_changed(self, obj, vals):
         """ Called when user presses Save Changes button on the settings page.
-            Checked to see if we are editing or creating a device/channel, 
-            and sets the corresponding object properties. """
+            Gets passed an old device/channel and new values, or a new
+            device/channel, and no values. """
 
         if vals == {}:
             # We are adding a device/channel
@@ -414,27 +414,20 @@ class ControlSystem():
                     self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.')
                     return
 
-            # attempt to set attributes. Need to make sure we only have
-            # unique channel/device names, and arduino ids
+            # Set attributes. Validity of entered values is handled in MainWindow.py
             for attr, val in vals.items():
                 if attr == 'name' and val != obj.name:
                     if isinstance(obj, Channel):
-                        if val in obj.parent_device.channels.keys():
-                            self.show_ErrorDialog('Channel name is already used by another channel on this device. Choose a unique name for this channel.')
-                            continue
-
                         # channel name is unique, so we update it in the device object
                         obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
+                        if obj.name in self._pinned_plot_name:
+                            self._pinned_plot_name = (self._pinned_plot_name[0], val)
                         self._x_values[(obj.parent_device.name, val)] = \
                                 self._x_values.pop((obj.parent_device.name, obj.name))
                         self._y_values[(obj.parent_device.name, val)] = \
                                 self._y_values.pop((obj.parent_device.name, obj.name))
 
                     elif isinstance(obj, Device):
-                        if val in self._devices.keys():
-                            self.show_ErrorDialog('Device name is already used by another device. Choose a unique name for this device.')
-                            continue
-
                         # device name is unique, so update it in the Control System
                         self._devices[val] = self._devices.pop(obj.name)
                         if obj.name in self._pinned_plot_name:
@@ -445,11 +438,6 @@ class ControlSystem():
                             self._y_values[(val, channel_name)] = \
                                     self._y_values.pop((obj.name, channel_name))
 
-                elif isinstance(obj, Device) and attr == 'device_id' and val != obj.device_id:
-                    if val in [x.device_id for name, x in self._devices.items()]:
-                        self.show_ErrorDialog('Device ID has already been assigned to another device. Choose a unique device ID for this device')
-                        continue
-                    
                 # use setattr to set obj properties by 'attr' which is a string
                 setattr(obj, attr, val)
 

@@ -353,10 +353,21 @@ class MainWindow(QMainWindow):
                 newobj = Device()
 
             for i, prop in enumerate(property_list):
-                if prop[0] != 'driver':
-                    val = gbox.itemAt(2 * i + 1).widget().text().strip()
-                else:
+                if prop[0] == 'driver':
                     val = gbox.itemAt(2 * i + 1).widget().currentText().strip()
+                else:
+                    val = gbox.itemAt(2 * i + 1).widget().text().strip()
+                    # make sure device has a unique name
+                    if prop[0] == 'name':
+                        if val in self._settings_devices.keys():
+                            self.show_ErrorDialog('Device name is already used by another device. Choose a unique name for this device.')
+                            return
+                    # make sure device has a unique device_id
+                    elif prop[0] == 'device_id':
+                        if val in [x['device'].device_id for _, x in self._settings_devices.items()]:
+                            self.show_ErrorDialog('Device ID has already been assigned to another device. Choose a unique device ID for this device')
+                            return
+
                 
                 if isinstance(obj, Device):
                     newvals[prop[0]] = val
@@ -379,6 +390,8 @@ class MainWindow(QMainWindow):
                 newobj = obj
             else:
                 newobj = Channel()
+                parent = obj[1] # if we are here, we are passed a tuple with the parent device
+                newobj.parent_device = parent
 
             for i, prop in enumerate(property_list):
                 # text box entries
@@ -394,6 +407,12 @@ class MainWindow(QMainWindow):
                             self.show_ErrorDialog('Bad value for {}. '
                                     'Must be type "{}".'.format(prp, typ))
                             return
+
+                        if prop[0] == 'name':
+                            if val in newobj.parent_device.channels.keys():
+                                self.show_ErrorDialog('Channel name is already used by another channel on this device. Choose a unique name for this channel.')
+                                return
+
                     else:
                         # upper_limit and lower_limit must be the selected data type 
                         try: 
