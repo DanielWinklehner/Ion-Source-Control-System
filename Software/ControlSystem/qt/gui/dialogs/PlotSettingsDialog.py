@@ -142,5 +142,5 @@ class PlotSettingsDialog(QDialog):
         else:
             self._plot_settings['y']['mode'] = 'auto'
 
-        self._channel.plotsettings = self._plot_settings
+        self._channel.plot_settings = self._plot_settings
         self.accept()

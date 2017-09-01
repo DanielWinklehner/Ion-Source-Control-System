@@ -53,8 +53,10 @@ class Channel(QWidget):
         
         if plot_settings is None:
             self._plot_settings = {
-                    'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False},
-                    'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False},
+                    'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False,
+                          'label': ''},
+                    'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False,
+                          'label': ''},
                     'widget': {'color': '#FF0000'}
                     }
         else:
@@ -202,9 +204,9 @@ class Channel(QWidget):
         return self._plot_settings
 
     @plot_settings.setter
-    def plotsettings(self, newsettings):
+    def plot_settings(self, newsettings):
         self._plot_settings = newsettings
-        self.update_plot_settings(self._plot_item, self._plot_curve, self._plot_settings)
+        self._plot_item.settings = self._plot_settings
 
     @property
     def precision(self):

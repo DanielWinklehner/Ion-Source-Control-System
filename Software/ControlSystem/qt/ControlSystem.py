@@ -115,7 +115,7 @@ class Listener(QObject):
 
     def __init__(self, listen_pipe):
         super().__init__()
-        self._terminate = False # flag to stop listening process
+        self._terminate = False
         self._listen_pipe = listen_pipe
         self._keep_communicating = True
 
@@ -182,7 +182,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-        """
+                
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -192,7 +192,6 @@ class ControlSystem():
         except Exception as e:
             print('Exception was: {}'.format(e))
             exit()
-
         ## Get devices connected to server
         r = requests.get(self._server_url + 'device/active')
         if r.status_code == 200:
@@ -204,7 +203,7 @@ class ControlSystem():
                                             device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        """
+
         ## Set up communication pipes.
         self._keep_communicating = False
         self._polling_rate = 15.0
@@ -231,9 +230,8 @@ class ControlSystem():
         """ Create gui/server pipe pair, start listener """
         self._pipe_gui, pipe_server = Pipe()
 
-        self._com_process = Process(target=query_server, args=(pipe_server,
-                                                            self._server_url,
-                                                            False,))
+        self._com_process = Process(target=query_server, 
+                                    args=(pipe_server, self._server_url, False,))
 
         self._threads = []
         self._keep_communicating = True
@@ -610,7 +608,7 @@ class ControlSystem():
     @pyqtSlot(Channel)
     def set_plot_settings_callback(self, ch):
         """ Show the plot settings dialog when the user presses the plot's setting button """
-        rng = ch._plotitem.viewRange()
+        rng = ch._plot_item.viewRange()
         ch._plot_settings['x']['min'] = rng[0][0]
         ch._plot_settings['x']['max'] = rng[0][1]
         ch._plot_settings['y']['min'] = rng[1][0]
@@ -805,6 +803,9 @@ if __name__ == '__main__':
     app = QApplication([])
 
     cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
+
+    # connect the closing event to the quit button procedure
+    app.aboutToQuit.connect(cs.on_quit_button)
 
     mydebug = False
 
