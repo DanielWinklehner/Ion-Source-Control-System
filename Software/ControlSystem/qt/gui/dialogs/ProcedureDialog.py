@@ -37,6 +37,9 @@ class ProcedureDialog(QDialog):
         self.initialize()
 
     def initialize(self):
+        self.ui.cbEvent.addItems(['Start up', 'Shut down', 
+                                  'Emergency shut down'])
+
         # set up UI elements
         self.ui.cbActionBool.addItems(['On', 'Off'])
         self.ui.cbActionBool.hide()
@@ -58,6 +61,8 @@ class ProcedureDialog(QDialog):
         self.ui.btnAddAction.clicked.connect(self.on_add_action_click)
         self.ui.chkEmail.stateChanged.connect(self.on_email_check_changed)
         self.ui.chkText.stateChanged.connect(self.on_text_check_changed)
+        self.ui.rbValue.toggled.connect(self.on_value_toggled)
+        self.ui.rbEvent.toggled.connect(self.on_event_toggled)
 
         self._vboxActions = QVBoxLayout()
         self._vboxActions.addStretch()
@@ -157,6 +162,15 @@ class ProcedureDialog(QDialog):
                 self.ui.txtText.show()
                 self.ui.txtText.setText(self._newproc.sms)
 
+    def on_value_toggled(self, isChecked):
+        self.ui.cbRuleDevice.setEnabled(isChecked)
+        self.ui.cbRuleChannel.setEnabled(isChecked)
+        self.ui.cbRuleCompare.setEnabled(isChecked)
+        self.ui.cbRuleBool.setEnabled(isChecked)
+        self.ui.txtRuleVal.setEnabled(isChecked)
+
+    def on_event_toggled(self, isChecked):
+        self.ui.cbEvent.setEnabled(isChecked)
 
     def on_add_action_click(self):
         if self.ui.cbActionDevice.currentIndex() == 0 or self.ui.cbActionChannel.currentIndex() == 0:
