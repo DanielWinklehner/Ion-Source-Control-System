@@ -6,18 +6,9 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel
     QRadioButton, QLineEdit, QPushButton
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
+from gui.widgets.DateTimePlotWidget import DateTimePlotWidget
+
 import pyqtgraph as pg
-
-class DateTimeAxis(pg.AxisItem):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def tickStrings(self, values, scale, spacing):
-        strings = []
-        for v in values:
-            val = datetime.datetime.fromtimestamp(v).strftime('%H:%M:%S')
-            strings.append(val)
-        return strings
 
 class Channel(QWidget):
     # emits itself and the new value
@@ -60,8 +51,17 @@ class Channel(QWidget):
         gb_plot = QGroupBox()
         gb_plot.setMinimumSize(350, 300)
         
-        dateaxis = DateTimeAxis(orientation='bottom')
-        self._plotitem = pg.PlotWidget(axisItems={'bottom': dateaxis})
+        if plot_settings is None:
+            self._plot_settings = {
+                    'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False},
+                    'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False},
+                    'widget': {'color': '#FF0000'}
+                    }
+        else:
+            self._plot_settings = plot_settings
+
+        self._plot_item = DateTimePlotWidget(settings=self._plot_settings)
+        self._plot_curve = self._plot_item.curve
 
         vbox = QVBoxLayout()
         gb_plot.setLayout(vbox)
@@ -73,20 +73,11 @@ class Channel(QWidget):
         hbox.addWidget(btnSettings)
         hbox.addStretch()
         hbox.addWidget(btnPin)
-        vbox.addWidget(self._plotitem)
+        vbox.addWidget(self._plot_item)
         vbox.addLayout(hbox)
         self._plot_widget = gb_plot
 
-        self._plot_curve = self._plotitem.plot(pen='#FF0000')
-        if plot_settings is None:
-            self._plot_settings = {
-                    'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False},
-                    'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False},
-                    'widget': {'color': '#FF0000'}
-                    }
-        else:
-            self._plot_settings = plot_settings
-            self.update_plot_settings(self._plotitem, self._plot_curve, self._plot_settings)
+        #self._plot_curve = self._plot_item.plot(pen='#FF0000')
 
         # overview widget
         gb = QGroupBox(self._label)
@@ -168,6 +159,7 @@ class Channel(QWidget):
             }
 
     def update(self):
+        """ Update the GUI representation of this channel """
         self._overview_widget.setTitle(self._label)
         for lbl in self._unit_labels:
             lbl.setText(self._unit)
@@ -183,6 +175,7 @@ class Channel(QWidget):
 
     @pyqtSlot()
     def set_value_callback(self):
+        """ Function called when user enters a value into this channel's write widget """
         if self._data_type != bool:
             try:
                 val = self._data_type(self._write_widget.text())
@@ -197,6 +190,7 @@ class Channel(QWidget):
 
     @pyqtSlot()
     def set_pin_callback(self):
+        """ Called when user presses the channel's pin button """
         self._pin_signal.emit(self.parent_device, self)
 
     @pyqtSlot()
@@ -204,40 +198,13 @@ class Channel(QWidget):
         self._settings_signal.emit(self)
 
     @property
-    def plotsettings(self):
+    def plot_settings(self):
         return self._plot_settings
 
-    @plotsettings.setter
+    @plot_settings.setter
     def plotsettings(self, newsettings):
         self._plot_settings = newsettings
-        self.update_plot_settings(self._plotitem, self._plot_curve, self._plot_settings)
-
-    @staticmethod
-    # has to be static because this is called for the pinned plot as well
-    def update_plot_settings(widget, curve, settings):
-        autorangeaxes = ''
-        if settings['x']['mode'] != 'auto':
-            widget.setXRange(settings['x']['min'],
-                                     settings['x']['max'],
-                                     padding=0.0)
-        else:
-            autorangeaxes += 'x'
-
-        if settings['y']['mode'] != 'auto':
-            widget.setYRange(settings['y']['min'],
-                                     settings['y']['max'],
-                                     padding=0.0)
-        else:
-            autorangeaxes += 'y'
-
-        if autorangeaxes != '':
-            widget.enableAutoRange(axis = autorangeaxes)
-
-        widget.setLogMode(x=settings['x']['log'],
-                                  y=settings['y']['log'])
-
-        curve.setData(pen = settings['widget']['color'])
-
+        self.update_plot_settings(self._plot_item, self._plot_curve, self._plot_settings)
 
     @property
     def precision(self):

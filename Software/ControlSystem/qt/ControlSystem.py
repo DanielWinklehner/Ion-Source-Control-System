@@ -182,8 +182,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-
-                
+        """
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -200,11 +199,12 @@ class ControlSystem():
             devices = json.loads(r.text)
             for device_id, device_info in devices.items():
                 self._window.status_message('Found {} with ID {} on port {}.'.format(
-                    device_info['identifyer'], device_id, device_info['port']))
+                                            device_info['identifyer'], 
+                                            device_id, 
+                                            device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        
-
+        """
         ## Set up communication pipes.
         self._keep_communicating = False
         self._polling_rate = 15.0
@@ -212,71 +212,20 @@ class ControlSystem():
 
         ## Set up data dictionaries
         self._devices = {}
-        self._device_name_id_map = {}
-        self._read_textboxes = {} # textboxes on overview page to update
         self._x_values = {}
         self._y_values = {}
         self._procedures = {}
         self._critical_procedures = {}
-        self._plotted_channels = {}
+        self._plotted_channels = []
         self._threads = None # holds listener thead
         self._retain_last_n_values = 500 # number of points to plot before removing
 
-        self._pinned_curve = self._window._pinnedplot.plot(pen='r')
+        self._pinned_curve = self._window._pinnedplot.curve
         self._pinned_plot_name = ()
 
         self._window.status_message('Initialization complete.')
 
-    def update_gui_devices(self):
-        for name, device in self._devices.items():
-            device.update()
-        self._window.update_overview(self._devices)
-        self._window.update_device_settings(self._devices)
-        self._window.update_plots(self._devices, self._plotted_channels)
-        self._window.update_procedures(self._procedures)
-
-    def on_start_pause_click(self):
-        btn = self._window.ui.btnStartPause
-        if btn.text() == 'Start':
-            self.setup_communication_threads()
-            btn.setText('Pause')
-            self._window.ui.btnStop_2.setEnabled(True)
-        elif btn.text() == 'Pause':
-            self._pipe_gui.send(('pause_query',))
-            self._keep_communicating = False
-            self._listener.isRunning = False
-            btn.setText('Resume')
-        else:
-            self._pipe_gui.send(('pause_query',))
-            self._keep_communicating = True
-            self._listener.isRunning = True
-            btn.setText('Pause')
-
-    def on_stop_click(self):
-        self.shutdown_communication_threads()
-        self._window.ui.btnStartPause.setText('Start')
-        self._window.ui.btnStop_2.setEnabled(False)
-
-        try:
-            # if server has not been started, _listener won't exist
-            self._listener.terminate()
-        except AttributeError:
-            pass
-
-        try:
-            # deques might not exist. If not, then don't do anything.
-            for xs, ys in zip(self._x_values.items(), self._y_values.items()):
-                xs[1].clear()
-                ys[1].clear()
-        except:
-            pass
-        
-        for device_name, device in self._devices.items():
-            device.error_message = ''
-            for channel_name, channel in device.channels.items():
-                channel._plot_widget.layout().itemAt(0).widget().setData(0,0)
-        #self._plotted_channels = {}
-        #self.update_gui_devices()
+    # ---- Server Communication ----
 
     def setup_communication_threads(self):
         """ Create gui/server pipe pair, start listener """
@@ -337,7 +286,7 @@ class ControlSystem():
 
     @pyqtSlot(dict)
     def on_listener_device_info(self, data: dict):
-        """ update device info in GUI """
+        """ Read in message from the server, and update devices accordingly """
         parsed_response = data
         #print(parsed_response)
         timestamp = parsed_response["timestamp"]
@@ -367,135 +316,6 @@ class ControlSystem():
                     if device.error_message != parsed_response[device_id]:
                         device.error_message = parsed_response[device_id]
 
-    def update_stored_values(self, device_name, channel_name, timestamp):
-        # update the stored data dictionaries
-        self._x_values[(device_name, channel_name)].append(timestamp)
-        self._y_values[(device_name, channel_name)].append(
-            self._devices[device_name].channels[channel_name].value)
-
-    @pyqtSlot()
-    def update_value_displays(self):
-        """ This function is called by a QTimer to ensure the GUI has a chance
-            to get input. Handles updating of 'read' values on the overview
-            page, and redraws plots if applicable """
-
-        # update read values on overview page
-        if self._window.current_tab == 'main':
-            for name, device in self._devices.items():
-                for chname, channel in device.channels.items():
-                    if channel._read_widget is None:
-                        continue
-
-                    if channel.data_type in [int, float]:
-                        fmt = '{:' + channel.displayformat + '}'
-                        val = str(fmt.format(channel.value))
-                        channel._read_widget.setText(val)
-
-        # update the pinned plot
-        if self._pinned_plot_name != ():
-            self._pinned_curve.setData(self._x_values[self._pinned_plot_name],
-                                       self._y_values[self._pinned_plot_name],
-                                       clear=True, _callsync='off')
-
-        # if we are on the plotting tab, update the plots there too
-        if self._window.current_tab == 'plots':
-            for device_name, device in self._devices.items():
-                for channel_name, channel in device.channels.items():
-                    channel._plot_curve.setData(
-                            self._x_values[(channel.parent_device.name, channel_name)],
-                            self._y_values[(channel.parent_device.name, channel_name)],
-                            clear=True, _callsync='off')
-        app.processEvents()
-
-    @pyqtSlot(object, dict)
-    def on_device_channel_changed(self, obj, vals):
-        """ Called when user presses Save Changes button on the settings page """
-
-        if vals == {}:
-            # We are adding a device/channel
-            if isinstance(obj, Device):
-                self.add_device(obj)
-            elif isinstance(obj, Channel):
-                obj.parent_device.add_channel(obj)
-                self.add_channel_to_gui(obj)
-        else:
-            # We are editing a device/channel
-            for procedure_name, procedure in self._procedures.items():
-                used_devices, used_channels = procedure.devices_channels_used()
-                if obj.name in used_devices + used_channels:
-                    self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.')
-                    return
-            for attr, val in vals.items():
-                # attempt to set attributes. Need to make sure we only have
-                # unique channel/device names, and arduino ids
-                if attr == 'name' and val != obj.name:
-                    if isinstance(obj, Channel):
-                        if val in obj.parent_device.channels.keys():
-                            self.show_ErrorDialog('Channel name is already used by another channel on this device. Choose a unique name for this channel.')
-                            continue
-
-                        # channel name is unique, so we update it in the device object
-                        obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
-                        self._x_values[(obj.parent_device.name, val)] = \
-                                self._x_values.pop((obj.parent_device.name, obj.name))
-                        self._y_values[(obj.parent_device.name, val)] = \
-                                self._y_values.pop((obj.parent_device.name, obj.name))
-
-                    elif isinstance(obj, Device):
-                        if val in self._devices.keys():
-                            self.show_ErrorDialog('Device name is already used by another device. Choose a unique name for this device.')
-                            continue
-
-                        # device name is unique, so update it in the Control System
-                        self._devices[val] = self._devices.pop(obj.name)
-                        if obj.name in self._pinned_plot_name:
-                            self._pinned_plot_name = (val, self._pinned_plot_name[1])
-                        for channel_name, channel in self._devices[val].channels.items():
-                            self._x_values[(val, channel_name)] = \
-                                    self._x_values.pop((obj.name, channel_name))
-                            self._y_values[(val, channel_name)] = \
-                                    self._y_values.pop((obj.name, channel_name))
-
-                elif isinstance(obj, Device) and attr == 'device_id' and val != obj.device_id:
-                    if val in [x.device_id for name, x in self._devices.items()]:
-                        self.show_ErrorDialog('Device ID has already been assigned to another device. Choose a unique device ID for this device')
-                        continue
-                    
-                # use setattr to set obj properties by 'attr' which is a string
-                setattr(obj, attr, val)
-
-        self.device_or_channel_changed()
-        self.update_gui_devices()
-
-    @pyqtSlot(str, str)
-    def set_pinned_plot_callback(self, device, channel):
-        # click button emits (device, channel)
-        key = (device.name, channel.name)
-        self._pinned_plot_name = key 
-        
-        # update plot settings
-        x = self._window._gbpinnedplot.layout().itemAt(0).widget()
-        x.setLabel('left', '{} [{}]'.format(channel.label, channel.unit))
-        Channel.update_plot_settings(x, self._pinned_curve, channel.plotsettings) 
-        self._window._gbpinnedplot.setTitle('{}.{}'.format(device.label, channel.label))
-
-    @pyqtSlot(Channel)
-    def set_plot_settings_callback(self, ch):
-        rng = ch._plotitem.viewRange()
-        ch._plot_settings['x']['min'] = rng[0][0]
-        ch._plot_settings['x']['max'] = rng[0][1]
-        ch._plot_settings['y']['min'] = rng[1][0]
-        ch._plot_settings['y']['max'] = rng[1][1]
-
-        _plotsettingsdialog = PlotSettingsDialog(ch)
-        _plotsettingsdialog.exec_()
-
-    @pyqtSlot()
-    def on_quit_button(self):
-        # shut down communication threads
-        self.shutdown_communication_threads()
-        self._window.close()
-
     def device_or_channel_changed(self):
         """ Sends a device changed request to the pipe """
         device_dict_list = [{
@@ -522,56 +342,7 @@ class ControlSystem():
         try:
             self._pipe_gui.send(pipe_message)
         except AttributeError:
-            # _pipe_gui will not exist if the server has not been started
-            # at least once. If it hasn't, no need to send this message
             pass
-
-    def add_channel_to_gui(self, channel):
-        if channel.parent_device is None:
-            print('Attempt to add channel with no parent device to gui')
-            return
-
-        key = (channel.parent_device.name, channel.name)
-        channel._set_signal.connect(self.set_value_callback)
-        channel._pin_signal.connect(self.set_pinned_plot_callback)
-        channel._settings_signal.connect(self.set_plot_settings_callback)
-        self._x_values[key] = deque(np.linspace(time.time() - 5.0, time.time(),
-                                                self._retain_last_n_values),
-                                                maxlen=self._retain_last_n_values)
-        self._y_values[key] = deque(np.zeros(self._retain_last_n_values),
-                                             maxlen=self._retain_last_n_values)
-        channel.parent_device.update()
-
-
-    def add_device(self, device):
-        """ Adds a device to the control system """
-        if device.name in self._devices.keys():
-            self.show_ErrorDialog('Device with the same name already loaded.')
-            return False
-
-        device.parent = self
-
-        # Add device to the list of devices in the control system
-        self._devices[device.name] = device
-        self._device_name_id_map[device.device_id] = device.name
-
-        for chname, ch in device.channels.items():
-            self.add_channel_to_gui(ch)
-
-        return True
-
-        """
-        # Add corresponding channels to the hdf5 log.
-        for channel_name, channel in device.channels().items():
-            if channel.mode() == "read" or channel.mode() == "both":
-                self._data_logger.add_channel(channel)
-
-
-        # Add the device to the settings page tree.
-        device_iter = self._settings_page_tree_store.insert(None, (len(self._settings_page_tree_store) - 1),
-                                                            [device.label(), "Device", "edit_device", device.name(),
-                                                             device.name()])
-        """
 
     @pyqtSlot(Channel, object)
     def set_value_callback(self, channel, val):
@@ -615,7 +386,247 @@ class ControlSystem():
             if self.debug:
                 print("Exception '{}' caught while communicating with RasPi server.".format(e))
 
+    # ---- Internal variable modifiers ----
+
+    def update_stored_values(self, device_name, channel_name, timestamp):
+        """ Update the value deques for each channel """
+        self._x_values[(device_name, channel_name)].append(timestamp)
+        self._y_values[(device_name, channel_name)].append(
+            self._devices[device_name].channels[channel_name].value)
+
+    @pyqtSlot(object, dict)
+    def on_device_channel_changed(self, obj, vals):
+        """ Called when user presses Save Changes button on the settings page.
+            Checked to see if we are editing or creating a device/channel, 
+            and sets the corresponding object properties. """
+
+        if vals == {}:
+            # We are adding a device/channel
+            if isinstance(obj, Device):
+                self.add_device(obj)
+            elif isinstance(obj, Channel):
+                obj.parent_device.add_channel(obj)
+                self.add_channel(obj)
+        else:
+            # We are editing a device/channel
+            # make sure the object is not part of a procedure
+            for procedure_name, procedure in self._procedures.items():
+                used_devices, used_channels = procedure.devices_channels_used()
+                if obj.name in used_devices + used_channels:
+                    self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.')
+                    return
+
+            # attempt to set attributes. Need to make sure we only have
+            # unique channel/device names, and arduino ids
+            for attr, val in vals.items():
+                if attr == 'name' and val != obj.name:
+                    if isinstance(obj, Channel):
+                        if val in obj.parent_device.channels.keys():
+                            self.show_ErrorDialog('Channel name is already used by another channel on this device. Choose a unique name for this channel.')
+                            continue
+
+                        # channel name is unique, so we update it in the device object
+                        obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
+                        self._x_values[(obj.parent_device.name, val)] = \
+                                self._x_values.pop((obj.parent_device.name, obj.name))
+                        self._y_values[(obj.parent_device.name, val)] = \
+                                self._y_values.pop((obj.parent_device.name, obj.name))
+
+                    elif isinstance(obj, Device):
+                        if val in self._devices.keys():
+                            self.show_ErrorDialog('Device name is already used by another device. Choose a unique name for this device.')
+                            continue
+
+                        # device name is unique, so update it in the Control System
+                        self._devices[val] = self._devices.pop(obj.name)
+                        if obj.name in self._pinned_plot_name:
+                            self._pinned_plot_name = (val, self._pinned_plot_name[1])
+                        for channel_name, channel in self._devices[val].channels.items():
+                            self._x_values[(val, channel_name)] = \
+                                    self._x_values.pop((obj.name, channel_name))
+                            self._y_values[(val, channel_name)] = \
+                                    self._y_values.pop((obj.name, channel_name))
+
+                elif isinstance(obj, Device) and attr == 'device_id' and val != obj.device_id:
+                    if val in [x.device_id for name, x in self._devices.items()]:
+                        self.show_ErrorDialog('Device ID has already been assigned to another device. Choose a unique device ID for this device')
+                        continue
+                    
+                # use setattr to set obj properties by 'attr' which is a string
+                setattr(obj, attr, val)
+
+        self.device_or_channel_changed()
+        self.update_gui_devices()
+
+    def add_device(self, device):
+        """ Adds a device to the control system """
+        if device.name in self._devices.keys():
+            self.show_ErrorDialog('Device with the same name already loaded.')
+            return False
+
+        device.parent = self
+
+        # Add device to the list of devices in the control system
+        self._devices[device.name] = device
+
+        for chname, ch in device.channels.items():
+            self.add_channel(ch)
+
+        return True
+
+        """
+        # Add corresponding channels to the hdf5 log.
+        for channel_name, channel in device.channels().items():
+            if channel.mode() == "read" or channel.mode() == "both":
+                self._data_logger.add_channel(channel)
+
+
+        # Add the device to the settings page tree.
+        device_iter = self._settings_page_tree_store.insert(None, (len(self._settings_page_tree_store) - 1),
+                                                            [device.label(), "Device", "edit_device", device.name(),
+                                                             device.name()])
+        """
+
+    def add_channel(self, channel):
+        if channel.parent_device is None:
+            print('Attempt to add channel with no parent device to gui')
+            return
+
+        key = (channel.parent_device.name, channel.name)
+        channel._set_signal.connect(self.set_value_callback)
+        channel._pin_signal.connect(self.set_pinned_plot_callback)
+        channel._settings_signal.connect(self.set_plot_settings_callback)
+        self._x_values[key] = deque(np.linspace(time.time() - 5.0, time.time(),
+                                                self._retain_last_n_values),
+                                                maxlen=self._retain_last_n_values)
+        self._y_values[key] = deque(np.zeros(self._retain_last_n_values),
+                                             maxlen=self._retain_last_n_values)
+        channel.parent_device.update()
+
+    # ---- GUI ----
+
+    def update_gui_devices(self):
+        """ Main update function to be called when a device is changed """
+        for name, device in self._devices.items():
+            device.update()
+        self._window.update_overview(self._devices)
+        self._window.update_device_settings(self._devices)
+        self._window.update_plots(self._devices, self._plotted_channels)
+        self._window.update_procedures(self._procedures)
+
+    def on_start_pause_click(self):
+        btn = self._window.ui.btnStartPause
+        if btn.text() == 'Start':
+            self.setup_communication_threads()
+            btn.setText('Pause')
+            self._window.ui.btnStop_2.setEnabled(True)
+        elif btn.text() == 'Pause':
+            self._pipe_gui.send(('pause_query',))
+            self._keep_communicating = False
+            self._listener.isRunning = False
+            btn.setText('Resume')
+        else:
+            # btnText == 'Resume'
+            self._pipe_gui.send(('pause_query',))
+            self._keep_communicating = True
+            self._listener.isRunning = True
+            btn.setText('Pause')
+
+    def on_stop_click(self):
+        self.shutdown_communication_threads()
+        self._window.ui.btnStartPause.setText('Start')
+        self._window.ui.btnStop_2.setEnabled(False)
+
+        try:
+            # if server has not been started, _listener won't exist
+            self._listener.terminate()
+        except AttributeError:
+            pass
+
+        try:
+            # deques might not exist. If not, then don't do anything.
+            for xs, ys in zip(self._x_values.items(), self._y_values.items()):
+                xs[1].clear()
+                ys[1].clear()
+        except:
+            pass
+        
+        for device_name, device in self._devices.items():
+            device.error_message = ''
+            for channel_name, channel in device.channels.items():
+                channel._plot_widget.layout().itemAt(0).widget().setData(0,0)
+        #self._plotted_channels = {}
+        #self.update_gui_devices()
+
+    @pyqtSlot()
+    def update_value_displays(self):
+        """ This function is called by a QTimer to ensure the GUI has a chance
+            to get input. Handles updating of 'read' values on the overview
+            page, and redraws plots if applicable """
+
+        # update the pinned plot
+        if self._pinned_plot_name != ():
+            self._pinned_curve.setData(self._x_values[self._pinned_plot_name],
+                                       self._y_values[self._pinned_plot_name],
+                                       clear=True, _callsync='off')
+
+        if self._window.current_tab == 'main':
+            # update read values on overview page
+            for name, device in self._devices.items():
+                for chname, channel in device.channels.items():
+                    if channel._read_widget is None:
+                        continue
+
+                    if channel.data_type in [int, float]:
+                        fmt = '{:' + channel.displayformat + '}'
+                        val = str(fmt.format(channel.value))
+                        channel._read_widget.setText(val)
+                        
+        elif self._window.current_tab == 'plots':
+            # update the plotted channels
+            for device_name, device in self._devices.items():
+                #for channel_name, channel in device.channels.items():
+                for channel in self._plotted_channels:
+                    channel._plot_curve.setData(
+                            self._x_values[(channel.parent_device.name, channel.name)],
+                            self._y_values[(channel.parent_device.name, channel.name)],
+                            clear=True, _callsync='off')
+        app.processEvents()
+
+
+    @pyqtSlot(str, str)
+    def set_pinned_plot_callback(self, device, channel):
+        """ Set the pinned plot when a user pressed the plot's pin button """
+        # click button emits (device, channel)
+        key = (device.name, channel.name)
+        self._pinned_plot_name = key 
+        
+        # update plot settings
+        x = self._window._gbpinnedplot.layout().itemAt(0).widget()
+        x.setLabel('left', '{} [{}]'.format(channel.label, channel.unit))
+        x.settings = channel.plot_settings
+        self._window._gbpinnedplot.setTitle('{}.{}'.format(device.label, channel.label))
+
+    @pyqtSlot(Channel)
+    def set_plot_settings_callback(self, ch):
+        """ Show the plot settings dialog when the user presses the plot's setting button """
+        rng = ch._plotitem.viewRange()
+        ch._plot_settings['x']['min'] = rng[0][0]
+        ch._plot_settings['x']['max'] = rng[0][1]
+        ch._plot_settings['y']['min'] = rng[1][0]
+        ch._plot_settings['y']['max'] = rng[1][1]
+
+        _plotsettingsdialog = PlotSettingsDialog(ch)
+        _plotsettingsdialog.exec_()
+
+    @pyqtSlot()
+    def on_quit_button(self):
+        # shut down communication threads
+        self.shutdown_communication_threads()
+        self._window.close()
+
     # ---- dialogs ----
+
     def on_save_button(self):
         fileName, _ = QFileDialog.getSaveFileName(self._window,
                             "Save Devices as JSON","","Text Files (*.txt)")
@@ -789,7 +800,6 @@ def dummy_device(n, ard_id):
 
     ps_controller1.add_channel(ch)
     return ps_controller1
-
 
 if __name__ == '__main__':
     app = QApplication([])

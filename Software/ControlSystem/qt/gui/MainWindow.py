@@ -20,8 +20,9 @@ import pyqtgraph as pg
 from .ui_MainWindow import Ui_MainWindow
 from .dialogs.AboutDialog import AboutDialog
 from .dialogs.ErrorDialog import ErrorDialog
+from .widgets.DateTimePlotWidget import DateTimePlotWidget
 from lib.Device import Device
-from lib.Channel import Channel, DateTimeAxis 
+from lib.Channel import Channel 
 from lib.Procedure import Procedure
 
 class MainWindow(QMainWindow):
@@ -39,14 +40,14 @@ class MainWindow(QMainWindow):
         self._messagelog = self.ui.txtMessageLog
         self._overview = self.ui.fmOverview
         self._plots = self.ui.fmPlots
-        #self._pinnedplot = self.ui.pltPinned
         self._gbpinnedplot = self.ui.gbPinnedPlot
         self._tabview = self.ui.tabMain
+        self._btnload = self.ui.btnLoad
+        self._btnsave = self.ui.btnSave
         self._btnquit = self.ui.btnQuit
 
         # set up pinned plot
-        dateaxis = DateTimeAxis(orientation='bottom')
-        self._pinnedplot = pg.PlotWidget(axisItems={'bottom': dateaxis})
+        self._pinnedplot = DateTimePlotWidget()
         self._gbpinnedplot.layout().itemAt(0).widget().deleteLater()
         self._gbpinnedplot.layout().addWidget(self._pinnedplot, 0 ,0)
 
@@ -60,6 +61,8 @@ class MainWindow(QMainWindow):
 
         # icons
         self._btnquit.setIcon(QIcon(QPixmap('gui/images/icons/process-stop.png')))
+        self._btnload.setIcon(QIcon(QPixmap('gui/images/icons/document-open.png')))
+        self._btnsave.setIcon(QIcon(QPixmap('gui/images/icons/document-save.png')))
         self._btnAbout.setIcon(QIcon(QPixmap('gui/images/icons/help-browser.png')))
         self.ui.btnExpand.setIcon(QIcon(QPixmap('gui/images/icons/list-add.png')))
         self.ui.btnCollapse.setIcon(QIcon(QPixmap('gui/images/icons/list-remove.png')))
@@ -186,7 +189,6 @@ class MainWindow(QMainWindow):
                     if device_data['row'] == item.parent():
                             parent = device_data['device']
                             break
-
 
         if parent is None:
             # set up device entry form
@@ -365,9 +367,9 @@ class MainWindow(QMainWindow):
             # saving changes for a channel
             property_list = sorted([(name, x) for name, x in Channel.user_edit_properties().items()], key=lambda y: y[1]['display_order'])
             
+            # find the user-selected data type
             data_type = type
             types = {'Float': float, 'Int': int, 'Bool': bool}
-            # find the user-selected data type
             for i, prop in enumerate(property_list):
                 if prop[0] == 'data_type':
                     data_type = types[gbox.itemAt(2 * i + 1).widget().currentText()]
@@ -379,15 +381,11 @@ class MainWindow(QMainWindow):
                 newobj = Channel()
 
             for i, prop in enumerate(property_list):
+                # text box entries
                 if prop[0] not in ['mode', 'data_type', 'display_mode']:
                     val = gbox.itemAt(2 * i + 1).widget().text().strip()
-                    if prop[0] in ['upper_limit', 'lower_limit']:
-                        try: 
-                            val = data_type(val)
-                        except:
-                            self.show_ErrorDialog('Bad values for limits.')
-                            return
-                    else:
+                    if prop[0] not in ['upper_limit', 'lower_limit']:
+                        # make sure the user didn't enter gibberish
                         try:
                             val = prop[1]['type'](val)
                         except:
@@ -396,7 +394,15 @@ class MainWindow(QMainWindow):
                             self.show_ErrorDialog('Bad value for {}. '
                                     'Must be type "{}".'.format(prp, typ))
                             return
+                    else:
+                        # upper_limit and lower_limit must be the selected data type 
+                        try: 
+                            val = data_type(val)
+                        except:
+                            self.show_ErrorDialog('Bad values for limits.')
+                            return
                 else:
+                    # combobox entries
                     val = gbox.itemAt(2 * i + 1).widget().currentText()
                     if prop[0] == 'data_type':
                         val = types[val]
@@ -425,7 +431,6 @@ class MainWindow(QMainWindow):
         _aboutdialog = AboutDialog()
         _aboutdialog.exec_()
 
-    @pyqtSlot()
     def show_ErrorDialog(self, error_message='Error'):
         _errordialog = ErrorDialog(error_message)
         _errordialog.exec_()

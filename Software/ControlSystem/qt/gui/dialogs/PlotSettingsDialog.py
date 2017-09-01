@@ -25,7 +25,7 @@ class PlotSettingsDialog(QDialog):
         self.ui.btnColor.clicked.connect(self.on_color_click)
 
         self._channel = channel
-        self._plot_settings = self._channel.plotsettings
+        self._plot_settings = self._channel.plot_settings
         self.setup_form()
 
     def setup_form(self):
