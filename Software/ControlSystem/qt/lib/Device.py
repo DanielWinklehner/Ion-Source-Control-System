@@ -41,7 +41,7 @@ class Device:
     
     @staticmethod
     def driver_list():
-        return ['Arduino', 'RS485', 'FT232R', 'Teensy']
+        return ['Arduino', 'RS485', 'FT232R', 'Teensy', 'Prolific']
 
     @staticmethod
     def user_edit_properties():
