@@ -10,7 +10,7 @@ import json
 import timeit
 import time
 import threading
-import copy
+import queue
 from multiprocessing import Process, Pipe
 from collections import deque
 
@@ -157,6 +157,25 @@ class Listener(QObject):
         self.sig_status.emit('Listener received terminate signal')
         self._terminate = True
 
+class Communicator(QObject):
+    """ Sends and recieves messages to and from the query process """
+    def __init__(self, pipe):
+        super().__init__()
+        self._pipe = pipe
+
+        # need a queue for procedure actions
+        self._message_queue = queue.Queue()
+
+    def send_message(self, message, delay=0):
+        self._message_queue.put((message, delay))
+
+    def communicate(self):
+        while True:
+            message = self._message_queue.get()
+            time.sleep(message[1])
+            self._pipe.send(message[0])
+            self._message_queue.task_done()
+
 class ControlSystem():
     def __init__(self, server_ip='127.0.0.1', server_port=80, debug=False):
         ## Set up Qt UI and connect UI signals
@@ -236,9 +255,19 @@ class ControlSystem():
         self._threads = []
         self._keep_communicating = True
 
+        # Create communicator to queue messages to server
+        self._communicator = Communicator(self._pipe_gui)
+        com_thread = QThread()
+        com_thread.setObjectName('com_thread')
+        self._threads.append((com_thread, self._communicator))
+        self._communicator.moveToThread(com_thread)
+        com_thread.started.connect(self._communicator.communicate)
+        com_thread.start()
+
         # Tell the query process the current polling rate:
         pipe_message = ["com_period", self._com_period]
-        self._pipe_gui.send(pipe_message)
+        self._communicator.send_message(pipe_message)
+        #self._pipe_gui.send(pipe_message)
 
         # Get initial device/channel list and send to query process:
         self.device_or_channel_changed()
@@ -338,12 +367,13 @@ class ControlSystem():
         pipe_message = ["device_or_channel_changed", device_dict_list]
 
         try:
-            self._pipe_gui.send(pipe_message)
+            self._communicator.send_message(pipe_message)
         except AttributeError:
             pass
 
     @pyqtSlot(Channel, object)
     def set_value_callback(self, channel, val):
+        print('here')
         """ Gets updated channel info from GUI, creates a message to send to server """
         values = None
         if channel.data_type == float:
@@ -507,13 +537,15 @@ class ControlSystem():
             btn.setText('Pause')
             self._window.ui.btnStop_2.setEnabled(True)
         elif btn.text() == 'Pause':
-            self._pipe_gui.send(('pause_query',))
+            self._communicator.send_message(('pause_query',))
+            #self._pipe_gui.send(('pause_query',))
             self._keep_communicating = False
             self._listener.isRunning = False
             btn.setText('Resume')
         else:
             # btnText == 'Resume'
-            self._pipe_gui.send(('pause_query',))
+            #self._pipe_gui.send(('pause_query',))
+            self._communicator.send_message(('pause_query',))
             self._keep_communicating = True
             self._listener.isRunning = True
             btn.setText('Pause')

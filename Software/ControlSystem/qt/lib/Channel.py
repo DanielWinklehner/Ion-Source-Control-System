@@ -183,7 +183,7 @@ class Channel(QWidget):
                 val = self._data_type(self._write_widget.text())
             except:
                 print('bad value entered')
-            return
+                return
 
             self._write_widget.setText(str(self._data_type(val)))
             self._set_signal.emit(self, val)
