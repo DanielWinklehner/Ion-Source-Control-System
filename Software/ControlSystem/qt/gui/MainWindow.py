@@ -408,7 +408,7 @@ class MainWindow(QMainWindow):
                                     'Must be type "{}".'.format(prp, typ))
                             return
 
-                        if prop[0] == 'name':
+                        if prop[0] == 'name' and newobj != obj:
                             if val in newobj.parent_device.channels.keys():
                                 self.show_ErrorDialog('Channel name is already used by another channel on this device. Choose a unique name for this channel.')
                                 return
