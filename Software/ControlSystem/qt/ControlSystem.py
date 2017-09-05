@@ -694,7 +694,7 @@ class ControlSystem():
 
         self.on_save_button()
 
-    def on_load_button(self, filename=''):
+    def on_load_button(self, _, filename=''):
         successes = 0
 
         if filename == '':
