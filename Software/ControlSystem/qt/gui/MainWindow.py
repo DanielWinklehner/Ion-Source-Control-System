@@ -391,7 +391,6 @@ class MainWindow(QMainWindow):
                 newobj = obj
             else:
                 parent = obj[1] # if we are here, we are passed a tuple with the parent device
-                newobj.parent_device = parent
 
             for i, prop in enumerate(property_list):
                 # text box entries
@@ -409,7 +408,7 @@ class MainWindow(QMainWindow):
                             return
 
                         if prop[0] == 'name' and newobj != obj:
-                            if val in newobj.parent_device.channels.keys():
+                            if val in parent.channels.keys():
                                 self.show_ErrorDialog('Channel name is already used by another channel on this device. Choose a unique name for this channel.')
                                 return
 
