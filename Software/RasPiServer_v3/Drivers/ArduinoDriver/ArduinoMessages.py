@@ -24,7 +24,7 @@ def build_set_message(channel_names, values_to_set):
     msg += str(channel_names[0])
     msg += str(values_to_set[0])
 
-    return [str(msg)]
+    return [(str(msg), 1)]
 
 
 def output_message_per_channel_length(precision):
@@ -120,7 +120,7 @@ def build_query_message(channel_ids, precisions, safe_messages=[]):
             # return build_query_message(split_channel, split_precision, safe_messages=[])
             all_messages.append(build_query_message(split_channel, split_precision))
 
-        return [msg[0] for msg in all_messages]
+        return [(msg[0], 1) for msg in all_messages]
 
     else:
         msg = "q"
@@ -129,7 +129,7 @@ def build_query_message(channel_ids, precisions, safe_messages=[]):
         for channel_name, precision in zip(channel_ids, precisions):
             msg += "{}{}".format(channel_name, precision)
 
-        return [msg]
+        return [(msg, 1)]
 
 
 arduino_error_messages_dict = {'ERR0': "Undefined error (does not fall into any of the other 9 categories).",

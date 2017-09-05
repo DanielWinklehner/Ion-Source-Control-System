@@ -87,15 +87,17 @@ class TDKDriver:
         assert num_of_mesg == len(server_to_driver['precisions'])
         assert server_to_driver['device_driver'] == "FT232R"
 
-        drivers_response_to_server = ['ADR 6\r']
+	# Each message contains a flag whether we wait for a response
+        drivers_response_to_server = [('ADR 6\r', 1)]
 
         for i in range(num_of_mesg):
 
             drivers_response_to_server.append(
-                self.build_message(msg_type=server_to_driver['set'],
-                                   for_what=server_to_driver['channel_ids'][i],
-                                   value=server_to_driver['values'][i],
-                                   data_type=server_to_driver['data_types'][i]))
+                (self.build_message(msg_type=server_to_driver['set'],
+                                    for_what=server_to_driver['channel_ids'][i],
+                                    value=server_to_driver['values'][i],
+                                    data_type=server_to_driver['data_types'][i]),
+                 1))
 
         return drivers_response_to_server
 

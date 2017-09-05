@@ -6,33 +6,6 @@ class REKDriver:
         self.command_dict = {'VGET': 'VGET', 'VSET': 'VSET',
                              'IGET': 'IGET', 'ISET': 'ISET',
                              'SW': 'SW'}
-                
-        '''
-                "identification": 'IDN', "software_revision": 'REV', "serial_number": 'SN',
-                             "output_voltage": 'PV', "output_current": 'PC', "read_output_voltage": 'MV',
-                             "read_output_current": 'MC', "output": 'OUT', "output_state": 'OUT?',
-                             "PV": "PV", "PC": "PC", "OUT": "OUT", "MV": "MV", "MC":"MC"}
-        '''
-
-    @staticmethod
-    def get_error(error_code):
-        error_dict = {'01': "Checksum error", '10': "Syntax error", '11': "Data length error", '12': "Invalid data",
-                      '13': "Invalid operating mode", '14': "Invalid action", '15': "Invalid gas",
-                      '16': "Invalid control mode", '17': "Invalid command", '24': "Calibration error",
-                      '25': "Flow too large", '27': "Too many gases in gas table",
-                      '28': "Flow cal error; valve not open",
-                      '98': "Internal device error", '99': "Internal device error"}
-        return error_dict[str(error_code)]
-
-    def tests(self):
-        assert self.calculate_checksum("@001UT!TEST;") == "16"
-
-    @staticmethod
-    def calculate_checksum(message):
-
-        checksum = sum(map(ord, [message_part for message_part in message]))
-
-        return hex(checksum)[-2:].upper()
 
     def parse_message(self, _message):
         message = _message.strip().split('=')[1]
@@ -82,15 +55,17 @@ class REKDriver:
         assert num_of_mesg == len(server_to_driver['precisions'])
         assert server_to_driver['device_driver'] == "Prolific"
 
-        drivers_response_to_server = ['#1 REN \r']
+	# Each message contains a flag whether we wait for a response
+        drivers_response_to_server = [('#1 REN \r', 0)]
 
         for i in range(num_of_mesg):
 
             drivers_response_to_server.append(
-                self.build_message(msg_type=server_to_driver['set'],
-                                   for_what=server_to_driver['channel_ids'][i],
-                                   value=server_to_driver['values'][i],
-                                   data_type=server_to_driver['data_types'][i]))
+                (self.build_message(msg_type=server_to_driver['set'],
+                                    for_what=server_to_driver['channel_ids'][i],
+                                    value=server_to_driver['values'][i],
+                                    data_type=server_to_driver['data_types'][i]),
+                 not server_to_driver['set']))
 
         return drivers_response_to_server
 
