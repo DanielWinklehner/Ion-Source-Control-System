@@ -182,6 +182,7 @@ class ControlSystem():
         self._window = MainWindow.MainWindow()
         
         self._window.ui.btnSave.triggered.connect(self.on_save_button)
+        self._window.ui.btnSaveAs.triggered.connect(self.on_save_as_button)
         self._window.ui.btnLoad.triggered.connect(self.on_load_button)
         self._window._btnquit.triggered.connect(self.on_quit_button)
 
@@ -241,6 +242,8 @@ class ControlSystem():
         self._pinned_curve = self._window._pinnedplot.curve
         self._pinned_plot_name = ()
 
+        self._device_file_name = ''
+
         self._window.status_message('Initialization complete.')
 
     # ---- Server Communication ----
@@ -298,7 +301,7 @@ class ControlSystem():
         except:
             pass
         if self._threads:
-            for thread, listener in self._threads:
+            for thread, _ in self._threads:
                 thread.quit()
 
     @pyqtSlot(str)
@@ -374,7 +377,7 @@ class ControlSystem():
     @pyqtSlot(Channel, object)
     def set_value_callback(self, channel, val):
         print('here')
-        """ Gets updated channel info from GUI, creates a message to send to server """
+        """ Creates a SET message to send to server """
         values = None
         if channel.data_type == float:
             values = val * channel.scaling
@@ -646,21 +649,43 @@ class ControlSystem():
     # ---- dialogs ----
 
     def on_save_button(self):
-        fileName, _ = QFileDialog.getSaveFileName(self._window,
-                            "Save Devices as JSON","","Text Files (*.txt)")
+        if self._device_file_name == '':
+            fileName, _ = QFileDialog.getSaveFileName(self._window,
+                                "Save Devices as JSON","","Text Files (*.txt)")
         
-        if fileName == '':
-            return
-        
-        if fileName[-4:] != '.txt':
-            fileName += '.txt'
+            if fileName == '':
+                return
 
-        with open(fileName, 'w') as f:
+            if fileName[-4:] != '.txt':
+                fileName += '.txt'
+
+            self._device_file_name = fileName
+        
+        with open(self._device_file_name, 'w') as f:
             output = {}
             for device_name, device in self._devices.items():
                 output[device_name] = device.get_json()
 
             json.dump(output, f, sort_keys=True, indent=4, separators=(', ', ': '))
+
+        with open('defaults.txt', 'w') as f:
+            f.write(self._device_file_name)
+
+        self._window.status_message('Saved devices to {}.'.format(self._device_file_name))
+
+    def on_save_as_button(self):
+        fileName, _ = QFileDialog.getSaveFileName(self._window,
+                            "Save Devices as JSON", "", "Text Files (*.txt)")
+
+        if fileName == '':
+            return
+
+        if fileName[-4:] != '.txt':
+            fileName += '.txt'
+
+        self._device_file_name = fileName
+
+        self.on_save_button()
 
     def on_load_button(self):
         successes = 0

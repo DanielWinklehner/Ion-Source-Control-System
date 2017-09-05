@@ -232,7 +232,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 57, 16))
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 839, 633))
         self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
         self.gridLayout_4 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents_2)
         self.gridLayout_4.setContentsMargins(0, 0, 0, 0)
@@ -269,7 +269,7 @@ class Ui_MainWindow(object):
         self.scrollArea_2.setWidgetResizable(True)
         self.scrollArea_2.setObjectName("scrollArea_2")
         self.scrollAreaWidgetContents_3 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_3.setGeometry(QtCore.QRect(0, 0, 57, 37))
+        self.scrollAreaWidgetContents_3.setGeometry(QtCore.QRect(0, 0, 839, 633))
         self.scrollAreaWidgetContents_3.setObjectName("scrollAreaWidgetContents_3")
         self.gridLayout_10 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents_3)
         self.gridLayout_10.setContentsMargins(0, 0, 0, 11)
@@ -321,9 +321,12 @@ class Ui_MainWindow(object):
         self.btnLoad.setObjectName("btnLoad")
         self.btnSave = QtWidgets.QAction(MainWindow)
         self.btnSave.setObjectName("btnSave")
+        self.btnSaveAs = QtWidgets.QAction(MainWindow)
+        self.btnSaveAs.setObjectName("btnSaveAs")
         self.toolBar.addAction(self.btnQuit)
         self.toolBar.addAction(self.btnLoad)
         self.toolBar.addAction(self.btnSave)
+        self.toolBar.addAction(self.btnSaveAs)
 
         self.retranslateUi(MainWindow)
         self.tabMain.setCurrentIndex(0)
@@ -353,5 +356,6 @@ class Ui_MainWindow(object):
         self.btnLoad.setText(_translate("MainWindow", "Load Devices"))
         self.btnLoad.setToolTip(_translate("MainWindow", "Load Devices"))
         self.btnSave.setText(_translate("MainWindow", "Save Devices"))
+        self.btnSaveAs.setText(_translate("MainWindow", "Save Devices As"))
 
 from pyqtgraph import PlotWidget
