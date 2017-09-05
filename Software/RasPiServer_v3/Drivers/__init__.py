@@ -1,6 +1,7 @@
 from ArduinoDriver import *
 from MFCDriver import *
 from TDKDriver import *
+from REKDriver import *
 
 """
 The driver mapping contains the information needed for the DeviceDriver class and the RasPiServer to
