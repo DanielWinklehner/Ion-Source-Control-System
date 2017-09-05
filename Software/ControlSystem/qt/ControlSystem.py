@@ -246,7 +246,7 @@ class ControlSystem():
         if os.path.exists('defaults.txt'):
             with open('defaults.txt') as f:
                 fileName = f.read()
-                self.on_load_button(fileName)
+                self.on_load_button(filename=fileName)
 
         self._window.status_message('Initialization complete.')
 
@@ -730,6 +730,7 @@ class ControlSystem():
                 successes += 1
 
         if successes > 0:
+            self._device_file_name = filename
             self.update_gui_devices()
             self._window.status_message('Loaded {} devices from JSON.'.format(successes))
 
