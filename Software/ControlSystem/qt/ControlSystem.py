@@ -4,7 +4,7 @@
 # Thomas Wester <twester@mit.edu>
 # Code adapted from MIST1ControlSystem.py (Python 2/gtk3+ version)
 
-import sys
+import sys, os
 import requests
 import json
 import timeit
@@ -202,7 +202,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-                
+                    
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -223,10 +223,10 @@ class ControlSystem():
                                             device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-
+        
         ## Set up communication pipes.
         self._keep_communicating = False
-        self._polling_rate = 15.0
+        self._polling_rate = 30.0
         self._com_period = 1.0 / self._polling_rate
 
         ## Set up data dictionaries
@@ -237,12 +237,16 @@ class ControlSystem():
         self._critical_procedures = {}
         self._plotted_channels = []
         self._threads = None # holds listener thead
-        self._retain_last_n_values = 500 # number of points to plot before removing
+        self._retain_last_n_values = 1000 # number of points to plot before removing
 
         self._pinned_curve = self._window._pinnedplot.curve
         self._pinned_plot_name = ()
 
         self._device_file_name = ''
+        if os.path.exists('defaults.txt'):
+            with open('defaults.txt') as f:
+                fileName = f.read()
+                self.on_load_button(fileName)
 
         self._window.status_message('Initialization complete.')
 
@@ -290,7 +294,6 @@ class ControlSystem():
         self._listener.sig_poll_rate.connect(self.on_listener_poll_rate)
         self._listener.sig_device_info.connect(self.on_listener_device_info)
         query_thread.started.connect(self._listener.listen)
-
         query_thread.start()
 
     def shutdown_communication_threads(self):
@@ -660,6 +663,9 @@ class ControlSystem():
                 fileName += '.txt'
 
             self._device_file_name = fileName
+
+            with open('defaults.txt', 'w') as f:
+                f.write(self._device_file_name)
         
         with open(self._device_file_name, 'w') as f:
             output = {}
@@ -668,8 +674,6 @@ class ControlSystem():
 
             json.dump(output, f, sort_keys=True, indent=4, separators=(', ', ': '))
 
-        with open('defaults.txt', 'w') as f:
-            f.write(self._device_file_name)
 
         self._window.status_message('Saved devices to {}.'.format(self._device_file_name))
 
@@ -685,17 +689,22 @@ class ControlSystem():
 
         self._device_file_name = fileName
 
+        with open('defaults.txt', 'w') as f:
+            f.write(self._device_file_name)
+
         self.on_save_button()
 
-    def on_load_button(self):
+    def on_load_button(self, filename=''):
         successes = 0
-        fileName, _ = QFileDialog.getOpenFileName(self._window,
-                            "Load devices from JSON","","Text Files (*.txt)")
 
-        if fileName == '':
-            return
+        if filename == '':
+            filename, _ = QFileDialog.getOpenFileName(self._window,
+                                "Load devices from JSON","","Text Files (*.txt)")
 
-        with open(fileName, 'r') as f:
+            if filename == '':
+                return
+
+        with open(filename, 'r') as f:
             try:
                 data = json.loads(f.read())
             except:

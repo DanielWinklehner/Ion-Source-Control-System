@@ -8,8 +8,6 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from gui.widgets.DateTimePlotWidget import DateTimePlotWidget
 
-import pyqtgraph as pg
-
 class Channel(QWidget):
     # emits itself and the new value
     _set_signal = pyqtSignal(object, object)
