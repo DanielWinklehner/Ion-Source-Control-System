@@ -386,10 +386,10 @@ class MainWindow(QMainWindow):
                     data_type = types[gbox.itemAt(2 * i + 1).widget().currentText()]
                     break
 
+            param_dict = {}
             if isinstance(obj, Channel):
                 newobj = obj
             else:
-                newobj = Channel()
                 parent = obj[1] # if we are here, we are passed a tuple with the parent device
                 newobj.parent_device = parent
 
@@ -436,9 +436,11 @@ class MainWindow(QMainWindow):
                 if isinstance(obj, Channel):
                     newvals[prop[0]] = val
                 else:
-                    setattr(newobj, prop[0], val)
+                    param_dict[prop[0]] = val
+                    #setattr(newobj, prop[0], val)
 
             if not isinstance(obj, Channel):
+                newobj = Channel(**param_dict)
                 parent = obj[1] # if we are here, we are passed a tuple with the parent device
                 newobj.parent_device = parent
 
