@@ -159,9 +159,14 @@ class Listener(QObject):
 
 class Communicator(QObject):
     """ Sends and recieves messages to and from the query process """
+
+    sig_status = pyqtSignal(str)
+
     def __init__(self, pipe):
         super().__init__()
         self._pipe = pipe
+        self._terminate = False
+        self._keep_communicating = True
 
         # need a queue for procedure actions
         self._message_queue = queue.Queue()
@@ -169,12 +174,35 @@ class Communicator(QObject):
     def send_message(self, message, delay=0):
         self._message_queue.put((message, delay))
 
+    @property
+    def isRunning(self):
+        return self._keep_communicating
+
+    @isRunning.setter
+    def isRunning(self, val):
+        self._keep_communicating = val
+
+    @pyqtSlot()
     def communicate(self):
         while True:
-            message = self._message_queue.get()
-            time.sleep(message[1])
-            self._pipe.send(message[0])
-            self._message_queue.task_done()
+            while self._keep_communicating:
+                message = self._message_queue.get()
+                time.sleep(message[1])
+                self._pipe.send(message[0])
+                self._message_queue.task_done()
+
+                app.processEvents()
+
+                if self._terminate:
+                    break
+
+            if self._terminate:
+                self.sig_status.emit('Communicator terminating...')
+                break
+
+    def terminate(self):
+        self.sig_status.emit('Communicator received terminate signal')
+        self._terminate = True
 
 class ControlSystem():
     def __init__(self, server_ip='127.0.0.1', server_port=80, debug=False):
@@ -547,6 +575,8 @@ class ControlSystem():
             #self._pipe_gui.send(('pause_query',))
             self._keep_communicating = False
             self._listener.isRunning = False
+            self._plot_timer.stop()
+            self._communicator.isRunning = False
             btn.setText('Resume')
         else:
             # btnText == 'Resume'
@@ -554,6 +584,8 @@ class ControlSystem():
             self._communicator.send_message(('pause_query',))
             self._keep_communicating = True
             self._listener.isRunning = True
+            self._plot_timer.start(20)
+            self._communicator.isRunning = True
             btn.setText('Pause')
 
     def on_stop_click(self):
@@ -857,7 +889,7 @@ def dummy_device(n, ard_id):
 if __name__ == '__main__':
     app = QApplication([])
 
-    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
 
     # connect the closing event to the quit button procedure
     app.aboutToQuit.connect(cs.on_quit_button)

@@ -15,12 +15,13 @@ from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QFont, QPixmap, QIcon
 
-import pyqtgraph as pg
-
 from .ui_MainWindow import Ui_MainWindow
 from .dialogs.AboutDialog import AboutDialog
 from .dialogs.ErrorDialog import ErrorDialog
+
 from .widgets.DateTimePlotWidget import DateTimePlotWidget
+from .widgets.EntryForm import EntryForm
+
 from lib.Device import Device
 from lib.Channel import Channel 
 from lib.Procedure import Procedure
@@ -121,7 +122,7 @@ class MainWindow(QMainWindow):
         col = 0
         for device_name, device in devices.items():
             for channel_name, channel in device.channels.items():
-                if channel._plot_widget is not None and channel in plotted_channels:
+                if channel in plotted_channels:
                     self._plot_layout.addWidget(channel._plot_widget, row, col)
                     row += 1
                     if row == 2:
@@ -160,6 +161,42 @@ class MainWindow(QMainWindow):
 
     # ---- Settings page functions ----
     def on_settings_row_changed(self, item):
+        if item == None:
+            return
+
+        self.clearLayout(self._devvbox)
+
+        obj = None
+        parent = None
+
+        for device_name, device_data in self._settings_devices.items():
+            # are we editing an existing device/channel?
+            if device_data['row'] == item:
+                obj = device_data['device']
+                break
+            else:
+                for channel_name, channel_data in device_data['channels'].items():
+                    if channel_data['row'] == item:
+                        obj = channel_data['channel']
+                        parent = device_data['device']
+                        break
+
+        if (obj, parent) == (None, None):
+            # adding a new device or channel
+            if 'channel' in item.text(0).lower():
+                for device_name, device_data in self._settings_devices.items():
+                    if device_data['row'] == item.parent():
+                            parent = device_data['device']
+                            break
+
+        if parent is None:
+            a = obj.entry_form
+            self._devvbox.addWidget(a)
+        else:
+            a = obj.entry_form
+            self._devvbox.addWidget(a)
+
+    def on_settings_row_changexd(self, item):
         """ Creates the edit controls when selecting rows in the tree view """
         if item == None:
             # if nothing is selected, do nothing
@@ -205,8 +242,7 @@ class MainWindow(QMainWindow):
             self._devvbox.addWidget(lblTitle)
             gbox = QGridLayout()
 
-            property_list = sorted([(name, x) for name, x in Device.user_edit_properties().items()], 
-                                   key=lambda y: y[1]['display_order'])
+            property_list = Device.user_edit_properties() 
 
             for i, prop in enumerate(property_list):
                 lbl = QLabel(prop[1]['display_name'])
@@ -267,8 +303,7 @@ class MainWindow(QMainWindow):
             self._devvbox.addWidget(lblTitle)
             gbox = QGridLayout()
 
-            property_list = sorted([(name, x) for name, x in Channel.user_edit_properties().items()], 
-                                   key=lambda y: y[1]['display_order'])
+            property_list = Channel.user_edit_properties() 
 
             for i, prop in enumerate(property_list):
                 lbl = QLabel(prop[1]['display_name'])
@@ -344,13 +379,11 @@ class MainWindow(QMainWindow):
         gbox = self._devvbox.itemAt(1).layout()
         if isinstance(obj, Device) or (isinstance(obj, str) and 'device' in obj.lower()):
             # saving changes for a device
-            property_list = sorted([(name, x) for name, x in Device.user_edit_properties().items()], 
-                                   key=lambda y: y[1]['display_order'])
+            property_list = Device.user_edit_properties() 
             
+            param_dict = {}
             if isinstance(obj, Device):
                 newobj = obj
-            else:
-                newobj = Device()
 
             for i, prop in enumerate(property_list):
                 if prop[0] == 'driver':
@@ -358,12 +391,12 @@ class MainWindow(QMainWindow):
                 else:
                     val = gbox.itemAt(2 * i + 1).widget().text().strip()
                     # make sure device has a unique name
-                    if prop[0] == 'name':
+                    if prop[0] == 'name' and newobj != obj:
                         if val in self._settings_devices.keys():
                             self.show_ErrorDialog('Device name is already used by another device. Choose a unique name for this device.')
                             return
                     # make sure device has a unique device_id
-                    elif prop[0] == 'device_id':
+                    elif prop[0] == 'device_id' and newobj != obj:
                         if val in [x['device'].device_id for _, x in self._settings_devices.items()]:
                             self.show_ErrorDialog('Device ID has already been assigned to another device. Choose a unique device ID for this device')
                             return
@@ -372,11 +405,14 @@ class MainWindow(QMainWindow):
                 if isinstance(obj, Device):
                     newvals[prop[0]] = val
                 else:
-                    setattr(newobj, prop[0], val)
+                    param_dict[prop[0]] = val
+
+            if newobj is None:
+                newobj = Device(**param_dict)
 
         else:
             # saving changes for a channel
-            property_list = sorted([(name, x) for name, x in Channel.user_edit_properties().items()], key=lambda y: y[1]['display_order'])
+            property_list = Channel.user_edit_properties()
             
             # find the user-selected data type
             data_type = type

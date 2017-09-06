@@ -4,9 +4,10 @@ import time
 from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLabel, QFrame
 
 from .Channel import Channel
+from gui.widgets.EntryForm import EntryForm
 
 class Device:
-    def __init__(self, name='', device_id='', label='', channels=None, driver='Arduino'):
+    def __init__(self, name, device_id, label='', channels=None, driver='Arduino'):
 
         self._name = name
         self._label = label
@@ -23,6 +24,12 @@ class Device:
 
         self._pages = ['overview']
 
+        self._error_message = ''
+        self._hasError = False
+
+        self._entry_form = EntryForm(self._label, '', self.user_edit_properties(), self)
+        self._entry_form.save_signal.connect(self.validate_form)
+
         # create gui representation
         fr = QFrame()
         vbox_main = QVBoxLayout()
@@ -36,24 +43,50 @@ class Device:
 
         self._gblayout = vbox_gb
         self._overview_widget = fr
-        self._error_message = ''
-        self._hasError = False
     
+    def validate_form(self):
+        print('here')
+
     @staticmethod
     def driver_list():
         return ['Arduino', 'RS485', 'FT232R', 'Teensy', 'Prolific']
 
-    @staticmethod
-    def user_edit_properties():
+    #@staticmethod
+    def user_edit_properties(self):
         """ Returns list of properties that should be user-editable 
             key name must match a propertyi of this class """
             
-        return {'name': {'display_name': 'Name', 'display_order': 1},
-                'device_id': {'display_name': 'Device ID', 'display_order': 2},
-                'label': {'display_name': 'Label', 'display_order': 3},
-                'driver': {'display_name': 'Driver', 'display_order': 4},
+        return {
+                'name': {
+                    'display_name': 'Name', 
+                    'entry_type': 'text',
+                    'value': self._name,
+                    'display_order': 1
+                    },
+                'device_id': {
+                    'display_name': 'Device ID', 
+                    'entry_type': 'text',
+                    'value': self._device_id,
+                    'display_order': 2
+                    },
+                'label': {
+                    'display_name': 'Label', 
+                    'entry_type': 'text',
+                    'value': self._label,
+                    'display_order': 3
+                    },
+                'driver': {
+                    'display_name': 'Driver', 
+                    'entry_type': 'combo',
+                    'value': self._driver,
+                    'defaults': self.driver_list(),
+                    'display_order': 4
+                    },
                 }
 
+    @property
+    def entry_form(self):
+        return self._entry_form.widget
 
     def update(self):
         # reorder the channels
@@ -90,7 +123,6 @@ class Device:
                 for name, ch in self.channels.items():
                     ch.update()
       
-
     @property
     def device_id(self):
         return self._device_id
@@ -134,7 +166,6 @@ class Device:
             self._gblayout.parent().setTitle(self._label)
             for channel_name, channel in self.channels.items():
                 channel.update()
-
 
     @property
     def pages(self):

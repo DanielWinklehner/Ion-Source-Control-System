@@ -1,12 +1,13 @@
 import json
 import datetime
-from scipy.interpolate import interp1d
+from collections import deque
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel, \
     QRadioButton, QLineEdit, QPushButton
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from gui.widgets.DateTimePlotWidget import DateTimePlotWidget
+from gui.widgets.EntryForm import EntryForm
 
 class Channel(QWidget):
     # emits itself and the new value
@@ -43,7 +44,12 @@ class Channel(QWidget):
 
         self._locked = False
 
-        self._pages = ['overview']
+        self._retain_last_n_values = 500
+        self._x_values = deque(maxlen=self._retain_last_n_values)
+        self._y_values = deque(maxlen=self._retain_last_n_values)
+
+        self._entry_form = EntryForm(self.label, '',
+                                     self.user_edit_properties(), self)
 
         # plot widget
         gb_plot = QGroupBox()
@@ -76,8 +82,6 @@ class Channel(QWidget):
         vbox.addWidget(self._plot_item)
         vbox.addLayout(hbox)
         self._plot_widget = gb_plot
-
-        #self._plot_curve = self._plot_item.plot(pen='#FF0000')
 
         # overview widget
         gb = QGroupBox(self._label)
@@ -126,38 +130,84 @@ class Channel(QWidget):
                 hbox_read.addWidget(lblUnit)
                 vbox_readwrite.addLayout(hbox_read)
 
-    @staticmethod
-    def user_edit_properties():
-    # this function tells the gui which properties can be edited
-    # during run time. Any key in this list needs to have a getter 
-    # and setter method, and must be decorated with 
-    # @property and @<name>.setter
+    @property
+    def entry_form(self):
+        return self._entry_form.widget
 
+    def user_edit_properties(self):
+        
         return {
-            'name':          {'display_name': 'Name', 
-                'display_order': 1, 'type': str},
-            'label':         {'display_name': 'Label', 
-                'display_order': 2, 'type': str},
-            'unit':          {'display_name': 'Unit', 
-                'display_order': 3, 'type': str},
-            'scaling':       {'display_name': 'Scaling', 
-                'display_order': 4, 'type': float},
-            'precision':     {'display_name': 'Precision', 
-                'display_order': 5, 'type': int},
-            'display_mode':  {'display_name': 'Display Mode', 
-                'display_order': 6, 'type': str},
-            'lower_limit':   {'display_name': 'Lower Limit', 
-                'display_order': 7, 'type': None},
-            'upper_limit':   {'display_name': 'Upper Limit', 
-                'display_order': 8, 'type': None},
-            'data_type':     {'display_name': 'Data Type', 
-                'display_order': 9, 'type': type},
-            'mode':          {'display_name': 'Mode', 
-                'display_order': 10, 'type': str},
-            'display_order': {'display_name': 'Display Order', 
-                'display_order': 11, 'type': int},
-            }
-
+                'name': {
+                    'display_name': 'Name', 
+                    'entry_type': 'text',
+                    'value': self._name,
+                    'display_order': 1
+                    },
+                'label': {
+                    'display_name': 'Label', 
+                    'entry_type': 'text',
+                    'value': self._label,
+                    'display_order': 2
+                    },
+                'unit': {
+                    'display_name': 'Unit', 
+                    'entry_type': 'text',
+                    'value': self._unit,
+                    'display_order': 3
+                    },
+                'scaling': {
+                    'display_name': 'Scaling', 
+                    'entry_type': 'text',
+                    'value': self._scaling,
+                    'display_order': 4
+                    },
+                'precision': {
+                    'display_name': 'Precision', 
+                    'entry_type': 'text',
+                    'value': self._precision,
+                    'display_order': 5
+                    },
+                'display_mode': {
+                    'display_name': 'Display Mode', 
+                    'entry_type': 'combo',
+                    'value': 'Scientific' if self._display_mode == 'e' else 'Float',
+                    'defaults': ['Float', 'Scientific'],
+                    'display_order': 6
+                    },
+                'lower_limit': {
+                    'display_name': 'Lower Limit', 
+                    'entry_type': 'text',
+                    'value': self._lower_limit,
+                    'display_order': 7
+                    },
+                'upper_limit': {
+                    'display_name': 'Upper Limit', 
+                    'entry_type': 'text',
+                    'value': self._upper_limit,
+                    'display_order': 8
+                    },
+                'data_type': {
+                    'display_name': 'Data Type', 
+                    'entry_type': 'combo',
+                    'value': str(self._data_type).split("'")[1].title(),
+                    'defaults': ['Float', 'Int', 'Bool'],
+                    'display_order': 9
+                    },
+                'mode': {
+                    'display_name': 'Mode', 
+                    'entry_type': 'combo',
+                    'value': self._mode.title(),
+                    'defaults': ['Read', 'Write', 'Both'],
+                    'display_order': 10
+                    },
+                'display_order': {
+                    'display_name': 'Display Order', 
+                    'entry_type': 'text',
+                    'value': self._display_order,
+                    'display_order': 11
+                    },
+                }
+        
     def update(self):
         """ Update the GUI representation of this channel """
         self._overview_widget.setTitle(self._label)
