@@ -7,7 +7,7 @@ from .Channel import Channel
 from gui.widgets.EntryForm import EntryForm
 
 class Device:
-    def __init__(self, name, device_id, label='', channels=None, driver='Arduino'):
+    def __init__(self, name='', device_id='', label='', channels=None, driver='Arduino'):
 
         self._name = name
         self._label = label

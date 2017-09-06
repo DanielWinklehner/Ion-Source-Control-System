@@ -83,6 +83,7 @@ class Channel(QWidget):
         vbox.addLayout(hbox)
         self._plot_widget = gb_plot
 
+    def initialize(self):
         # overview widget
         gb = QGroupBox(self._label)
         self._overview_widget = gb

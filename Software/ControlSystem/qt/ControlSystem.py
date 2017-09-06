@@ -756,6 +756,7 @@ class ControlSystem():
                 channel_data['data_type'] = eval(data_type_str.split("'")[1])
 
                 ch = Channel(**channel_data)
+                ch.initialize()
                 device.add_channel(ch)
 
             if self.add_device(device):
