@@ -282,7 +282,6 @@ class ControlSystem():
             pass
         
         if self._threads:
-            print(self._threads)
             for thread, obj in self._threads:
                 obj.terminate()
                 thread.quit()

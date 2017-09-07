@@ -23,7 +23,7 @@ class Channel(QWidget):
     def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, 
                  data_type=float, unit="", scaling=1.0, scaling_read=None, 
                  mode="both", display_order=0, display_mode="f", precision=2, 
-                 default_value=0.0, plot_settings = None):
+                 default_value=0.0, plot_settings = None, stored_values=500):
 
         super().__init__()
 
@@ -62,7 +62,7 @@ class Channel(QWidget):
                 self._plot_settings['x']['grid'] = False
                 self._plot_settings['y']['grid'] = False
 
-        self._retain_last_n_values = 500
+        self._retain_last_n_values = stored_values
         self._x_values = deque(maxlen=self._retain_last_n_values)
         self._y_values = deque(maxlen=self._retain_last_n_values)
 
@@ -172,7 +172,7 @@ class Channel(QWidget):
                     value = float(val)
                 except:
                     print('bad value entered for scaling')
-            elif prop_name in ['precision', 'display_order']:
+            elif prop_name in ['stored_values', 'precision', 'display_order']:
                 try:
                     value = int(val)
                 except:
@@ -273,6 +273,12 @@ class Channel(QWidget):
                     'value': self._display_order,
                     'display_order': 11
                     },
+                'stored_values': {
+                    'display_name': '# Stored Values', 
+                    'entry_type': 'text',
+                    'value': self._retain_last_n_values,
+                    'display_order': 12
+                    },
                 }
         
     # ---- GUI interaction ----
@@ -332,6 +338,16 @@ class Channel(QWidget):
     @property
     def y_values(self):
         return self._y_values
+
+    @property
+    def stored_values(self):
+        return self._retain_last_n_values
+
+    @stored_values.setter
+    def stored_values(self, value):
+        self._retain_last_n_values = value
+        self._x_values = deque(maxlen=self._retain_last_n_values)
+        self._y_values = deque(maxlen=self._retain_last_n_values)
 
     def append_data(self, x, y):
         self._x_values.append(x)
@@ -513,7 +529,8 @@ class Channel(QWidget):
             'precision': self._precision,
             'display_mode': self._display_mode,
             'display_order': self._display_order,
-            'plot_settings': self._plot_settings
+            'plot_settings': self._plot_settings,
+            'stored_values': self._retain_last_n_values
             }
 
         return properties #json.dumps(properties)
