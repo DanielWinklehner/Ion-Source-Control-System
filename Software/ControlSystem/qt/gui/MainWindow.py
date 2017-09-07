@@ -29,7 +29,7 @@ from lib.Procedure import Procedure
 class MainWindow(QMainWindow):
 
     # signal to be emitted when device/channel is changed
-    sig_device_channel_changed = pyqtSignal(object, dict)
+    _sig_new_device_channel = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -50,7 +50,7 @@ class MainWindow(QMainWindow):
         # set up pinned plot
         self._pinnedplot = DateTimePlotWidget()
         self._gbpinnedplot.layout().itemAt(0).widget().deleteLater()
-        self._gbpinnedplot.layout().addWidget(self._pinnedplot, 0 ,0)
+        self._gbpinnedplot.layout().insertWidget(0, self._pinnedplot)
 
         # add a right-aligned About tool bar button
         spc = QWidget()
@@ -194,8 +194,10 @@ class MainWindow(QMainWindow):
                 obj = Device(label='New Device')
             else:
                 obj = Channel(label='New Channel')
+                obj.parent_device = parent
 
         self._devvbox.addWidget(obj.entry_form)
+        self._sig_new_device_channel.emit(obj)
 
     # ---- Misc functions ---
     def show_AboutDialog(self):

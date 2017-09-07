@@ -220,7 +220,7 @@ class ControlSystem():
 
         self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
         self._window.ui.btnAddProcedure.clicked.connect(self.show_ProcedureDialog)
-        self._window.sig_device_channel_changed.connect(self.on_device_channel_changed)
+        self._window._sig_new_device_channel.connect(self.on_new_device_channel)
 
         ## Plotting timer
         self._plot_timer = QTimer()
@@ -271,10 +271,6 @@ class ControlSystem():
         self._pinned_plot_name = ()
 
         self._device_file_name = ''
-        if os.path.exists('defaults.txt'):
-            with open('defaults.txt') as f:
-                fileName = f.read()
-                self.on_load_button(filename=fileName)
 
         self._window.status_message('Initialization complete.')
 
@@ -456,54 +452,70 @@ class ControlSystem():
         self._y_values[(device_name, channel_name)].append(
             self._devices[device_name].channels[channel_name].value)
 
+    @pyqtSlot(object)
+    def on_new_device_channel(self, obj):
+        """ Connects the new object's save signal to the control system """
+        obj.sig_entry_form_ok.connect(self.on_device_channel_changed)
+
     @pyqtSlot(object, dict)
     def on_device_channel_changed(self, obj, vals):
         """ Called when user presses Save Changes button on the settings page.
             Gets passed an old device/channel and new values, or a new
             device/channel, and no values. """
 
-        if vals == {}:
-            # We are adding a device/channel
-            if isinstance(obj, Device):
-                self.add_device(obj)
-            elif isinstance(obj, Channel):
-                obj.parent_device.add_channel(obj)
-                self.add_channel(obj)
-        else:
-            # We are editing a device/channel
-            # make sure the object is not part of a procedure
-            for procedure_name, procedure in self._procedures.items():
-                used_devices, used_channels = procedure.devices_channels_used()
-                if obj.name in used_devices + used_channels:
-                    self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.')
+        # make sure the object is not part of a procedure
+        for procedure_name, procedure in self._procedures.items():
+            used_devices, used_channels = procedure.devices_channels_used()
+            if obj in used_devices | used_channels:
+                self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.')
+                return
+
+        if isinstance(obj, Device):
+
+            name_in_use = vals['name'] in self._devices.keys()
+            id_in_use = vals['device_id'] in [x.device_id for _, x in self._devices.items()]
+            editing_device = obj in [x for _, x in self._devices.items()]
+
+            if editing_device:
+                if name_in_use and vals['name'] != obj.name:
+                    # attempting to change device name to a name in-use
                     return
 
-            # Set attributes. Validity of entered values is handled in MainWindow.py
+                if id_in_use and vals['device_id'] != obj.device_id:
+                    # attempting to change device_id to an id in-use
+                    return
+
+            else:
+                # adding a new device
+                if name_in_use or id_in_use:
+                    # attempting to add a device with name or id in-use
+                    return
+
             for attr, val in vals.items():
-                if attr == 'name' and val != obj.name:
-                    if isinstance(obj, Channel):
-                        # channel name is unique, so we update it in the device object
-                        obj.parent_device.channels[val] = obj.parent_device.channels.pop(obj.name)
-                        if obj.name in self._pinned_plot_name:
-                            self._pinned_plot_name = (self._pinned_plot_name[0], val)
-                        self._x_values[(obj.parent_device.name, val)] = \
-                                self._x_values.pop((obj.parent_device.name, obj.name))
-                        self._y_values[(obj.parent_device.name, val)] = \
-                                self._y_values.pop((obj.parent_device.name, obj.name))
-
-                    elif isinstance(obj, Device):
-                        # device name is unique, so update it in the Control System
-                        self._devices[val] = self._devices.pop(obj.name)
-                        if obj.name in self._pinned_plot_name:
-                            self._pinned_plot_name = (val, self._pinned_plot_name[1])
-                        for channel_name, channel in self._devices[val].channels.items():
-                            self._x_values[(val, channel_name)] = \
-                                    self._x_values.pop((obj.name, channel_name))
-                            self._y_values[(val, channel_name)] = \
-                                    self._y_values.pop((obj.name, channel_name))
-
-                # use setattr to set obj properties by 'attr' which is a string
                 setattr(obj, attr, val)
+
+            if not editing_device:
+                self.add_device(obj)
+
+        elif isinstance(obj, Channel):
+
+            editing_channel = obj in [x for _, x in obj.parent_device.channels.items()]
+            name_in_use = vals['name'] in obj.parent_device.channels.keys()
+
+            if editing_channel:
+                if name_in_use and vals['name'] != obj.name:
+                    return
+            else:
+                if name_in_use:
+                    return
+                # adding a new channel
+            for attr, val in vals.items():
+                setattr(obj, attr, val)
+
+            if not editing_channel:
+                obj.initialize()
+                obj.parent_device.add_channel(obj)
+                self.add_channel(obj)
 
         self.device_or_channel_changed()
         self.update_gui_devices()
@@ -543,9 +555,11 @@ class ControlSystem():
             return
 
         key = (channel.parent_device.name, channel.name)
+        
         channel._set_signal.connect(self.set_value_callback)
         channel._pin_signal.connect(self.set_pinned_plot_callback)
         channel._settings_signal.connect(self.set_plot_settings_callback)
+
         self._x_values[key] = deque(np.linspace(time.time() - 5.0, time.time(),
                                                 self._retain_last_n_values),
                                                 maxlen=self._retain_last_n_values)

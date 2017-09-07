@@ -62,15 +62,15 @@ class Procedure(QWidget):
         self._delete_sig.emit(self)
 
     def devices_channels_used(self):
-        devices = []
-        channels = []
+        devices = set()
+        channels = set()
         for idx, rule in self._rules.items():
-            devices.append(rule['device'].name)
-            channels.append(rule['channel'].name)
+            devices.add(rule['device'])
+            channels.add(rule['channel'])
 
         for idx, action in self._actions.items():
-            devices.append(action['device'].name)
-            channels.append(action['channel'].name)
+            devices.add(action['device'])
+            channels.add(action['channel'])
 
         return (devices, channels)
 

@@ -121,8 +121,8 @@
            <property name="title">
             <string>Pinned Plot</string>
            </property>
-           <layout class="QGridLayout" name="gridLayout_7">
-            <item row="0" column="0">
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <item>
              <widget class="PlotWidget" name="pltPinned">
               <property name="font">
                <font>
@@ -130,6 +130,43 @@
                </font>
               </property>
              </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_4">
+              <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QPushButton" name="btnResetPinnedPlot">
+                <property name="text">
+                 <string>Reset</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_4">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
@@ -277,7 +314,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>839</width>
+              <width>815</width>
               <height>675</height>
              </rect>
             </property>
@@ -509,8 +546,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>839</width>
-              <height>633</height>
+              <width>78</width>
+              <height>16</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_4">
@@ -589,8 +626,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>839</width>
-              <height>633</height>
+              <width>57</width>
+              <height>37</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_10">

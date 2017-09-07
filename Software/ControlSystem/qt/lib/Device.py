@@ -1,13 +1,18 @@
 import json
 import time
 
-from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLabel, QFrame
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QLabel, QFrame
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from .Channel import Channel
 from gui.widgets.EntryForm import EntryForm
 
-class Device:
+class Device(QWidget):
+
+    _sig_entry_form_ok = pyqtSignal(object, dict)
+
     def __init__(self, name='', device_id='', label='', channels=None, driver='Arduino'):
+        super().__init__()
 
         self._name = name
         self._label = label
@@ -28,7 +33,7 @@ class Device:
         self._hasError = False
 
         self._entry_form = EntryForm(self._label, '', self.user_edit_properties(), self)
-        self._entry_form.save_signal.connect(self.validate_form)
+        self._entry_form.save_signal.connect(self.save_changes)
 
         # create gui representation
         fr = QFrame()
@@ -44,8 +49,25 @@ class Device:
         self._gblayout = vbox_gb
         self._overview_widget = fr
     
-    def validate_form(self):
-        print('here')
+    @pyqtSlot(dict)
+    def save_changes(self, newvals):
+        """ Validates the user data entered into the device's entry form """
+        validvals = {}
+        for prop_name, val in newvals.items():
+            if val != '':
+                value = val
+            else:
+                print('No value entered for {}.'.format(
+                    self.user_edit_properties()[prop_name]['display_name']))
+                return
+
+            validvals[prop_name] = value
+
+        self._sig_entry_form_ok.emit(self, validvals)
+
+    @property
+    def sig_entry_form_ok(self):
+        return self._sig_entry_form_ok
 
     @staticmethod
     def driver_list():

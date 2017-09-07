@@ -18,6 +18,8 @@ class Channel(QWidget):
 
     _settings_signal = pyqtSignal(object)
 
+    _sig_entry_form_ok = pyqtSignal(object, dict)
+
     def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, 
                  data_type=float, unit="", scaling=1.0, scaling_read=None, 
                  mode="both", display_order=0, display_mode="f", precision=2, 
@@ -50,6 +52,7 @@ class Channel(QWidget):
 
         self._entry_form = EntryForm(self.label, '',
                                      self.user_edit_properties(), self)
+        self._entry_form.save_signal.connect(self.save_changes)
 
         # plot widget
         gb_plot = QGroupBox()
@@ -83,7 +86,11 @@ class Channel(QWidget):
         vbox.addLayout(hbox)
         self._plot_widget = gb_plot
 
+        self._initialized = False
+
     def initialize(self):
+        """ Creates the overview widget representation of this channel """
+        self._initialized = True
         # overview widget
         gb = QGroupBox(self._label)
         self._overview_widget = gb
@@ -134,6 +141,56 @@ class Channel(QWidget):
     @property
     def entry_form(self):
         return self._entry_form.widget
+
+    @pyqtSlot(dict)
+    def save_changes(self, newvals):
+        """ Validates the user data entered into the channel's Entry Form. 
+            Returns a dictionary of values to update if there are no errors. """
+        data_type_map = {'Float': float, 'Int': int, 'Bool': bool}
+        display_mode_map = {'Float': 'f', 'Scientific': 'e'}
+        data_type = data_type_map[newvals['data_type']]
+
+        validvals = {}
+        for prop_name, val in newvals.items(): 
+            if prop_name in ['lower_limit', 'upper_limit']:
+                try:
+                    value = data_type(val)
+                except:
+                    print('bad value entered for limits')
+                    return
+            elif prop_name == 'scaling':
+                try:
+                    value = float(val)
+                except:
+                    print('bad value entered for scaling')
+            elif prop_name in ['precision', 'display_order']:
+                try:
+                    value = int(val)
+                except:
+                    print('{} must be int.'.format(prop_name))
+                    return
+            elif prop_name == 'display_mode':
+                value = display_mode_map[val]
+            elif prop_name == 'mode':
+                value = val.lower()
+            elif prop_name == 'data_type':
+                value = data_type
+            elif prop_name == 'unit':
+                value = val
+            else:
+                if val != '':
+                    value = val
+                else:
+                    print('No value entered for {}.'.format(prop_name))
+                    return
+
+            validvals[prop_name] = value
+
+        self._sig_entry_form_ok.emit(self, validvals)
+
+    @property
+    def sig_entry_form_ok(self):
+        return self._sig_entry_form_ok
 
     def user_edit_properties(self):
         
@@ -332,7 +389,8 @@ class Channel(QWidget):
     @parent_device.setter
     def parent_device(self, device):
         self._parent_device = device
-        self.update()
+        if self._initialized:
+            self.update()
 
     @property
     def label(self):
@@ -341,9 +399,10 @@ class Channel(QWidget):
     @label.setter
     def label(self, value):
         self._label = value
-        if self._overview_widget.title() != self._label:
-            self._overview_widget.setTitle(self._label)
-            self.update()
+        if self._initialized:
+            if self._overview_widget.title() != self._label:
+                self._overview_widget.setTitle(self._label)
+                self.update()
 
     @property
     def name(self):
