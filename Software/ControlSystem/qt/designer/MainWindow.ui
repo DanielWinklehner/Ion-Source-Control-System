@@ -249,6 +249,13 @@
               </item>
              </layout>
             </item>
+            <item>
+             <widget class="QPushButton" name="btnPID">
+              <property name="text">
+               <string>Test PID</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </widget>
