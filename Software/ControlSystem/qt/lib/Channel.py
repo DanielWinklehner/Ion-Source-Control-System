@@ -58,6 +58,7 @@ class Channel(QWidget):
                     }
         else:
             self._plot_settings = plot_settings
+            # ensure compatibility with older saves...
             if 'grid' not in self._plot_settings['x'].keys():
                 self._plot_settings['x']['grid'] = False
                 self._plot_settings['y']['grid'] = False
@@ -345,9 +346,21 @@ class Channel(QWidget):
 
     @stored_values.setter
     def stored_values(self, value):
+        n = len(self._x_values)
+
+        if value < n:
+            # take last n values of current deque
+            x_vals = [self._x_values[i] for i in range(n - value, n)]
+            y_vals = [self._y_values[i] for i in range(n - value, n)]
+        else:
+            x_vals = self._x_values
+            y_vals = self._y_values
+
         self._retain_last_n_values = value
         self._x_values = deque(maxlen=self._retain_last_n_values)
+        self._x_values.extend(x_vals)
         self._y_values = deque(maxlen=self._retain_last_n_values)
+        self._y_values.extend(y_vals)
 
     def append_data(self, x, y):
         self._x_values.append(x)
