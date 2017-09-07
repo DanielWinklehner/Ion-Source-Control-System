@@ -26,6 +26,8 @@ class Channel(QWidget):
                  default_value=0.0, plot_settings = None):
 
         super().__init__()
+
+        # basic properties
         self._name = name
         self._label = label
         self._upper_limit = upper_limit
@@ -36,61 +38,45 @@ class Channel(QWidget):
         self._scaling_read = scaling_read
         self._value = default_value
         self._mode = mode
-        self._display_order = display_order
-
-        # The device this channel belongs to will be set during add_channel().
-        self._parent_device = None  
-        self._displayformat = ".{}{}".format(precision, display_mode)
         self._precision = precision
         self._display_mode = display_mode
+        self._display_order = display_order
 
+        # derived properties
+        self._displayformat = ".{}{}".format(precision, display_mode)
+
+        # properties that will be set during run time
+        self._parent_device = None  
         self._locked = False
+        if plot_settings is None:
+            self._plot_settings = {
+                    'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False,
+                          'label': '', 'grid': False},
+                    'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False,
+                          'label': '', 'grid': False},
+                    'widget': {'color': '#FF0000'}
+                    }
+        else:
+            self._plot_settings = plot_settings
+            if 'grid' not in self._plot_settings['x'].keys():
+                self._plot_settings['x']['grid'] = False
+                self._plot_settings['y']['grid'] = False
 
         self._retain_last_n_values = 500
         self._x_values = deque(maxlen=self._retain_last_n_values)
         self._y_values = deque(maxlen=self._retain_last_n_values)
 
+        # entry form representation (settings page in GUI)
         self._entry_form = EntryForm(self.label, '',
                                      self.user_edit_properties(), self)
         self._entry_form.save_signal.connect(self.save_changes)
 
-        # plot widget
-        gb_plot = QGroupBox()
-        gb_plot.setMinimumSize(350, 300)
-        
-        if plot_settings is None:
-            self._plot_settings = {
-                    'x': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False,
-                          'label': ''},
-                    'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False,
-                          'label': ''},
-                    'widget': {'color': '#FF0000'}
-                    }
-        else:
-            self._plot_settings = plot_settings
-
-        self._plot_item = DateTimePlotWidget(settings=self._plot_settings)
-        self._plot_curve = self._plot_item.curve
-
-        vbox = QVBoxLayout()
-        gb_plot.setLayout(vbox)
-        hbox = QHBoxLayout()
-        btnPin = QPushButton('Pin')
-        btnSettings = QPushButton('Settings')
-        btnPin.clicked.connect(self.set_pin_callback)
-        btnSettings.clicked.connect(self.settings_callback)
-        hbox.addWidget(btnSettings)
-        hbox.addStretch()
-        hbox.addWidget(btnPin)
-        vbox.addWidget(self._plot_item)
-        vbox.addLayout(hbox)
-        self._plot_widget = gb_plot
-
         self._initialized = False
 
     def initialize(self):
-        """ Creates the overview widget representation of this channel """
+        """ Create widgets for this channel """
         self._initialized = True
+
         # overview widget
         gb = QGroupBox(self._label)
         self._overview_widget = gb
@@ -138,6 +124,29 @@ class Channel(QWidget):
                 hbox_read.addWidget(lblUnit)
                 vbox_readwrite.addLayout(hbox_read)
 
+        # plot widget
+        gb_plot = QGroupBox()
+        gb_plot.setMinimumSize(350, 300)
+        
+        self._plot_item = DateTimePlotWidget(settings=self._plot_settings)
+        self._plot_curve = self._plot_item.curve
+
+        vbox = QVBoxLayout()
+        gb_plot.setLayout(vbox)
+        hbox = QHBoxLayout()
+        btnPin = QPushButton('Pin')
+        btnSettings = QPushButton('Settings')
+        btnPin.clicked.connect(self.set_pin_callback)
+        btnSettings.clicked.connect(self.settings_callback)
+        hbox.addWidget(btnSettings)
+        hbox.addStretch()
+        hbox.addWidget(btnPin)
+        vbox.addWidget(self._plot_item)
+        vbox.addLayout(hbox)
+        self._plot_widget = gb_plot
+
+
+    # ---- Entry form ----
     @property
     def entry_form(self):
         return self._entry_form.widget
@@ -266,6 +275,8 @@ class Channel(QWidget):
                     },
                 }
         
+    # ---- GUI interaction ----
+
     def update(self):
         """ Update the GUI representation of this channel """
         self._overview_widget.setTitle(self._label)
@@ -313,6 +324,25 @@ class Channel(QWidget):
     def plot_settings(self, newsettings):
         self._plot_settings = newsettings
         self._plot_item.settings = self._plot_settings
+
+    @property
+    def x_values(self):
+        return self._x_values
+
+    @property
+    def y_values(self):
+        return self._y_values
+
+    def append_data(self, x, y):
+        self._x_values.append(x)
+        self._y_values.append(y)
+
+    def clear_data(self):
+        self._x_values.clear()
+        self._y_values.clear()
+        self._plot_item.setData(0,0)
+
+    # ---- Properties ----
 
     @property
     def precision(self):

@@ -61,6 +61,12 @@ class PlotSettingsDialog(QDialog):
         if ysettings['log']:
             self.ui.chkYLog.toggle()
 
+        if xsettings['grid']:
+            self.ui.chkXGrid.toggle()
+
+        if ysettings['grid']:
+            self.ui.chkYGrid.toggle()
+
         # color
         self.ui.lblColor.setStyleSheet('padding: 0 10; background-color: {}'.format(wsettings['color']))
     def on_x_auto_toggle(self, chkstate):
@@ -97,6 +103,16 @@ class PlotSettingsDialog(QDialog):
             self._plot_settings['y']['log'] = True
         else:
             self._plot_settings['y']['log'] = False
+
+        if self.ui.chkXGrid.isChecked():
+            self._plot_settings['x']['grid'] = True
+        else:
+            self._plot_settings['x']['grid'] = False
+
+        if self.ui.chkYGrid.isChecked():
+            self._plot_settings['y']['grid'] = True
+        else:
+            self._plot_settings['y']['grid'] = False
 
         # plot limits
         if not self.ui.rbXAuto.isChecked():

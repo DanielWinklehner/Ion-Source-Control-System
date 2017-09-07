@@ -30,7 +30,7 @@ from lib.Channel import Channel
 from lib.Procedure import Procedure
 
 def query_server(com_pipe, server_url, debug=False):
-    """ Sends info from RasPi server to listener pipe """
+    """ Sends info from RasPi server to communicator pipe """
     _keep_communicating = True
     _com_period = 5.0
     _device_dict_list = None
@@ -102,65 +102,14 @@ def query_server(com_pipe, server_url, debug=False):
         if _sleepy_time > 0.0:
             time.sleep(_sleepy_time)
 
-class Listener(QObject):
-    """ Gets info from server pipe & passes it to main thread, 
-        so that GUI updates are thread-safe """
-    # status message and ending signals
-    sig_status = pyqtSignal(str)
-    sig_done = pyqtSignal(str)
-
-    # gui update signals
-    sig_poll_rate = pyqtSignal(float)
-    sig_device_info = pyqtSignal(dict)
-
-    def __init__(self, listen_pipe):
-        super().__init__()
-        self._terminate = False
-        self._listen_pipe = listen_pipe
-        self._keep_communicating = True
-
-    @property
-    def isRunning(self):
-        return self._keep_communicating
-
-    @isRunning.setter
-    def isRunning(self, val):
-        self._keep_communicating = val
-
-    @pyqtSlot()
-    def listen(self):
-        self.sig_status.emit('Listener started')
-
-        while True:
-            # wrap this in a "while True" because self._keep_communicating 
-            # will change. Want to resume if it becomes true again.
-            while self._keep_communicating:
-                if self._listen_pipe.poll():
-                    gui_message = self._listen_pipe.recv()
-                    if gui_message[0] == "polling_rate":
-                        self.sig_poll_rate.emit(gui_message[1])
-                    elif gui_message[0] == "query_response":
-                        self.sig_device_info.emit(gui_message[1])
-
-                app.processEvents()
-                if self._terminate:
-                    break
-
-            if self._terminate:
-                self.sig_status.emit('Listener terminating...')
-                break
-
-
-        self.sig_done.emit('Listener stopped')
-
-    def terminate(self):
-        self.sig_status.emit('Listener received terminate signal')
-        self._terminate = True
-
 class Communicator(QObject):
     """ Sends and recieves messages to and from the query process """
 
     sig_status = pyqtSignal(str)
+
+    # gui update signals
+    sig_poll_rate = pyqtSignal(float)
+    sig_device_info = pyqtSignal(dict)
 
     def __init__(self, pipe):
         super().__init__()
@@ -171,8 +120,8 @@ class Communicator(QObject):
         # need a queue for procedure actions
         self._message_queue = queue.Queue()
 
-    def send_message(self, message, delay=0):
-        self._message_queue.put((message, delay))
+    def send_message(self, message):
+        self._message_queue.put(message)
 
     @property
     def isRunning(self):
@@ -182,19 +131,34 @@ class Communicator(QObject):
     def isRunning(self, val):
         self._keep_communicating = val
 
+    @property
+    def pipe(self):
+        return self._pipe
+
     @pyqtSlot()
     def communicate(self):
         while True:
-            while self._keep_communicating:
-                message = self._message_queue.get()
-                time.sleep(message[1])
-                self._pipe.send(message[0])
-                self._message_queue.task_done()
+            if self._keep_communicating:
+                # listen to the pipe
+                if self._pipe.poll():
+                    gui_message = self._pipe.recv()
+                    if gui_message[0] == "polling_rate":
+                        self.sig_poll_rate.emit(gui_message[1])
+                    elif gui_message[0] == "query_response":
+                        self.sig_device_info.emit(gui_message[1])
+                
+                # if there is a message, send it
+                if not self._message_queue.empty():
+                    message = self._message_queue.get()
+                    self._pipe.send(message)
+                    self._message_queue.task_done()
 
                 app.processEvents()
 
                 if self._terminate:
                     break
+            else:
+                time.sleep(1.0)
 
             if self._terminate:
                 self.sig_status.emit('Communicator terminating...')
@@ -217,6 +181,7 @@ class ControlSystem():
         self._window.ui.btnStartPause.clicked.connect(self.on_start_pause_click)
         self._window.ui.btnStop_2.clicked.connect(self.on_stop_click)
         self._window.ui.btnStop_2.setEnabled(False)
+        self._window.ui.btnResetPinnedPlot.clicked.connect(self.reset_pinned_plot_callback)
 
         self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
         self._window.ui.btnAddProcedure.clicked.connect(self.show_ProcedureDialog)
@@ -225,7 +190,7 @@ class ControlSystem():
         ## Plotting timer
         self._plot_timer = QTimer()
         self._plot_timer.timeout.connect(self.update_value_displays)
-        self._plot_timer.start(20)
+        self._plot_timer.start(25)
 
         ##  Initialize RasPi server
         self.debug = debug
@@ -259,16 +224,14 @@ class ControlSystem():
 
         ## Set up data dictionaries
         self._devices = {}
-        self._x_values = {}
-        self._y_values = {}
         self._procedures = {}
         self._critical_procedures = {}
         self._plotted_channels = []
-        self._threads = None # holds listener thead
+        self._threads = None # holds communicator thead
         self._retain_last_n_values = 1000 # number of points to plot before removing
 
         self._pinned_curve = self._window._pinnedplot.curve
-        self._pinned_plot_name = ()
+        self._pinned_channel = None
 
         self._device_file_name = ''
 
@@ -277,7 +240,7 @@ class ControlSystem():
     # ---- Server Communication ----
 
     def setup_communication_threads(self):
-        """ Create gui/server pipe pair, start listener """
+        """ Create gui/server pipe pair, start communicator """
         self._pipe_gui, pipe_server = Pipe()
 
         self._com_process = Process(target=query_server, 
@@ -292,13 +255,16 @@ class ControlSystem():
         com_thread.setObjectName('com_thread')
         self._threads.append((com_thread, self._communicator))
         self._communicator.moveToThread(com_thread)
+
         com_thread.started.connect(self._communicator.communicate)
+        self._communicator.sig_status.connect(self.on_communicator_status)
+        self._communicator.sig_poll_rate.connect(self.on_communicator_poll_rate)
+        self._communicator.sig_device_info.connect(self.on_communicator_device_info)
         com_thread.start()
 
         # Tell the query process the current polling rate:
         pipe_message = ["com_period", self._com_period]
         self._communicator.send_message(pipe_message)
-        #self._pipe_gui.send(pipe_message)
 
         # Get initial device/channel list and send to query process:
         self.device_or_channel_changed()
@@ -306,43 +272,33 @@ class ControlSystem():
         # Start the query process:
         self._com_process.start()
 
-        # Create listener object, and start listener process
-        # Also connect all Qt signals/slots
-        self._listener = Listener(self._pipe_gui)
-        query_thread = QThread()
-        query_thread.setObjectName('listener_thread')
-        self._threads.append((query_thread, self._listener))
-        self._listener.moveToThread(query_thread)
-
-        self._listener.sig_status.connect(self.on_listener_status)
-        self._listener.sig_poll_rate.connect(self.on_listener_poll_rate)
-        self._listener.sig_device_info.connect(self.on_listener_device_info)
-        query_thread.started.connect(self._listener.listen)
-        query_thread.start()
-
     def shutdown_communication_threads(self):
         self._keep_communicating = False
         try:
             self._com_process.terminate()
             self._com_process.join()
-        except:
+        except AttributeError:
+            # if process doesn't exist
             pass
+        
         if self._threads:
-            for thread, _ in self._threads:
+            print(self._threads)
+            for thread, obj in self._threads:
+                obj.terminate()
                 thread.quit()
 
     @pyqtSlot(str)
-    def on_listener_status(self, data: str):
+    def on_communicator_status(self, data: str):
         """ update status bar with thread message """
         self._window.status_message(data)
 
     @pyqtSlot(float)
-    def on_listener_poll_rate(self, data: float):
+    def on_communicator_poll_rate(self, data: float):
         """ update polling rate in GUI """
         self._window.set_polling_rate('%.2f' % (data))
 
     @pyqtSlot(dict)
-    def on_listener_device_info(self, data: dict):
+    def on_communicator_device_info(self, data: dict):
         """ Read in message from the server, and update devices accordingly """
         parsed_response = data
         #print(parsed_response)
@@ -448,9 +404,9 @@ class ControlSystem():
 
     def update_stored_values(self, device_name, channel_name, timestamp):
         """ Update the value deques for each channel """
-        self._x_values[(device_name, channel_name)].append(timestamp)
-        self._y_values[(device_name, channel_name)].append(
-            self._devices[device_name].channels[channel_name].value)
+        ch = self._devices[device_name].channels[channel_name]
+        ch.append_data(timestamp, ch.value)
+
 
     @pyqtSlot(object)
     def on_new_device_channel(self, obj):
@@ -554,17 +510,10 @@ class ControlSystem():
             print('Attempt to add channel with no parent device to gui')
             return
 
-        key = (channel.parent_device.name, channel.name)
-        
         channel._set_signal.connect(self.set_value_callback)
         channel._pin_signal.connect(self.set_pinned_plot_callback)
         channel._settings_signal.connect(self.set_plot_settings_callback)
 
-        self._x_values[key] = deque(np.linspace(time.time() - 5.0, time.time(),
-                                                self._retain_last_n_values),
-                                                maxlen=self._retain_last_n_values)
-        self._y_values[key] = deque(np.zeros(self._retain_last_n_values),
-                                             maxlen=self._retain_last_n_values)
         channel.parent_device.update()
 
     # ---- GUI ----
@@ -580,51 +529,32 @@ class ControlSystem():
 
     def on_start_pause_click(self):
         btn = self._window.ui.btnStartPause
-        if btn.text() == 'Start':
+        if btn.text() == 'Start Polling':
             self.setup_communication_threads()
-            btn.setText('Pause')
+            btn.setText('Pause Polling')
             self._window.ui.btnStop_2.setEnabled(True)
-        elif btn.text() == 'Pause':
-            self._communicator.send_message(('pause_query',))
-            #self._pipe_gui.send(('pause_query',))
+        elif btn.text() == 'Pause Polling':
+            self._communicator.send_message('pause_query',)
             self._keep_communicating = False
-            self._listener.isRunning = False
-            self._plot_timer.stop()
             self._communicator.isRunning = False
-            btn.setText('Resume')
+            self._plot_timer.stop()
+            btn.setText('Resume Polling')
         else:
-            # btnText == 'Resume'
-            #self._pipe_gui.send(('pause_query',))
-            self._communicator.send_message(('pause_query',))
+            self._communicator.send_message('pause_query',)
             self._keep_communicating = True
-            self._listener.isRunning = True
-            self._plot_timer.start(20)
             self._communicator.isRunning = True
-            btn.setText('Pause')
+            self._plot_timer.start(20)
+            btn.setText('Pause Polling')
 
     def on_stop_click(self):
         self.shutdown_communication_threads()
-        self._window.ui.btnStartPause.setText('Start')
+        self._window.ui.btnStartPause.setText('Start Polling')
         self._window.ui.btnStop_2.setEnabled(False)
 
-        try:
-            # if server has not been started, _listener won't exist
-            self._listener.terminate()
-        except AttributeError:
-            pass
-
-        try:
-            # deques might not exist. If not, then don't do anything.
-            for xs, ys in zip(self._x_values.items(), self._y_values.items()):
-                xs[1].clear()
-                ys[1].clear()
-        except:
-            pass
-        
         for device_name, device in self._devices.items():
             device.error_message = ''
             for channel_name, channel in device.channels.items():
-                channel._plot_widget.layout().itemAt(0).widget().setData(0,0)
+                channel.clear_data()
         #self._plotted_channels = {}
         #self.update_gui_devices()
 
@@ -635,9 +565,10 @@ class ControlSystem():
             page, and redraws plots if applicable """
 
         # update the pinned plot
-        if self._pinned_plot_name != ():
-            self._pinned_curve.setData(self._x_values[self._pinned_plot_name],
-                                       self._y_values[self._pinned_plot_name],
+        if self._pinned_channel is not None:
+
+            self._pinned_curve.setData(self._pinned_channel.x_values,
+                                       self._pinned_channel.y_values,
                                        clear=True, _callsync='off')
 
         if self._window.current_tab == 'main':
@@ -657,19 +588,23 @@ class ControlSystem():
             for device_name, device in self._devices.items():
                 #for channel_name, channel in device.channels.items():
                 for channel in self._plotted_channels:
-                    channel._plot_curve.setData(
-                            self._x_values[(channel.parent_device.name, channel.name)],
-                            self._y_values[(channel.parent_device.name, channel.name)],
-                            clear=True, _callsync='off')
+                    channel._plot_curve.setData(channel.x_values, channel.y_values,
+                                                clear=True, _callsync='off')
+                            
+                            #self._x_values[(channel.parent_device.name, channel.name)],
+                            #self._y_values[(channel.parent_device.name, channel.name)],
+                            #clear=True, _callsync='off')
         app.processEvents()
 
 
-    @pyqtSlot(str, str)
+    def reset_pinned_plot_callback(self):
+        x = self._window._gbpinnedplot.layout().itemAt(0).widget()
+        x.settings = self._pinned_channel.plot_settings
+
     def set_pinned_plot_callback(self, device, channel):
         """ Set the pinned plot when a user pressed the plot's pin button """
         # click button emits (device, channel)
-        key = (device.name, channel.name)
-        self._pinned_plot_name = key 
+        self._pinned_channel = channel 
         
         # update plot settings
         x = self._window._gbpinnedplot.layout().itemAt(0).widget()

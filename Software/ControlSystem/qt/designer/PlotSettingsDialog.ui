@@ -75,13 +75,20 @@
          <string>Options</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_2">
-         <item row="0" column="0">
+         <item row="1" column="0">
           <widget class="QCheckBox" name="chkXLog">
            <property name="enabled">
             <bool>false</bool>
            </property>
            <property name="text">
             <string>Log</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QCheckBox" name="chkXGrid">
+           <property name="text">
+            <string>Grid</string>
            </property>
           </widget>
          </item>
@@ -146,10 +153,17 @@
          <string>Options</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_4">
-         <item row="0" column="0">
+         <item row="1" column="0">
           <widget class="QCheckBox" name="chkYLog">
            <property name="text">
             <string>Log</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QCheckBox" name="chkYGrid">
+           <property name="text">
+            <string>Grid</string>
            </property>
           </widget>
          </item>

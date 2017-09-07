@@ -73,5 +73,8 @@ class DateTimePlotWidget(pg.PlotWidget):
         self.setLogMode(x=self._settings['x']['log'],
                         y=self._settings['y']['log'])
 
+        self.showGrid(x=self._settings['x']['grid'],
+                      y=self._settings['y']['grid'])
+
         self._curve.setData(pen = self._settings['widget']['color'])
 
