@@ -17,9 +17,10 @@ class Pid(QObject):
 
     @pyqtSlot()
     def run(self):
+        self._terminate = False
         prev_err = 0.
         integral = 0.
-        while True:
+        while not self._terminate:
             err = self._target - self._channel.value
             integral += err * self._dt
             deriv = (err - prev_err) / self._dt
@@ -28,6 +29,14 @@ class Pid(QObject):
             prev_err = err
             time.sleep(self._dt)
 
+    @pyqtSlot()
+    def terminate(self):
+        self._terminate = True
+
+    @property
+    def set_signal(self):
+        return self._sig_set_value
+
     @property
     def channel(self):
         return self._channel
@@ -35,3 +44,15 @@ class Pid(QObject):
     @channel.setter
     def channel(self, ch):
         self._channel = ch
+
+    @property
+    def target(self):
+        return self._target
+
+    @property
+    def coeffs(self):
+        return self._coeffs
+
+    @property
+    def dt(self):
+        return self._dt

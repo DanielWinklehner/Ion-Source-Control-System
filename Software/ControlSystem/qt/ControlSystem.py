@@ -27,7 +27,7 @@ from gui.dialogs.ProcedureDialog import ProcedureDialog
 from gui.dialogs.ErrorDialog import ErrorDialog
 from lib.Device import Device
 from lib.Channel import Channel
-from lib.Procedure import Procedure
+from lib.Procedure import Procedure, PidProcedure
 from lib.Pid import Pid
 
 def query_server(com_pipe, server_url, debug=False):
@@ -196,7 +196,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-         
+             
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -725,6 +725,9 @@ class ControlSystem():
         self._procedures[procedure.name] = procedure
         procedure.signal_edit.connect(self.edit_procedure)
         procedure.signal_delete.connect(self.delete_procedure)
+        if isinstance(procedure, PidProcedure):
+            procedure.set_signal.connect(self.set_value_callback)
+
         procedure.initialize()
 
     def edit_procedure(self, proc):

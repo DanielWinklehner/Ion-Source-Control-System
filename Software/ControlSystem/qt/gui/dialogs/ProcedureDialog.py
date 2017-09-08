@@ -176,7 +176,45 @@ class ProcedureDialog(QDialog):
             self.ui.txtText.setText(self._newproc.sms)
 
     def initialize_pid_procedure(self):
-        pass
+        for i, dev in enumerate(self._devlist):
+            if self._newproc._write_channel.parent_device == dev:
+                self.ui.cbPidDeviceWrite.setCurrentIndex(i + 1)
+                break
+
+        chs = self._newproc._write_channel.parent_device.channels
+        chlist = [x for name, x in reversed(sorted(chs.items(), 
+                    key=lambda t: t[1].display_order))
+                    if x.mode in ['write', 'both']]
+
+        for i, ch in enumerate(chlist):
+            if self._newproc._write_channel == ch:
+                self.ui.cbPidChannelWrite.setCurrentIndex(i + 1)
+                break
+        
+        for i, dev in enumerate(self._devlist):
+            if self._newproc._pid.channel.parent_device == dev:
+                self.ui.cbPidDeviceRead.setCurrentIndex(i + 1)
+                break
+
+        chs = self._newproc._pid.channel.parent_device.channels
+        chlist = [x for name, x in reversed(sorted(chs.items(), 
+                    key=lambda t: t[1].display_order))
+                    if x.mode in ['read', 'both']]
+
+        for i, ch in enumerate(chlist):
+            if self._newproc._pid.channel == ch:
+                self.ui.cbPidChannelRead.setCurrentIndex(i + 1)
+                break
+
+        self.ui.txtTarget.setText(str(self._newproc._pid.target))
+        self.ui.txtP.setText(str(self._newproc._pid.coeffs[0]))
+        self.ui.txtI.setText(str(self._newproc._pid.coeffs[1]))
+        self.ui.txtD.setText(str(self._newproc._pid.coeffs[2]))
+        self.ui.txtdt.setText(str(self._newproc._pid.dt))
+
+        self._currentTab = 'PID'
+        self.ui.gbOptions.setEnabled(False)
+        self.ui.gbNotify.setEnabled(False)
 
     def on_tab_changed(self, idx):
         if idx == 1:
@@ -300,7 +338,9 @@ class ProcedureDialog(QDialog):
         if index > 0:
             self.ui.cbPidChannelRead.clear()
             chs = self._devlist[index - 1].channels
-            chlist = [x.label for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
+            chlist = [x.label for name, x in reversed(sorted(chs.items(), 
+                        key=lambda t: t[1].display_order)) 
+                        if x.mode in ['read', 'both'] and x.data_type == float]
             self.ui.cbPidChannelRead.addItems(['- Choose a channel -'] + chlist)
         else:
             self.ui.cbPidChannelRead.clear()
@@ -310,7 +350,9 @@ class ProcedureDialog(QDialog):
         if index > 0:
             self.ui.cbPidChannelWrite.clear()
             chs = self._devlist[index - 1].channels
-            chlist = [x.label for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
+            chlist = [x.label for name, x in reversed(sorted(chs.items(), 
+                        key=lambda t: t[1].display_order)) 
+                        if x.mode in ['write', 'both'] and x.data_type == float]
             self.ui.cbPidChannelWrite.addItems(['- Choose a channel -'] + chlist)
         else:
             self.ui.cbPidChannelWrite.clear()
@@ -470,18 +512,43 @@ class ProcedureDialog(QDialog):
         writedevidx = self.ui.cbPidDeviceWrite.currentIndex() - 1
         writechidx = self.ui.cbPidChannelWrite.currentIndex() - 1
         
-        if writedevidx < 0 or writechidx < 0:
+        readdevidx = self.ui.cbPidDeviceRead.currentIndex() - 1
+        readchidx = self.ui.cbPidChannelRead.currentIndex() - 1
+
+        if writedevidx < 0 or writechidx < 0 or readdevidx < 0 or readchidx < 0:
             # Device or channel not selected for rule
-            print('Error: Device or channel not selected for Procedure rule')
+            print('Error: Device or channel not selected for read or write channel')
             return False
 
-        device = self._devlist[writedevidx]
-        chs = device.channels
-        chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-        currentChannel = chlist[writechidx]
+        writedevice = self._devlist[writedevidx]
+        readdevice = self._devlist[readdevidx]
+
+        wchs = writedevice.channels
+        rchs = readdevice.channels
+        rchlist = [x for name, x in reversed(sorted(rchs.items(), 
+                    key=lambda t: t[1].display_order)) 
+                    if x.mode in ['read', 'both'] and x.data_type == float]
+        wchlist = [x for name, x in reversed(sorted(wchs.items(), 
+                    key=lambda t: t[1].display_order)) 
+                    if x.mode in ['write', 'both'] and x.data_type == float]
+
+        writechannel = wchlist[writechidx]
+        readchannel = rchlist[readchidx]
+
+        try:
+            target = float(self.ui.txtTarget.text())
+            p = float(self.ui.txtP.text())
+            i = float(self.ui.txtI.text())
+            d = float(self.ui.txtD.text())
+            dt = float(self.ui.txtdt.text())
+        except:
+            print('bad values entered')
+            return False
 
         self._newproc = PidProcedure(self.ui.txtProcedureName.text(),
-                                     currentChannel, currentChannel)
+                                     readchannel, writechannel,
+                                     target, [p,i,d], dt)
+
         return True
 
     def on_done_click(self):

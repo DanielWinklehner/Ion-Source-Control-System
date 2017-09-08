@@ -8,7 +8,7 @@ import operator
 
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, \
                             QGroupBox, QWidget
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 
 from .Pid import Pid
 
@@ -46,6 +46,7 @@ class Procedure(QObject):
 
         return hbox
 
+    @property
     def info(self):
         return "Procedure base class"
 
@@ -208,6 +209,7 @@ class PidProcedure(Procedure):
 
     _sig_start = pyqtSignal(object)
     _sig_stop = pyqtSignal(object)
+    _sig_set = pyqtSignal(object, float)
 
     def __init__(self, name, read_channel, write_channel,
                  target=0.0, coeffs=[1.0, 1.0, 1.0], dt=0.5):
@@ -215,14 +217,21 @@ class PidProcedure(Procedure):
         super(PidProcedure, self).__init__(name)
         self._title = '(PID) {}'.format(self._name)
         self._pid = Pid(read_channel, target, coeffs, dt)
+        self._pid.set_signal.connect(self.on_pid_set_signal)
         self._write_channel = write_channel
+        self._pid_thread = None
+        
+        self._pid_thread = QThread()
+        self._pid.moveToThread(self._pid_thread)
+        self._pid_thread.started.connect(self._pid.run)
+        self._pid_thread.finished.connect(self.on_pid_thread_finished)
 
     def control_button_layout(self):
         hbox = QHBoxLayout()
         self._btnStart = QPushButton('Start')
         self._btnStop = QPushButton('Stop')
-        self._btnStart.clicked.connect(lambda: self._sig_start.emit(self))
-        self._btnStop.clicked.connect(lambda: self._sig_stop.emit(self))
+        self._btnStart.clicked.connect(self.on_start_click)
+        self._btnStop.clicked.connect(self.on_stop_click)
         hbox.addWidget(self._btnStart)
         hbox.addWidget(self._btnStop)
         hbox.addStretch()
@@ -235,9 +244,47 @@ class PidProcedure(Procedure):
 
         return hbox
 
+    @pyqtSlot(float)
+    def on_pid_set_signal(self, val):
+
+        self._sig_set.emit(self._write_channel, val)
+
+    @pyqtSlot()
+    def on_start_click(self):
+        self._btnStart.setEnabled(False)
+        self._btnEdit.setEnabled(False)
+        self._btnDelete.setEnabled(False)
+        self._btnStop.setEnabled(True)
+        self._pid_thread.start()
+
+    @pyqtSlot()
+    def on_stop_click(self):
+        self._pid.terminate()
+        self._pid_thread.quit()
+        self._btnStart.setEnabled(True)
+        self._btnEdit.setEnabled(True)
+        self._btnDelete.setEnabled(True)
+        self._btnStop.setEnabled(False)
+
+    @pyqtSlot()
+    def on_pid_thread_finished(self):
+        print('done')
+
+    @property
+    def set_signal(self):
+        return self._sig_set
+
     @property
     def info(self):
-        return 'PID Procedure'
+        rval = ''
+        rval += 'Reading channel {}.{}\n'.format(self._pid.channel.parent_device.label,
+                                                self._pid.channel.label)
+        rval += 'Writing to channel {}.{}\n'.format(self._write_channel.parent_device.label,
+                                                    self._write_channel.label)
+        rval += 'Target value: {} {}\n'.format(self._pid.target, self._pid.channel.unit)
+        rval += 'Parameters: P={}, I={}, D={}, dt={}s'.format(*self._pid.coeffs, self._pid.dt)
+
+        return rval
 
     def devices_channels_used(self):
         return (self._pid.channel.parent_device, self._pid.channel)
