@@ -156,7 +156,7 @@ class MainWindow(QMainWindow):
         # Add procedures to the procedures tab
         self.clearLayout(self.ui.vboxProcedures)
         for procedure_name, procedure in procedures.items():
-            self.ui.vboxProcedures.addWidget(procedure._widget)
+            self.ui.vboxProcedures.addWidget(procedure.widget)
         self.ui.vboxProcedures.addStretch()
 
     # ---- Settings page functions ----

@@ -410,15 +410,15 @@
       <attribute name="title">
        <string>PID</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout_12">
+      <layout class="QHBoxLayout" name="horizontalLayout_4">
        <item>
-        <spacer name="horizontalSpacer_17">
+        <spacer name="horizontalSpacer_15">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>256</width>
+           <width>40</width>
            <height>20</height>
           </size>
          </property>
@@ -440,53 +440,62 @@
           </spacer>
          </item>
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
-           <item>
-            <spacer name="horizontalSpacer_15">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QComboBox" name="cbPidDevice">
+          <layout class="QGridLayout" name="gridLayout_5">
+           <item row="0" column="1">
+            <widget class="QComboBox" name="cbPidDeviceRead">
              <property name="currentText">
               <string/>
              </property>
             </widget>
            </item>
-           <item>
+           <item row="0" column="2">
             <widget class="QLabel" name="label_9">
              <property name="text">
               <string>.</string>
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QComboBox" name="cbPidChannel">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>Write Channel:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QComboBox" name="cbPidDeviceWrite">
              <property name="currentText">
               <string/>
              </property>
             </widget>
            </item>
-           <item>
-            <spacer name="horizontalSpacer_16">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+           <item row="0" column="3">
+            <widget class="QComboBox" name="cbPidChannelRead">
+             <property name="currentText">
+              <string/>
              </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_18">
+             <property name="text">
+              <string>.</string>
              </property>
-            </spacer>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QComboBox" name="cbPidChannelWrite">
+             <property name="currentText">
+              <string/>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>Read Channel:</string>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -500,7 +509,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLineEdit" name="lineEdit_2">
+            <widget class="QLineEdit" name="txtTarget">
              <property name="text">
               <string>0.0</string>
              </property>
@@ -525,7 +534,7 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QLineEdit" name="lineEdit_6">
+             <widget class="QLineEdit" name="txtdt">
               <property name="text">
                <string>0.0</string>
               </property>
@@ -542,7 +551,7 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QLineEdit" name="lineEdit_3">
+             <widget class="QLineEdit" name="txtP">
               <property name="text">
                <string>0.0</string>
               </property>
@@ -559,7 +568,7 @@
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QLineEdit" name="lineEdit_4">
+             <widget class="QLineEdit" name="txtI">
               <property name="text">
                <string>0.0</string>
               </property>
@@ -576,45 +585,12 @@
              </widget>
             </item>
             <item row="3" column="1">
-             <widget class="QLineEdit" name="lineEdit_5">
+             <widget class="QLineEdit" name="txtD">
               <property name="text">
                <string>0.0</string>
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="groupBox_6">
-           <property name="title">
-            <string>Options</string>
-           </property>
-           <layout class="QHBoxLayout" name="horizontalLayout_11">
-            <item>
-             <widget class="QCheckBox" name="checkBox">
-              <property name="text">
-               <string>Stop when value is within</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLineEdit" name="lineEdit_7">
-              <property name="text">
-               <string>0.0</string>
-              </property>
-              <property name="alignment">
-               <set>Qt::AlignCenter</set>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_15">
-              <property name="text">
-               <string>% of target</string>
               </property>
              </widget>
             </item>
@@ -643,7 +619,7 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>256</width>
+           <width>333</width>
            <height>20</height>
           </size>
          </property>

@@ -178,7 +178,6 @@ class ControlSystem():
         self._window.ui.btnSaveAs.triggered.connect(self.on_save_as_button)
         self._window.ui.btnLoad.triggered.connect(self.on_load_button)
         self._window._btnquit.triggered.connect(self.on_quit_button)
-        self._window.ui.btnPID.clicked.connect(self.on_pid_button)
 
         self._window.ui.btnStartPause.clicked.connect(self.on_start_pause_click)
         self._window.ui.btnStop_2.clicked.connect(self.on_stop_click)
@@ -238,39 +237,6 @@ class ControlSystem():
         self._device_file_name = ''
 
         self._window.status_message('Initialization complete.')
-
-    # ---- PID test code ----
-    def on_pid_button(self):
-        try:
-            if self._pid_threads:
-                self._pid_threads[0].quit()
-                return
-        except AttributeError:
-            pass
-
-        self._pid_threads = []
-
-        print('Starting PID test.')
-        ch = None
-        for _, device in self._devices.items():
-            if device.driver == 'Teensy':
-                for name, channel in device.channels.items():
-                    if name == 'v1':
-                        ch = channel
-                        break
-        if ch is None:
-            print('Could not find correct channel')
-            return 
-
-        self._p = Pid(ch, target=1.0, coeffs=[0.1, 0.5, 0.1], dt=0.5)
-
-        p_thread = QThread()
-        self._pid_threads.append(p_thread)
-        self._p.moveToThread(p_thread)
-        self._p._sig_set_value.connect(lambda x: self.set_value_callback(ch, x))
-        p_thread.started.connect(self._p.run)
-        p_thread.start()
-        print('PID setup complete.')
 
     # ---- Server Communication ----
 
@@ -757,8 +723,9 @@ class ControlSystem():
 
     def add_procedure(self, procedure):
         self._procedures[procedure.name] = procedure
-        procedure._edit_sig.connect(self.edit_procedure)
-        procedure._delete_sig.connect(self.delete_procedure)
+        procedure.signal_edit.connect(self.edit_procedure)
+        procedure.signal_delete.connect(self.delete_procedure)
+        procedure.initialize()
 
     def edit_procedure(self, proc):
         self.show_ProcedureDialog(False, proc = proc)

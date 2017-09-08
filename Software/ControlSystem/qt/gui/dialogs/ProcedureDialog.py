@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QDialog, QFrame, QLabel, QPushButton, QVBoxLayout, \
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from .ui_ProcedureDialog import Ui_ProcedureDialog
-from lib.Procedure import Procedure
+from lib.Procedure import Procedure, BasicProcedure, PidProcedure
 
 class ProcedureDialog(QDialog):
 
@@ -74,93 +74,104 @@ class ProcedureDialog(QDialog):
         self.ui.cbActionDevice.addItems([' - Choose a device - '] + devnamelist)
         self.ui.cbRuleCompare.addItems(['<', '>', '=', '<=', '>='])
 
+        self.ui.cbPidDeviceRead.addItems([' - Choose a device - '] + devnamelist)
+        self.ui.cbPidDeviceWrite.addItems([' - Choose a device - '] + devnamelist)
+        #self.ui.cbPidDeviceRead.currentIndexChanged.connect(self.on_pid_read_device_cb_changed)
+        #self.ui.cbPidDeviceWrite.currentIndexChanged.connect(self.on_pid_write_device_cb_changed)
+
         if self._newproc != None:
-            # we are editing a procedure, so fill in the procedure info
             self.ui.txtProcedureName.setText(self._newproc.name)
+            if isinstance(self._newproc, BasicProcedure):
+                self.ui.tab_2.setParent(None)
+                self.initialize_basic_procedure()
+            elif isinstance(self._newproc, PidProcedure):
+                self.ui.tab.setParent(None)
+                self.initialize_pid_procedure()
 
-            for idx, rule in self._newproc.rules.items():
-                # TODO: currently only works with 1 rule
-                for i, dev in enumerate(self._devlist):
-                    if rule['device'] == dev:
-                        # Set device combobox
-                        self.ui.cbRuleDevice.setCurrentIndex(i + 1)
-                        break
+    def initialize_basic_procedure(self):
+        for idx, rule in self._newproc.rules.items():
+            # TODO: currently only works with 1 rule
+            for i, dev in enumerate(self._devlist):
+                if rule['device'] == dev:
+                    # Set device combobox
+                    self.ui.cbRuleDevice.setCurrentIndex(i + 1)
+                    break
 
-                chs = rule['device'].channels
-                chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-                for i, ch in enumerate(chlist):
-                    # Set channel combobox
-                    if rule['channel'] == ch:
-                        self.ui.cbRuleChannel.setCurrentIndex(i + 1)
-                        break
-                
-                # Set comparison operator and value
-                if rule['channel'].data_type != bool:
-                    self.ui.txtRuleVal.setText(str(rule['value']))
-                    if rule['comp'] == operator.lt:
-                        self.ui.cbRuleCompare.setCurrentIndex(0)
-                    if rule['comp'] == operator.gt:
-                        self.ui.cbRuleCompare.setCurrentIndex(1)
-                    if rule['comp'] == operator.eq:
-                        self.ui.cbRuleCompare.setCurrentIndex(2)
-                    if rule['comp'] == operator.le:
-                        self.ui.cbRuleCompare.setCurrentIndex(3)
-                    if rule['comp'] == operator.ge:
-                        self.ui.cbRuleCompare.setCurrentIndex(4)
+            chs = rule['device'].channels
+            chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
+            for i, ch in enumerate(chlist):
+                # Set channel combobox
+                if rule['channel'] == ch:
+                    self.ui.cbRuleChannel.setCurrentIndex(i + 1)
+                    break
+            
+            # Set comparison operator and value
+            if rule['channel'].data_type != bool:
+                self.ui.txtRuleVal.setText(str(rule['value']))
+                if rule['comp'] == operator.lt:
+                    self.ui.cbRuleCompare.setCurrentIndex(0)
+                if rule['comp'] == operator.gt:
+                    self.ui.cbRuleCompare.setCurrentIndex(1)
+                if rule['comp'] == operator.eq:
+                    self.ui.cbRuleCompare.setCurrentIndex(2)
+                if rule['comp'] == operator.le:
+                    self.ui.cbRuleCompare.setCurrentIndex(3)
+                if rule['comp'] == operator.ge:
+                    self.ui.cbRuleCompare.setCurrentIndex(4)
 
+            else:
+                # since we already changed the index to a channel of type bool,
+                # the bool combo box should be visible
+                if rule['value']:
+                    self.ui.cbRuleBool.setCurrentIndex(0)
                 else:
-                    # since we already changed the index to a channel of type bool,
-                    # the bool combo box should be visible
-                    if rule['value']:
-                        self.ui.cbRuleBool.setCurrentIndex(0)
-                    else:
-                        self.ui.cbRuleBool.setCurrentIndex(1)
+                    self.ui.cbRuleBool.setCurrentIndex(1)
 
-            # add the actions
-            for idx, action in self._newproc.actions.items():
-                for i, dev in enumerate(self._devlist):
-                    #set the device combobox
-                    if action['device'] == dev:
-                        self.ui.cbActionDevice.setCurrentIndex(i + 1)
-                        break
+        # add the actions
+        for idx, action in self._newproc.actions.items():
+            for i, dev in enumerate(self._devlist):
+                #set the device combobox
+                if action['device'] == dev:
+                    self.ui.cbActionDevice.setCurrentIndex(i + 1)
+                    break
 
-                chs = action['device'].channels
-                chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-                for i, ch in enumerate(chlist):
-                    # Set channel combobox
-                    if action['channel'] == ch:
-                        self.ui.cbActionChannel.setCurrentIndex(i + 1)
-                        break
+            chs = action['device'].channels
+            chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
+            for i, ch in enumerate(chlist):
+                # Set channel combobox
+                if action['channel'] == ch:
+                    self.ui.cbActionChannel.setCurrentIndex(i + 1)
+                    break
 
-                # set the data text
-                if action['channel'].data_type != bool:
-                    self.ui.txtActionVal.setText(str(action['value']))
+            # set the data text
+            if action['channel'].data_type != bool:
+                self.ui.txtActionVal.setText(str(action['value']))
+            else:
+                if action['value']:
+                    self.ui.cbActionBool.setCurrentIndex(0)
                 else:
-                    if action['value']:
-                        self.ui.cbActionBool.setCurrentIndex(0)
-                    else:
-                        self.ui.cbActionBool.setCurrentIndex(1)
+                    self.ui.cbActionBool.setCurrentIndex(1)
 
-                self.on_add_action_click()
+            self.on_add_action_click()
+
+        if self._newproc.critical:
+            self.ui.chkCritical.toggle()
+
+        if self._newproc.email != '':
+            self.ui.chkEmail.toggle()
+            self.ui.gbContact.show()
+            self.ui.lblEmail.show()
+            self.ui.txtEmail.show()
+            self.ui.txtEmail.setText(self._newproc.email)
+
+        if self._newproc.sms != '':
+            self.ui.chkText.toggle()
+            self.ui.gbContact.show()
+            self.ui.lblText.show()
+            self.ui.txtText.show()
+            self.ui.txtText.setText(self._newproc.sms)
 
 
-
-            if self._newproc.critical:
-                self.ui.chkCritical.toggle()
-
-            if self._newproc.email != '':
-                self.ui.chkEmail.toggle()
-                self.ui.gbContact.show()
-                self.ui.lblEmail.show()
-                self.ui.txtEmail.show()
-                self.ui.txtEmail.setText(self._newproc.email)
-
-            if self._newproc.sms != '':
-                self.ui.chkText.toggle()
-                self.ui.gbContact.show()
-                self.ui.lblText.show()
-                self.ui.txtText.show()
-                self.ui.txtText.setText(self._newproc.sms)
 
     def on_value_toggled(self, isChecked):
         self.ui.cbRuleDevice.setEnabled(isChecked)
@@ -409,11 +420,11 @@ class ProcedureDialog(QDialog):
         rule = {'1' : {'device' : device, 'channel' : currentChannel, 'value' : value,
                         'comp' : comp}}
 
-        self._newproc = Procedure(self.ui.txtProcedureName.text(), 
-                                  rule, self._actions, 
-                                  self.ui.chkCritical.isChecked(), 
-                                  self.ui.txtEmail.text(), 
-                                  self.ui.txtText.text())
+        self._newproc = BasicProcedure(self.ui.txtProcedureName.text(), 
+                                       rule, self._actions, 
+                                       self.ui.chkCritical.isChecked(), 
+                                       self.ui.txtEmail.text(), 
+                                       self.ui.txtText.text())
 
         print('Created new procedure:')
         print(self._newproc)

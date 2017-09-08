@@ -12,95 +12,58 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 class Procedure(QObject):
 
-    _sig_edit = pyqtSignal(object)
-    _sig_delete = pyqtSignal(object)
-
-    def __init__(self, name):
-
-        super().__init__()
-        self._name = name
-        self._title = self._name
-        
-    def initialize(self):
-        gb = QGroupBox(self._title)
-        vbox = QVBoxLayout()
-        gb.setLayout(vbox)
-        self._lblInfo = QLabel(self.info)
-        vbox.addWidget(self._lblInfo)
- 
-        vbox.addLayout(self.control_button_layout())
-
-        self._widget = gb 
-
-    def control_button_layout(self):
-        hbox = QHBoxLayout()
-        hbox.addStretch()
-        self._btnEdit = QPushButton('Edit')
-        self._btnDelete = QPushButton('Delete')
-        self._btnEdit.clicked.connect(lambda: self._sig_edit.emit(self))
-        self._btnDelete.clicked.connect(lambda: self._sig_delete.emit(self))
-        hbox.addWidget(self._btnEdit)
-        hbox.addWidget(self._btnDelete)
-
-        return hbox
-
-    def info(self):
-        return "Procedure base class"
-
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, val):
-        self._name = val
-
-    @property
-    def signal_edit(self):
-        return self._sig_edit
-
-    @property
-    def signal_delete(self):
-        return self._sig_delete
-
-    @property
-    def widget(self):
-        return self._widget
-
-class BasicProcedure(Procedure):
-
-    _sig_trigger = pyqtSignal(object)
+    _edit_sig = pyqtSignal(object)
+    _delete_sig = pyqtSignal(object)
 
     def __init__(self, name, rules, actions, critical=False, email='', sms=''):
-        super(BasicProcedure, self).__init__(name)
 
+        super().__init__()
+        # Rules dict:
+        # key = arduino_id, device, channel, comparison, value
+
+        # Action dict:
+        # key = arduino_id, device, channel, value to set
+
+        self._name = name
         self._rules = rules
         self._actions = actions
         self._critical = critical
+        self._kind = kind
         
         # these will trigger sending email/sms if not blank
         self._email = email
         self._sms = sms
         
-        self._title = ''
+        title = ''
         if self._critical:
-            self._title = '(Critical) {}'.format(self._name)
+            title = '(Critical) {}'.format(self._name)
         else:
-            self._title = self._name
+            title = self._name
+        gb = QGroupBox(title)
+        vbox = QVBoxLayout()
+        gb.setLayout(vbox)
+        self._lblInfo = QLabel(self.info)
+        vbox.addWidget(self._lblInfo)
 
-    def control_button_layout(self):
         hbox = QHBoxLayout()
         self._btnTrigger = QPushButton('Trigger')
-        self._btnTrigger.clicked.connect(lambda: self._sig_trigger.emit(self))
+        hbox.addWidget(self._btnTrigger)
         hbox.addStretch()
         self._btnEdit = QPushButton('Edit')
         self._btnDelete = QPushButton('Delete')
-        self._btnEdit.clicked.connect(lambda: self._sig_edit.emit(self))
-        self._btnDelete.clicked.connect(lambda: self._sig_delete.emit(self))
+        self._btnEdit.clicked.connect(self.on_edit_clicked)
+        self._btnDelete.clicked.connect(self.on_delete_clicked)
         hbox.addWidget(self._btnEdit)
         hbox.addWidget(self._btnDelete)
+        vbox.addLayout(hbox)
 
-        return hbox
+        self._widget = gb 
+
+    def on_edit_clicked(self):
+        self._edit_sig.emit(self)
+
+    def on_delete_clicked(self):
+        self._delete_sig.emit(self)
 
     def devices_channels_used(self):
         devices = set()
@@ -115,6 +78,9 @@ class BasicProcedure(Procedure):
 
         return (devices, channels)
 
+    @property
+    def name(self):
+        return self._name
 
     @property
     def rules(self):
@@ -204,5 +170,14 @@ class BasicProcedure(Procedure):
 
         return rval
 
-class PidProcedure(Procedure):
-    pass
+
+    def __repr__(self):
+        rval = ''
+
+        if self._critical:
+            rval += 'Critical procedure {}\n'.format(self._name)
+        else:
+            rval += 'Procedure {}\n'.format(self._name)
+
+        rval += self.info
+        return rval 
