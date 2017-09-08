@@ -232,6 +232,7 @@ class PidProcedure(Procedure):
         self._btnStop = QPushButton('Stop')
         self._btnStart.clicked.connect(self.on_start_click)
         self._btnStop.clicked.connect(self.on_stop_click)
+        self._btnStop.setEnabled(False)
         hbox.addWidget(self._btnStart)
         hbox.addWidget(self._btnStop)
         hbox.addStretch()
@@ -287,5 +288,12 @@ class PidProcedure(Procedure):
         return rval
 
     def devices_channels_used(self):
-        return (self._pid.channel.parent_device, self._pid.channel)
+        devices = set()
+        channels = set()
+        devices.add(self._pid.channel.parent_device)
+        devices.add(self._write_channel.parent_device)
+        channels.add(self._pid.channel)
+        channels.add(self._write_channel)
+
+        return (devices, channels)
 
