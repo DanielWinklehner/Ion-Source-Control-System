@@ -10,6 +10,8 @@ from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, \
                             QGroupBox, QWidget
 from PyQt5.QtCore import QObject, pyqtSignal
 
+from .Pid import Pid
+
 class Procedure(QObject):
 
     _sig_edit = pyqtSignal(object)
@@ -82,16 +84,14 @@ class BasicProcedure(Procedure):
         self._email = email
         self._sms = sms
         
-        self._title = ''
         if self._critical:
             self._title = '(Critical) {}'.format(self._name)
-        else:
-            self._title = self._name
 
     def control_button_layout(self):
         hbox = QHBoxLayout()
         self._btnTrigger = QPushButton('Trigger')
         self._btnTrigger.clicked.connect(lambda: self._sig_trigger.emit(self))
+        hbox.addWidget(self._btnTrigger)
         hbox.addStretch()
         self._btnEdit = QPushButton('Edit')
         self._btnDelete = QPushButton('Delete')
@@ -205,4 +205,40 @@ class BasicProcedure(Procedure):
         return rval
 
 class PidProcedure(Procedure):
-    pass
+
+    _sig_start = pyqtSignal(object)
+    _sig_stop = pyqtSignal(object)
+
+    def __init__(self, name, read_channel, write_channel,
+                 target=0.0, coeffs=[1.0, 1.0, 1.0], dt=0.5):
+
+        super(PidProcedure, self).__init__(name)
+        self._title = '(PID) {}'.format(self._name)
+        self._pid = Pid(read_channel, target, coeffs, dt)
+        self._write_channel = write_channel
+
+    def control_button_layout(self):
+        hbox = QHBoxLayout()
+        self._btnStart = QPushButton('Start')
+        self._btnStop = QPushButton('Stop')
+        self._btnStart.clicked.connect(lambda: self._sig_start.emit(self))
+        self._btnStop.clicked.connect(lambda: self._sig_stop.emit(self))
+        hbox.addWidget(self._btnStart)
+        hbox.addWidget(self._btnStop)
+        hbox.addStretch()
+        self._btnEdit = QPushButton('Edit')
+        self._btnDelete = QPushButton('Delete')
+        self._btnEdit.clicked.connect(lambda: self._sig_edit.emit(self))
+        self._btnDelete.clicked.connect(lambda: self._sig_delete.emit(self))
+        hbox.addWidget(self._btnEdit)
+        hbox.addWidget(self._btnDelete)
+
+        return hbox
+
+    @property
+    def info(self):
+        return 'PID Procedure'
+
+    def devices_channels_used(self):
+        return (self._pid.channel.parent_device, self._pid.channel)
+

@@ -34,6 +34,8 @@ class ProcedureDialog(QDialog):
         self._newproc = proc
         self._accepted = False
 
+        self._currentTab = 'Basic'
+
         self.initialize()
 
     def initialize(self):
@@ -64,6 +66,8 @@ class ProcedureDialog(QDialog):
         self.ui.rbValue.toggled.connect(self.on_value_toggled)
         self.ui.rbEvent.toggled.connect(self.on_event_toggled)
 
+        self.ui.tabWidget.currentChanged.connect(self.on_tab_changed)
+
         self._vboxActions = QVBoxLayout()
         self._vboxActions.addStretch()
         self.ui.fmActions.setLayout(self._vboxActions)
@@ -76,8 +80,8 @@ class ProcedureDialog(QDialog):
 
         self.ui.cbPidDeviceRead.addItems([' - Choose a device - '] + devnamelist)
         self.ui.cbPidDeviceWrite.addItems([' - Choose a device - '] + devnamelist)
-        #self.ui.cbPidDeviceRead.currentIndexChanged.connect(self.on_pid_read_device_cb_changed)
-        #self.ui.cbPidDeviceWrite.currentIndexChanged.connect(self.on_pid_write_device_cb_changed)
+        self.ui.cbPidDeviceRead.currentIndexChanged.connect(self.on_pid_read_device_cb_changed)
+        self.ui.cbPidDeviceWrite.currentIndexChanged.connect(self.on_pid_write_device_cb_changed)
 
         if self._newproc != None:
             self.ui.txtProcedureName.setText(self._newproc.name)
@@ -171,7 +175,18 @@ class ProcedureDialog(QDialog):
             self.ui.txtText.show()
             self.ui.txtText.setText(self._newproc.sms)
 
+    def initialize_pid_procedure(self):
+        pass
 
+    def on_tab_changed(self, idx):
+        if idx == 1:
+            self._currentTab = 'PID'
+            self.ui.gbOptions.setEnabled(False)
+            self.ui.gbNotify.setEnabled(False)
+        else:
+            self._currentTab = 'Basic'
+            self.ui.gbOptions.setEnabled(True)
+            self.ui.gbNotify.setEnabled(True)
 
     def on_value_toggled(self, isChecked):
         self.ui.cbRuleDevice.setEnabled(isChecked)
@@ -281,6 +296,26 @@ class ProcedureDialog(QDialog):
         self._actions = newactions
         self._actioncontrols = newactioncontrols
 
+    def on_pid_read_device_cb_changed(self, index):
+        if index > 0:
+            self.ui.cbPidChannelRead.clear()
+            chs = self._devlist[index - 1].channels
+            chlist = [x.label for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
+            self.ui.cbPidChannelRead.addItems(['- Choose a channel -'] + chlist)
+        else:
+            self.ui.cbPidChannelRead.clear()
+            self.ui.cbPidChannelRead.addItems(['- Choose a device - '])
+
+    def on_pid_write_device_cb_changed(self, index):
+        if index > 0:
+            self.ui.cbPidChannelWrite.clear()
+            chs = self._devlist[index - 1].channels
+            chlist = [x.label for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
+            self.ui.cbPidChannelWrite.addItems(['- Choose a channel -'] + chlist)
+        else:
+            self.ui.cbPidChannelWrite.clear()
+            self.ui.cbPidChannelWrite.addItems(['- Choose a device - '])
+
     def on_rule_device_cb_changed(self, index):
         if index > 0:
             self.ui.cbRuleChannel.clear()
@@ -370,7 +405,7 @@ class ProcedureDialog(QDialog):
             if not self.ui.chkEmail.isChecked():
                 self.ui.gbContact.hide()
 
-    def validate_form(self):
+    def validate_basic_procedure(self):
         if self._newproc == None and self.ui.txtProcedureName.text() in self._procnames:
             # if self._newproc is not None, then we are editing a procedure, so ok to overwrite
             print('Error: Procedure name already in use')
@@ -430,12 +465,39 @@ class ProcedureDialog(QDialog):
         print(self._newproc)
 
         return True
+    
+    def validate_pid_procedure(self):
+        writedevidx = self.ui.cbPidDeviceWrite.currentIndex() - 1
+        writechidx = self.ui.cbPidChannelWrite.currentIndex() - 1
+        
+        if writedevidx < 0 or writechidx < 0:
+            # Device or channel not selected for rule
+            print('Error: Device or channel not selected for Procedure rule')
+            return False
 
+        device = self._devlist[writedevidx]
+        chs = device.channels
+        chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
+        currentChannel = chlist[writechidx]
+
+        self._newproc = PidProcedure(self.ui.txtProcedureName.text(),
+                                     currentChannel, currentChannel)
+        return True
 
     def on_done_click(self):
-        if self.validate_form():
-            self._accepted = True
-            self.accept()
+        if self._newproc == None and self.ui.txtProcedureName.text() in self._procnames:
+            # if self._newproc is not None, then we are editing a procedure, so ok to overwrite
+            print('Error: Procedure name already in use')
+            return
+
+        if self._currentTab == 'Basic':
+            if self.validate_basic_procedure():
+                self._accepted = True
+                self.accept()
+        elif self._currentTab == 'PID':
+            if self.validate_pid_procedure():
+                self._accepted = True
+                self.accept()
 
     def exec_(self):
         super(ProcedureDialog, self).exec_()
