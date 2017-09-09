@@ -70,6 +70,10 @@ class Procedure(QObject):
     def widget(self):
         return self._widget
 
+    @property
+    def json(self):
+        return {'name': self._name}
+
 class BasicProcedure(Procedure):
 
     _sig_trigger = pyqtSignal(object)
@@ -297,3 +301,17 @@ class PidProcedure(Procedure):
 
         return (devices, channels)
 
+    @property
+    def json(self):
+        return {
+                'name': self._name,
+                'type': 'pid',
+                'read-device': self._pid.channel.parent_device.name,
+                'read-channel': self._pid.channel.name,
+                'write-device': self._write_channel.parent_device.name,
+                'write-channel': self._write_channel.name,
+                'target': self._pid.target,
+                'coeffs': self._pid.coeffs,
+                'dt': self._pid.dt,
+                }
+    

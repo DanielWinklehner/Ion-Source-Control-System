@@ -94,6 +94,25 @@ class MainWindow(QMainWindow):
         # local copies of data
         self._settings_devices = {}
 
+    def apply_settings(self, settings):
+        self.ui.splitMain.setSizes([settings['split-main-first'],
+                                    settings['split-main-second']])
+
+        self.move(settings['window-pos-x'], settings['window-pos-y'])
+    
+        self.resize(settings['window-width'], settings['window-height'])
+
+    def current_settings(self):
+        return {
+            'split-main-first': self.ui.splitMain.sizes()[0],
+            'split-main-second': self.ui.splitMain.sizes()[1],
+            'window-maximize-state': True if self.windowState == Qt.WindowMaximized else False,
+            'window-pos-x': self.pos().x(),
+            'window-pos-y': self.pos().y(),
+            'window-width': self.frameSize().width(),
+            'window-height': self.frameSize().height(),
+            }
+
     @property
     def current_tab(self):
         return self._current_tab

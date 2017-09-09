@@ -643,13 +643,22 @@ class ControlSystem():
 
             self._device_file_name = fileName
 
-            with open('defaults.txt', 'w') as f:
-                f.write(self._device_file_name)
-        
         with open(self._device_file_name, 'w') as f:
-            output = {}
+            devdict = {}
             for device_name, device in self._devices.items():
-                output[device_name] = device.get_json()
+                devdict[device_name] = device.get_json()
+
+            procdict = {}
+            for proc_name, procedure in self._procedures.items():
+                procdict[proc_name] = procedure.json
+
+            winsettingsdict = self._window.current_settings()
+
+            output = {
+                      'devices': devdict, 
+                      'procedures': procdict,
+                      'window-settings': winsettingsdict
+                      }
 
             json.dump(output, f, sort_keys=True, indent=4, separators=(', ', ': '))
 
@@ -667,9 +676,6 @@ class ControlSystem():
             fileName += '.txt'
 
         self._device_file_name = fileName
-
-        with open('defaults.txt', 'w') as f:
-            f.write(self._device_file_name)
 
         self.on_save_button()
 
@@ -690,7 +696,18 @@ class ControlSystem():
                 self.show_ErrorDialog('Unable to read JSON file')
                 return
 
-        for device_name, device_data in data.items():
+        devices = {}
+        procedures = {}
+        try:
+            self._window.apply_settings(data['window-settings'])
+            devices = data['devices']
+            procedures = data['procedures']
+        except:
+            # using old version
+            devices = data
+    
+        # Load devices
+        for device_name, device_data in devices.items():
             filtered_params = {}
             for key, value in device_data.items():
                 if not key == "channels":
@@ -708,6 +725,26 @@ class ControlSystem():
 
             if self.add_device(device):
                 successes += 1
+
+        # Load procedures
+        for proc_name, proc_data in procedures.items():
+            filtered_params = {}
+            proc_type = ''
+            for key, value in proc_data.items():
+                if key == 'type':
+                    proc_type = value
+                elif key in ['write-channel', 'write-device', 'read-channel', 'read-device']:
+                    pass
+                else:
+                    filtered_params[key] = value
+
+            if proc_type == 'pid':
+                filtered_params['read_channel'] = self._devices[proc_data['read-device']].channels[proc_data['read-channel']]
+                filtered_params['write_channel'] = self._devices[proc_data['write-device']].channels[proc_data['write-channel']]
+
+                proc = PidProcedure(**filtered_params)
+
+            self.add_procedure(proc)
 
         if successes > 0:
             self._device_file_name = filename
