@@ -7,8 +7,9 @@
 import operator
 
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, \
-                            QGroupBox, QWidget
+                            QGroupBox, QWidget, QTextEdit
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
+from PyQt5.QtGui import QSizePolicy
 
 from .Pid import Pid
 
@@ -230,6 +231,26 @@ class PidProcedure(Procedure):
         self._pid_thread.started.connect(self._pid.run)
         self._pid_thread.finished.connect(self.on_pid_thread_finished)
 
+    def initialize(self):
+        gb = QGroupBox(self._title)
+        vbox = QVBoxLayout()
+        gb.setLayout(vbox)
+        hbox = QHBoxLayout()
+
+        self._lblInfo = QLabel(self.info)
+        self._txtLog = QTextEdit()
+        self._txtLog.setReadOnly(True)
+        self._txtLog.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self._txtLog.setMaximumHeight(100)
+        self._txtLog.setMaximumWidth(700)
+        hbox.addWidget(self._lblInfo)
+        hbox.addWidget(self._txtLog)
+ 
+        vbox.addLayout(hbox)
+        vbox.addLayout(self.control_button_layout())
+
+        self._widget = gb 
+
     def control_button_layout(self):
         hbox = QHBoxLayout()
         self._btnStart = QPushButton('Start')
@@ -252,10 +273,14 @@ class PidProcedure(Procedure):
     @pyqtSlot(float)
     def on_pid_set_signal(self, val):
 
+        self._txtLog.append('Send SET command to {}.{}. Value={} {}'.format(
+                self._write_channel.parent_device.label, self._write_channel.label,
+                '{0:.2f}'.format(val), self._write_channel.unit))
         self._sig_set.emit(self._write_channel, val)
 
     @pyqtSlot()
     def on_start_click(self):
+        self._txtLog.setText('')
         self._btnStart.setEnabled(False)
         self._btnEdit.setEnabled(False)
         self._btnDelete.setEnabled(False)

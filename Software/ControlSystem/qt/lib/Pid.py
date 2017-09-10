@@ -21,12 +21,15 @@ class Pid(QObject):
         prev_err = 0.
         integral = 0.
         while not self._terminate:
+
             err = self._target - self._channel.value
             integral += err * self._dt
             deriv = (err - prev_err) / self._dt
+
             output = sum(np.multiply([err, integral, deriv], self._coeffs))
             self._sig_set_value.emit(output)
             prev_err = err
+
             time.sleep(self._dt)
 
     @pyqtSlot()

@@ -191,7 +191,7 @@ class ControlSystem():
         ## Plotting timer
         self._plot_timer = QTimer()
         self._plot_timer.timeout.connect(self.update_value_displays)
-        self._plot_timer.start(25)
+        #self._plot_timer.start(25)
 
         ##  Initialize RasPi server
         self.debug = debug
@@ -529,6 +529,7 @@ class ControlSystem():
         btn = self._window.ui.btnStartPause
         if btn.text() == 'Start Polling':
             self.setup_communication_threads()
+            self._plot_timer.start(20)
             btn.setText('Pause Polling')
             self._window.ui.btnStop_2.setEnabled(True)
         elif btn.text() == 'Pause Polling':
@@ -654,16 +655,44 @@ class ControlSystem():
 
             winsettingsdict = self._window.current_settings()
 
+            chpinname = None
+            devpinname = None
+            if self._pinned_channel is not None:
+                chpinname = self._pinned_channel.name
+                devpinname = self._pinned_channel.parent_device.name
+
+            cssettingsdict = {
+                              'pinned-channel': chpinname,
+                              'pinned-device': devpinname,
+                              'plotted-channels': [(x.name, x.parent_device.name) for
+                                                    x in self._plotted_channels]
+                              }
+
             output = {
                       'devices': devdict, 
                       'procedures': procdict,
-                      'window-settings': winsettingsdict
+                      'window-settings': winsettingsdict,
+                      'control-system-settings': cssettingsdict,
                       }
 
             json.dump(output, f, sort_keys=True, indent=4, separators=(', ', ': '))
 
 
         self._window.status_message('Saved devices to {}.'.format(self._device_file_name))
+
+    def apply_settings(self, settings):
+        if settings == {}:
+            return
+
+        if settings['pinned-device'] is not None:
+            dev = self._devices[settings['pinned-device']]
+            ch = dev.channels[settings['pinned-channel']]
+            self._pinned_channel = ch 
+            self.set_pinned_plot_callback(dev, ch)
+
+        for item in settings['plotted-channels']:
+            self._plotted_channels.append(self._devices[item[1]].channels[item[0]])
+
 
     def on_save_as_button(self):
         fileName, _ = QFileDialog.getSaveFileName(self._window,
@@ -698,10 +727,12 @@ class ControlSystem():
 
         devices = {}
         procedures = {}
+        cssettings = {}
         try:
             self._window.apply_settings(data['window-settings'])
             devices = data['devices']
             procedures = data['procedures']
+            cssettings = data['control-system-settings']
         except:
             # using old version
             devices = data
@@ -745,6 +776,9 @@ class ControlSystem():
                 proc = PidProcedure(**filtered_params)
 
             self.add_procedure(proc)
+
+        # Load control system settings
+        self.apply_settings(cssettings)
 
         if successes > 0:
             self._device_file_name = filename
