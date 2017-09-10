@@ -29,7 +29,7 @@ from lib.Procedure import Procedure
 class MainWindow(QMainWindow):
 
     # signal to be emitted when device/channel is changed
-    _sig_new_device_channel = pyqtSignal(object)
+    _sig_entry_form_changed = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -216,7 +216,7 @@ class MainWindow(QMainWindow):
                 obj.parent_device = parent
 
         self._devvbox.addWidget(obj.entry_form)
-        self._sig_new_device_channel.emit(obj)
+        self._sig_entry_form_changed.emit(obj)
 
     # ---- Misc functions ---
     def show_AboutDialog(self):

@@ -186,7 +186,7 @@ class ControlSystem():
 
         self._window.ui.btnSetupDevicePlots.clicked.connect(self.show_PlotChooseDialog)
         self._window.ui.btnAddProcedure.clicked.connect(self.show_ProcedureDialog)
-        self._window._sig_new_device_channel.connect(self.on_new_device_channel)
+        self._window._sig_entry_form_changed.connect(self.connect_device_channel_entry_form)
 
         ## Plotting timer
         self._plot_timer = QTimer()
@@ -403,7 +403,7 @@ class ControlSystem():
         ch.append_data(timestamp, ch.value)
 
     @pyqtSlot(object)
-    def on_new_device_channel(self, obj):
+    def connect_device_channel_entry_form(self, obj):
         """ Connects the new object's save and delete signals to the control system """
         try:
             obj.sig_entry_form_ok.disconnect()
@@ -646,7 +646,7 @@ class ControlSystem():
     def on_save_button(self):
         if self._device_file_name == '':
             fileName, _ = QFileDialog.getSaveFileName(self._window,
-                                "Save Devices as JSON","","Text Files (*.txt)")
+                                "Save Session as JSON","","Text Files (*.txt)")
         
             if fileName == '':
                 return
@@ -690,12 +690,12 @@ class ControlSystem():
             json.dump(output, f, sort_keys=True, indent=4, separators=(', ', ': '))
 
 
-        self._window.status_message('Saved devices to {}.'.format(self._device_file_name))
+        self._window.status_message('Saved session to {}.'.format(self._device_file_name))
 
 
     def on_save_as_button(self):
         fileName, _ = QFileDialog.getSaveFileName(self._window,
-                            "Save Devices as JSON", "", "Text Files (*.txt)")
+                            "Save Session as JSON", "", "Text Files (*.txt)")
 
         if fileName == '':
             return
@@ -712,7 +712,7 @@ class ControlSystem():
         successes = 0
 
         filename, _ = QFileDialog.getOpenFileName(self._window,
-                            "Load devices from JSON","","Text Files (*.txt)")
+                            "Load session from JSON","","Text Files (*.txt)")
 
         if filename == '':
             return
