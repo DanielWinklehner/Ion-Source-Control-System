@@ -19,6 +19,7 @@ class Channel(QWidget):
     _settings_signal = pyqtSignal(object)
 
     _sig_entry_form_ok = pyqtSignal(object, dict)
+    _sig_delete = pyqtSignal(object)
 
     def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, 
                  data_type=float, unit="", scaling=1.0, scaling_read=None, 
@@ -58,10 +59,6 @@ class Channel(QWidget):
                     }
         else:
             self._plot_settings = plot_settings
-            # ensure compatibility with older saves...
-            if 'grid' not in self._plot_settings['x'].keys():
-                self._plot_settings['x']['grid'] = False
-                self._plot_settings['y']['grid'] = False
 
         self._retain_last_n_values = stored_values
         self._x_values = deque(maxlen=self._retain_last_n_values)
@@ -70,13 +67,20 @@ class Channel(QWidget):
         # entry form representation (settings page in GUI)
         self._entry_form = EntryForm(self.label, '',
                                      self.user_edit_properties(), self)
-        self._entry_form.save_signal.connect(self.save_changes)
+        self._entry_form.sig_save.connect(self.save_changes)
+        self._entry_form.sig_delete.connect(self.delete)
 
         self._initialized = False
+
+    @property
+    def initialized(self):
+        return self._initialized
 
     def initialize(self):
         """ Create widgets for this channel """
         self._initialized = True
+
+        self._entry_form.add_delete_button()
 
         # overview widget
         gb = QGroupBox(self._label)
@@ -202,6 +206,10 @@ class Channel(QWidget):
     def sig_entry_form_ok(self):
         return self._sig_entry_form_ok
 
+    @property
+    def sig_delete(self):
+        return self._sig_delete
+
     def user_edit_properties(self):
         
         return {
@@ -281,6 +289,9 @@ class Channel(QWidget):
                     'display_order': 12
                     },
                 }
+
+    def delete(self):
+        self._sig_delete.emit(self)
         
     # ---- GUI interaction ----
 

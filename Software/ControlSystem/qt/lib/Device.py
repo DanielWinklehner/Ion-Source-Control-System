@@ -10,6 +10,7 @@ from gui.widgets.EntryForm import EntryForm
 class Device(QWidget):
 
     _sig_entry_form_ok = pyqtSignal(object, dict)
+    _sig_delete = pyqtSignal(object)
 
     def __init__(self, name='', device_id='', label='', channels=None, driver='Arduino'):
         super().__init__()
@@ -33,7 +34,16 @@ class Device(QWidget):
         self._hasError = False
 
         self._entry_form = EntryForm(self._label, '', self.user_edit_properties(), self)
-        self._entry_form.save_signal.connect(self.save_changes)
+        self._entry_form.sig_save.connect(self.save_changes)
+        self._entry_form.sig_delete.connect(self.delete)
+
+        self._initialized = False
+
+    @property
+    def initialized(self):
+        return self._initialized
+
+    def initialize(self):
 
         # create gui representation
         fr = QFrame()
@@ -49,6 +59,9 @@ class Device(QWidget):
         self._gblayout = vbox_gb
         self._overview_widget = fr
     
+        self._initialized = True
+        self._entry_form.add_delete_button()
+
     @pyqtSlot(dict)
     def save_changes(self, newvals):
         """ Validates the user data entered into the device's entry form """
@@ -65,9 +78,17 @@ class Device(QWidget):
 
         self._sig_entry_form_ok.emit(self, validvals)
 
+    @pyqtSlot()
+    def delete(self):
+        self._sig_delete.emit(self)
+
     @property
     def sig_entry_form_ok(self):
         return self._sig_entry_form_ok
+
+    @property
+    def sig_delete(self):
+        return self._sig_delete
 
     @staticmethod
     def driver_list():
@@ -112,8 +133,12 @@ class Device(QWidget):
 
     def update(self):
         # reorder the channels
+        if not self._initialized:
+            return
+
         chlist = [ch for chname, ch in reversed(sorted(self._channels.items(), 
                                                         key=lambda x: x[1].display_order))]
+
         for idx, ch in enumerate(chlist):
             ch._overview_widget.setParent(None)
 
@@ -207,6 +232,7 @@ class Device(QWidget):
             return None
 
     def add_channel(self, channel):
+        channel.initialize()
         channel.device_id = self._device_id
         channel.parent_device = self
         self._channels[channel.name] = channel

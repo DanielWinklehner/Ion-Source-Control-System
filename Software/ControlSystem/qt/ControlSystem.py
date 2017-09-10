@@ -228,8 +228,9 @@ class ControlSystem():
         self._procedures = {}
         self._critical_procedures = {}
         self._plotted_channels = []
-        self._threads = None # holds communicator thead
-        self._retain_last_n_values = 1000 # number of points to plot before removing
+
+        # keep persistent communicator thread
+        self._com_thread = QThread() 
 
         self._pinned_curve = self._window._pinnedplot.curve
         self._pinned_channel = None
@@ -247,21 +248,15 @@ class ControlSystem():
         self._com_process = Process(target=query_server, 
                                     args=(pipe_server, self._server_url, False,))
 
-        self._threads = []
         self._keep_communicating = True
 
-        # Create communicator to queue messages to server
         self._communicator = Communicator(self._pipe_gui)
-        com_thread = QThread()
-        com_thread.setObjectName('com_thread')
-        self._threads.append((com_thread, self._communicator))
-        self._communicator.moveToThread(com_thread)
-
-        com_thread.started.connect(self._communicator.communicate)
+        self._communicator.moveToThread(self._com_thread)
+        self._com_thread.started.connect(self._communicator.communicate)
         self._communicator.sig_status.connect(self.on_communicator_status)
         self._communicator.sig_poll_rate.connect(self.on_communicator_poll_rate)
         self._communicator.sig_device_info.connect(self.on_communicator_device_info)
-        com_thread.start()
+        self._com_thread.start()
 
         # Tell the query process the current polling rate:
         pipe_message = ["com_period", self._com_period]
@@ -282,10 +277,11 @@ class ControlSystem():
             # if process doesn't exist
             pass
         
-        if self._threads:
-            for thread, obj in self._threads:
-                obj.terminate()
-                thread.quit()
+        try:
+            self._communicator.terminate()
+            self._com_thread.quit()
+        except AttributeError:
+            pass
 
     @pyqtSlot(str)
     def on_communicator_status(self, data: str):
@@ -408,8 +404,22 @@ class ControlSystem():
 
     @pyqtSlot(object)
     def on_new_device_channel(self, obj):
-        """ Connects the new object's save signal to the control system """
+        """ Connects the new object's save and delete signals to the control system """
+        try:
+            obj.sig_entry_form_ok.disconnect()
+        except TypeError:
+            pass
         obj.sig_entry_form_ok.connect(self.on_device_channel_changed)
+
+        try:
+            obj.sig_delete.disconnect()
+        except TypeError:
+            pass
+        obj.sig_delete.connect(self.on_device_channel_delete)
+
+    @pyqtSlot(object)
+    def on_device_channel_delete(self, obj):
+        print(obj)
 
     @pyqtSlot(object, dict)
     def on_device_channel_changed(self, obj, vals):
@@ -467,7 +477,6 @@ class ControlSystem():
                 setattr(obj, attr, val)
 
             if not editing_channel:
-                obj.initialize()
                 obj.parent_device.add_channel(obj)
                 self.add_channel(obj)
 
@@ -481,6 +490,7 @@ class ControlSystem():
             return False
 
         device.parent = self
+        device.initialize()
 
         # Add device to the list of devices in the control system
         self._devices[device.name] = device
@@ -507,6 +517,8 @@ class ControlSystem():
         if channel.parent_device is None:
             print('Attempt to add channel with no parent device to gui')
             return
+
+        #channel.initialize()
 
         channel._set_signal.connect(self.set_value_callback)
         channel._pin_signal.connect(self.set_pinned_plot_callback)
@@ -680,19 +692,6 @@ class ControlSystem():
 
         self._window.status_message('Saved devices to {}.'.format(self._device_file_name))
 
-    def apply_settings(self, settings):
-        if settings == {}:
-            return
-
-        if settings['pinned-device'] is not None:
-            dev = self._devices[settings['pinned-device']]
-            ch = dev.channels[settings['pinned-channel']]
-            self._pinned_channel = ch 
-            self.set_pinned_plot_callback(dev, ch)
-
-        for item in settings['plotted-channels']:
-            self._plotted_channels.append(self._devices[item[1]].channels[item[0]])
-
 
     def on_save_as_button(self):
         fileName, _ = QFileDialog.getSaveFileName(self._window,
@@ -708,15 +707,15 @@ class ControlSystem():
 
         self.on_save_button()
 
-    def on_load_button(self, _=False, filename=''):
+    @pyqtSlot()
+    def on_load_button(self):
         successes = 0
 
-        if filename == '':
-            filename, _ = QFileDialog.getOpenFileName(self._window,
-                                "Load devices from JSON","","Text Files (*.txt)")
+        filename, _ = QFileDialog.getOpenFileName(self._window,
+                            "Load devices from JSON","","Text Files (*.txt)")
 
-            if filename == '':
-                return
+        if filename == '':
+            return
 
         with open(filename, 'r') as f:
             try:
@@ -751,7 +750,6 @@ class ControlSystem():
                 channel_data['data_type'] = eval(data_type_str.split("'")[1])
 
                 ch = Channel(**channel_data)
-                ch.initialize()
                 device.add_channel(ch)
 
             if self.add_device(device):
@@ -827,6 +825,21 @@ class ControlSystem():
         _errordialog = ErrorDialog(error_message)
         _errordialog.exec_()
         self.update_gui_devices()
+
+    # ---- Other functions ----
+
+    def apply_settings(self, settings):
+        if settings == {}:
+            return
+
+        if settings['pinned-device'] is not None:
+            dev = self._devices[settings['pinned-device']]
+            ch = dev.channels[settings['pinned-channel']]
+            self._pinned_channel = ch 
+            self.set_pinned_plot_callback(dev, ch)
+
+        for item in settings['plotted-channels']:
+            self._plotted_channels.append(self._devices[item[1]].channels[item[0]])
 
     def run(self):
         #self.setup_communication_threads()

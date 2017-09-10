@@ -12,7 +12,8 @@ from PyQt5.QtGui import QFont
 
 class EntryForm(QWidget):
 
-    _save_changes_signal = pyqtSignal(dict)
+    _sig_save_changes = pyqtSignal(dict)
+    _sig_delete = pyqtSignal()
 
     def __init__(self, title, subtitle, properties, parent=None):
         super().__init__()
@@ -53,7 +54,7 @@ class EntryForm(QWidget):
 
         lblSubtitle = QLabel(self._subtitle)
         btnSave = QPushButton('Save Changes')
-        btnSave.clicked.connect(lambda: self.on_save_changes_click())
+        btnSave.clicked.connect(self.on_save_changes_click)
 
         hbox = QHBoxLayout()
         hbox.addStretch()
@@ -66,14 +67,15 @@ class EntryForm(QWidget):
         self._layout.addLayout(hbox)
         self._layout.addStretch()
 
-        if self._parent is not None:
-            btnDelete = QPushButton('Delete')
-            btnDelete.clicked.connect(self.on_delete_click)
-            hbox = QHBoxLayout()
-            hbox.addStretch()
-            hbox.addWidget(btnDelete)
-            hbox.addStretch()
-            self._layout.addLayout(hbox)
+    def add_delete_button(self):
+
+        btnDelete = QPushButton('Delete')
+        btnDelete.clicked.connect(self.on_delete_click)
+        hbox = QHBoxLayout()
+        hbox.addStretch()
+        hbox.addWidget(btnDelete)
+        hbox.addStretch()
+        self._layout.addLayout(hbox)
 
     @pyqtSlot()
     def on_save_changes_click(self):
@@ -87,15 +89,20 @@ class EntryForm(QWidget):
 
             newvals[prop[0]] = val
 
-        self._save_changes_signal.emit(newvals)
+        self._sig_save_changes.emit(newvals)
 
+    @pyqtSlot()
     def on_delete_click(self):
-        print('test')
+        self._sig_delete.emit()
 
     @property
     def widget(self):
         return self._widget
 
     @property
-    def save_signal(self):
-        return self._save_changes_signal
+    def sig_save(self):
+        return self._sig_save_changes
+
+    @property
+    def sig_delete(self):
+        return self._sig_delete
