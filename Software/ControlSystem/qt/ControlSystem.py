@@ -25,6 +25,7 @@ from gui.dialogs.PlotChooseDialog import PlotChooseDialog
 from gui.dialogs.PlotSettingsDialog import PlotSettingsDialog
 from gui.dialogs.ProcedureDialog import ProcedureDialog
 from gui.dialogs.ErrorDialog import ErrorDialog
+from gui.dialogs.WarningDialog import WarningDialog
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure, PidProcedure
@@ -350,6 +351,7 @@ class ControlSystem():
 
         try:
             self._communicator.send_message(pipe_message)
+            print(pipe_message)
         except AttributeError:
             pass
 
@@ -431,7 +433,10 @@ class ControlSystem():
         for procedure_name, procedure in self._procedures.items():
             used_devices, used_channels = procedure.devices_channels_used()
             if obj in used_devices | used_channels:
-                self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.\n(You may ignore this warning)')
+                ignored = self.show_WarningDialog('Object is part of a procedure. Delete the procedure before editing this object.')
+                if not ignored:
+                    obj.reset_entry_form()
+                    return
 
         if isinstance(obj, Device):
 
@@ -441,20 +446,25 @@ class ControlSystem():
 
             if editing_device:
                 if name_in_use and vals['name'] != obj.name:
+                    obj.reset_entry_form()
                     # attempting to change device name to a name in-use
                     return
 
                 if id_in_use and vals['device_id'] != obj.device_id:
+                    obj.reset_entry_form()
                     # attempting to change device_id to an id in-use
                     return
 
             else:
                 # adding a new device
                 if name_in_use or id_in_use:
+                    obj.reset_entry_form()
                     # attempting to add a device with name or id in-use
                     return
 
             for attr, val in vals.items():
+                if attr == 'name':
+                    self._devices[val] = self._devices.pop(obj.name)
                 setattr(obj, attr, val)
 
             if not editing_device:
@@ -467,12 +477,17 @@ class ControlSystem():
 
             if editing_channel:
                 if name_in_use and vals['name'] != obj.name:
+                    obj.reset_entry_form()
                     return
             else:
                 if name_in_use:
+                    obj.reset_entry_form()
                     return
-                # adding a new channel
+
             for attr, val in vals.items():
+                if attr == 'name':
+                    self._devices[obj.parent_device.name].channels[val] = \
+                            self._devices[obj.parent_device.name].channels.pop(obj.name)
                 setattr(obj, attr, val)
 
             if not editing_channel:
@@ -829,6 +844,12 @@ class ControlSystem():
         _errordialog = ErrorDialog(error_message)
         _errordialog.exec_()
         self.update_gui_devices()
+
+    def show_WarningDialog(self, warning_message='Warning'):
+        _warningdialog = WarningDialog(warning_message)
+        userignored = _warningdialog.exec_()
+
+        return userignored
 
     # ---- Other functions ----
 

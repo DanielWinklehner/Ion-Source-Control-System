@@ -152,6 +152,11 @@ class Channel(QWidget):
 
 
     # ---- Entry form ----
+
+    def reset_entry_form(self):
+        self._entry_form.properties = self.user_edit_properties()
+        self._entry_form.reset()
+
     @property
     def entry_form(self):
         return self._entry_form.widget

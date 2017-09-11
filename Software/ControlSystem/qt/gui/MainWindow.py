@@ -132,7 +132,6 @@ class MainWindow(QMainWindow):
         order_devlist = sorted([x for _, x in devices.items()], 
                                key=lambda y: y.overview_order)
         for device in order_devlist: 
-            print(device.label, device.overview_order)
             if 'overview' in device.pages:
                 self._overview_layout.insertWidget(0, device._overview_widget)
         self._overview_layout.addStretch()
@@ -218,6 +217,7 @@ class MainWindow(QMainWindow):
                 obj = Channel(label='New Channel')
                 obj.parent_device = parent
 
+        obj.reset_entry_form()
         self._devvbox.addWidget(obj.entry_form)
         self._sig_entry_form_changed.emit(obj)
 

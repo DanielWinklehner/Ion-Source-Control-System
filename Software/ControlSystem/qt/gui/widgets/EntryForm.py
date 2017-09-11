@@ -67,6 +67,17 @@ class EntryForm(QWidget):
         self._layout.addLayout(hbox)
         self._layout.addStretch()
 
+    def reset(self):
+        for i, prop in enumerate(self._property_list):
+
+            widget = self._widget_layout.itemAt(1 + 2 * i).widget()
+
+            if prop[1]['entry_type'] == 'text':
+                widget.setText(str(prop[1]['value']))
+
+            elif prop[1]['entry_type'] == 'combo':
+                widget.setCurrentIndex(prop[1]['defaults'].index(prop[1]['value']))
+
     def add_delete_button(self):
 
         btnDelete = QPushButton('Delete')
@@ -106,3 +117,13 @@ class EntryForm(QWidget):
     @property
     def sig_delete(self):
         return self._sig_delete
+
+    @property
+    def properties(self):
+        return self._properties
+
+    @properties.setter
+    def properties(self, props):
+        self._properties = props
+        self._property_list = sorted([(name, x) for name, x in self._properties.items()], 
+                                     key=lambda y: y[1]['display_order'])

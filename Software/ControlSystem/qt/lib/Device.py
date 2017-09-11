@@ -64,6 +64,10 @@ class Device(QWidget):
         self._initialized = True
         self._entry_form.add_delete_button()
 
+    def reset_entry_form(self):
+        self._entry_form.properties = self.user_edit_properties()
+        self._entry_form.reset()
+
     @pyqtSlot(dict)
     def save_changes(self, newvals):
         """ Validates the user data entered into the device's entry form """
