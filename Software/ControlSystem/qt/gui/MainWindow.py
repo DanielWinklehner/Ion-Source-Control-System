@@ -157,6 +157,7 @@ class MainWindow(QMainWindow):
 
     def update_device_settings(self, devices):
         """ Populates the treeview on the devices tab """
+        self.clearLayout(self._devvbox)
         self.ui.treeDevices.clear()
         for device_name, device in devices.items():
             devrow = QTreeWidgetItem(self.ui.treeDevices)
