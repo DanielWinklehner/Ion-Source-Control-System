@@ -600,7 +600,7 @@ QPushButton
     border-width: 1px;
     border-color: #76797C;
     border-style: solid;
-    padding: 5px;
+    padding: 5px 10px;
     border-radius: 2px;
     outline: none;
 }

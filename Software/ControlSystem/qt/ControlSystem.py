@@ -583,7 +583,7 @@ class ControlSystem():
         btn = self._window.ui.btnStartPause
         if btn.text() == 'Start Polling':
             self.setup_communication_threads()
-            self._plot_timer.start(25)
+            self._plot_timer.start(50)
             btn.setText('Pause Polling')
             self._window.ui.btnStop_2.setEnabled(True)
         elif btn.text() == 'Pause Polling':
@@ -596,7 +596,7 @@ class ControlSystem():
             self._communicator.send_message('pause_query',)
             self._keep_communicating = True
             self._communicator.isRunning = True
-            self._plot_timer.start(25)
+            self._plot_timer.start(50)
             btn.setText('Pause Polling')
 
     def on_stop_click(self):

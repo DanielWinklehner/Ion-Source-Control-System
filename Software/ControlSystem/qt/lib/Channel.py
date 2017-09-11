@@ -325,6 +325,10 @@ class Channel(QWidget):
                 print('bad value entered')
                 return
 
+            if val > self._upper_limit or val < self._lower_limit:
+                print('value exceeds limits')
+                return
+
             self._write_widget.setText(str(self._data_type(val)))
             self._set_signal.emit(self, val)
         else:

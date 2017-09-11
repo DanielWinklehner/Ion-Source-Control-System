@@ -7,6 +7,7 @@
 import datetime
 
 from PyQt5.QtWidgets import QDialog, QColorDialog
+from PyQt5.QtGui import QColor
 from .ui_PlotSettingsDialog import Ui_PlotSettingsDialog
 
 from lib.Channel import Channel
@@ -86,11 +87,12 @@ class PlotSettingsDialog(QDialog):
             self.ui.txtYMax.setEnabled(True)
 
     def on_color_click(self):
-        _colordialog = QColorDialog()
-        x = _colordialog.getColor().name()
+        init_color = QColor(self._plot_settings['widget']['color'])
+        _colordialog = QColorDialog(init_color)
+        _colordialog.exec_()
+        x = _colordialog.currentColor().name()
         self._plot_settings['widget']['color'] = x
         self.ui.lblColor.setStyleSheet('padding: 0 10; background-color: {}'.format(x))
-
 
     def on_done_click(self):
         # Log scaling

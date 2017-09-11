@@ -31,6 +31,9 @@ class DateTimePlotWidget(pg.PlotWidget):
         nkwargs['axisItems'] = {'bottom': self._dateaxis}
         super().__init__(*args, **nkwargs)
 
+        #self.getAxis('left').textWidth = 40
+        #self.getAxis('left').setWidth(40)
+
         self._settings = settings
         self._curve = self.plot()
         self.update_settings()
