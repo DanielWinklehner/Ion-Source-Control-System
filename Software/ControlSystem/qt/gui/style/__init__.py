@@ -3,7 +3,7 @@ import platform
 
 from PyQt5.QtCore import QFile, QTextStream
 
-import gui.style.dark.style_rc
+import gui.style.dark_alt.style_rc
 
 def dark_stylesheet():   
     f = QFile("gui/style/dark_alt/style.qss")

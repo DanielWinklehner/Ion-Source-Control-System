@@ -300,7 +300,8 @@ QMenu::right-arrow {
 
 QWidget:disabled
 {
-    color: #454545;
+    /* color: #454545; */
+    color: #aaa;
     background-color: #31363b;
 }
 
@@ -338,7 +339,8 @@ QAbstractItemView QLineEdit
 }
 
 QGroupBox {
-    border:1px solid #76797C;
+    /* border:1px solid #76797C; */
+    border:1px solid #56585a;
     border-radius: 2px;
     margin-top: 20px;
 }
@@ -614,7 +616,8 @@ QPushButton:disabled
     padding-left: 10px;
     padding-right: 10px;
     border-radius: 2px;
-    color: #454545;
+    /* color: #454545; */
+    color: #76797C;
 }
 
 QPushButton:focus {

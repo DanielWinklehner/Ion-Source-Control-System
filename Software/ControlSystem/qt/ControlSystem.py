@@ -467,11 +467,13 @@ class ControlSystem():
 
             if editing_device:
                 if name_in_use and vals['name'] != obj.name:
+                    self.show_ErrorDialog('Device name already in use.')
                     obj.reset_entry_form()
                     # attempting to change device name to a name in-use
                     return
 
                 if id_in_use and vals['device_id'] != obj.device_id:
+                    self.show_ErrorDialog('Device ID already in use.')
                     obj.reset_entry_form()
                     # attempting to change device_id to an id in-use
                     return
@@ -479,6 +481,7 @@ class ControlSystem():
             else:
                 # adding a new device
                 if name_in_use or id_in_use:
+                    self.show_ErrorDialog('Device name already in use.')
                     obj.reset_entry_form()
                     # attempting to add a device with name or id in-use
                     return
@@ -498,10 +501,12 @@ class ControlSystem():
 
             if editing_channel:
                 if name_in_use and vals['name'] != obj.name:
+                    self.show_ErrorDialog('Channel name already in use.')
                     obj.reset_entry_form()
                     return
             else:
                 if name_in_use:
+                    self.show_ErrorDialog('Channel name already in use.')
                     obj.reset_entry_form()
                     return
 
@@ -808,9 +813,10 @@ class ControlSystem():
                     filtered_params[key] = value
 
             if proc_type == 'pid':
-                filtered_params['read_channel'] = self._devices[proc_data['read-device']].channels[proc_data['read-channel']]
-                filtered_params['write_channel'] = self._devices[proc_data['write-device']].channels[proc_data['write-channel']]
-
+                filtered_params['read_channel'] = \
+                    self._devices[proc_data['read-device']].channels[proc_data['read-channel']]
+                filtered_params['write_channel'] = \
+                    self._devices[proc_data['write-device']].channels[proc_data['write-channel']]
                 proc = PidProcedure(**filtered_params)
 
             self.add_procedure(proc)
