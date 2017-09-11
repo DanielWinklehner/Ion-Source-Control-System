@@ -277,7 +277,7 @@
         <enum>QTabWidget::Rounded</enum>
        </property>
        <property name="currentIndex">
-        <number>4</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="overview">
         <attribute name="title">
@@ -364,7 +364,7 @@
         </attribute>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="0" column="0">
-          <widget class="QSplitter" name="splitter">
+          <widget class="QSplitter" name="splitSettings">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
@@ -552,8 +552,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>100</width>
-              <height>30</height>
+              <width>806</width>
+              <height>633</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_4">
@@ -632,8 +632,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>98</width>
-              <height>35</height>
+              <width>806</width>
+              <height>633</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_10">

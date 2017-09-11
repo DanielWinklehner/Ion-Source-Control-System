@@ -351,7 +351,6 @@ class ControlSystem():
 
         try:
             self._communicator.send_message(pipe_message)
-            print(pipe_message)
         except AttributeError:
             pass
 
@@ -437,6 +436,9 @@ class ControlSystem():
                 if not ignored:
                     obj.reset_entry_form()
                     return
+                else:
+                    # if part of multiple procedures, we only want to show this once
+                    break
 
         if isinstance(obj, Device):
 
