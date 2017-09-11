@@ -15,11 +15,12 @@ from multiprocessing import Process, Pipe
 from collections import deque
 
 from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication, QFileDialog
+from PyQt5.QtWidgets import QApplication, QFileDialog 
 
 import pyqtgraph as pg
 import numpy as np
 
+from gui.style import dark_stylesheet
 from gui import MainWindow
 from gui.dialogs.PlotChooseDialog import PlotChooseDialog
 from gui.dialogs.PlotSettingsDialog import PlotSettingsDialog
@@ -969,6 +970,8 @@ def dummy_device(n, ard_id):
 
 if __name__ == '__main__':
     app = QApplication([])
+
+    app.setStyleSheet(dark_stylesheet())
 
     cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
 

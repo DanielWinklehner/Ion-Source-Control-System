@@ -190,6 +190,11 @@ class MainWindow(QMainWindow):
     def on_settings_row_changed(self, item):
         if item == None:
             return
+    
+        # if clause fixes mysterious floating entry forms....
+        if self._devvbox.count():
+            widget = self._devvbox.itemAt(0).widget()
+            widget.hide()
 
         self.clearLayout(self._devvbox)
 
@@ -225,6 +230,7 @@ class MainWindow(QMainWindow):
 
         obj.reset_entry_form()
         self._devvbox.addWidget(obj.entry_form)
+        obj.entry_form.show()
         self._sig_entry_form_changed.emit(obj)
 
     # ---- Misc functions ---
