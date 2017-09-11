@@ -291,7 +291,7 @@ class ControlSystem():
     @pyqtSlot(float)
     def on_communicator_poll_rate(self, data: float):
         """ update polling rate in GUI """
-        self._window.set_polling_rate('%.2f' % (data))
+        self._window.set_polling_rate('{0:.2f}'.format(data))
 
     @pyqtSlot(dict)
     def on_communicator_device_info(self, data: dict):
@@ -431,8 +431,7 @@ class ControlSystem():
         for procedure_name, procedure in self._procedures.items():
             used_devices, used_channels = procedure.devices_channels_used()
             if obj in used_devices | used_channels:
-                self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.')
-                return
+                self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before editing this object.\n(You may ignore this warning)')
 
         if isinstance(obj, Device):
 
@@ -490,6 +489,8 @@ class ControlSystem():
             return False
 
         device.parent = self
+        if device.overview_order == -1:
+            device.overview_order = min([x.overview_order for _, x in self._devices.items()]) - 1
         device.initialize()
 
         # Add device to the list of devices in the control system
@@ -541,7 +542,7 @@ class ControlSystem():
         btn = self._window.ui.btnStartPause
         if btn.text() == 'Start Polling':
             self.setup_communication_threads()
-            self._plot_timer.start(20)
+            self._plot_timer.start(25)
             btn.setText('Pause Polling')
             self._window.ui.btnStop_2.setEnabled(True)
         elif btn.text() == 'Pause Polling':
@@ -554,11 +555,12 @@ class ControlSystem():
             self._communicator.send_message('pause_query',)
             self._keep_communicating = True
             self._communicator.isRunning = True
-            self._plot_timer.start(20)
+            self._plot_timer.start(25)
             btn.setText('Pause Polling')
 
     def on_stop_click(self):
         self.shutdown_communication_threads()
+        self._plot_timer.stop()
         self._window.ui.btnStartPause.setText('Start Polling')
         self._window.ui.btnStop_2.setEnabled(False)
 
@@ -566,6 +568,8 @@ class ControlSystem():
             device.error_message = ''
             for channel_name, channel in device.channels.items():
                 channel.clear_data()
+
+        self.update_value_displays()
         #self._plotted_channels = {}
         #self.update_gui_devices()
 

@@ -12,7 +12,8 @@ class Device(QWidget):
     _sig_entry_form_ok = pyqtSignal(object, dict)
     _sig_delete = pyqtSignal(object)
 
-    def __init__(self, name='', device_id='', label='', channels=None, driver='Arduino'):
+    def __init__(self, name='', device_id='', label='', channels=None, 
+                 driver='Arduino', overview_order=-1):
         super().__init__()
 
         self._name = name
@@ -29,6 +30,7 @@ class Device(QWidget):
         self._locked = False
 
         self._pages = ['overview']
+        self._overview_order = overview_order
 
         self._error_message = ''
         self._hasError = False
@@ -67,12 +69,19 @@ class Device(QWidget):
         """ Validates the user data entered into the device's entry form """
         validvals = {}
         for prop_name, val in newvals.items():
-            if val != '':
-                value = val
+            if prop_name == 'overview_order':
+                try:
+                    value = int(val)
+                except:
+                    print('Display order must be an int')
+                    return
             else:
-                print('No value entered for {}.'.format(
-                    self.user_edit_properties()[prop_name]['display_name']))
-                return
+                if val != '':
+                    value = val
+                else:
+                    print('No value entered for {}.'.format(
+                        self.user_edit_properties()[prop_name]['display_name']))
+                    return
 
             validvals[prop_name] = value
 
@@ -97,7 +106,7 @@ class Device(QWidget):
     #@staticmethod
     def user_edit_properties(self):
         """ Returns list of properties that should be user-editable 
-            key name must match a propertyi of this class """
+            key name must match a property of this class """
             
         return {
                 'name': {
@@ -124,6 +133,12 @@ class Device(QWidget):
                     'value': self._driver,
                     'defaults': self.driver_list(),
                     'display_order': 4
+                    },
+                'overview_order': {
+                    'display_name': 'Display Order', 
+                    'entry_type': 'text',
+                    'value': self._overview_order,
+                    'display_order': 5
                     },
                 }
 
@@ -209,6 +224,9 @@ class Device(QWidget):
     @label.setter
     def label(self, value):
         self._label = value
+        if not self._initialized:
+            return
+
         if self._gblayout.parent().title() != self._label:
             self._gblayout.parent().setTitle(self._label)
             for channel_name, channel in self.channels.items():
@@ -217,6 +235,14 @@ class Device(QWidget):
     @property
     def pages(self):
         return self._pages
+
+    @property
+    def overview_order(self):
+        return self._overview_order
+
+    @overview_order.setter
+    def overview_order(self, value):
+        self._overview_order = value
 
     def add_page(self, value):
         self._pages.append(value)
@@ -260,7 +286,8 @@ class Device(QWidget):
                       'label': self._label,
                       'device_id': self._device_id,
                       'driver': self._driver,
-                      'channels': {}
+                      'channels': {},
+                      'overview_order': self._overview_order
                       }
 
         for channel_name, channel in self._channels.items():

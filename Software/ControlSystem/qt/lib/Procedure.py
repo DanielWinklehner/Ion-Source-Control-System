@@ -298,7 +298,7 @@ class PidProcedure(Procedure):
 
     @pyqtSlot()
     def on_pid_thread_finished(self):
-        print('done')
+        print('PID procedure {} stopped.'.format(self._name))
 
     @property
     def set_signal(self):

@@ -129,7 +129,10 @@ class MainWindow(QMainWindow):
     # ---- Tab Update Functions ----
     def update_overview(self, devices):
         self.clearLayout(self._overview_layout)
-        for device_name, device in devices.items():
+        order_devlist = sorted([x for _, x in devices.items()], 
+                               key=lambda y: y.overview_order)
+        for device in order_devlist: 
+            print(device.label, device.overview_order)
             if 'overview' in device.pages:
                 self._overview_layout.insertWidget(0, device._overview_widget)
         self._overview_layout.addStretch()
