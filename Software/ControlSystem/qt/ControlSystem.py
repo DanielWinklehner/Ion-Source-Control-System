@@ -420,6 +420,24 @@ class ControlSystem():
 
     @pyqtSlot(object)
     def on_device_channel_delete(self, obj):
+        for procedure_name, procedure in self._procedures.items():
+            used_devices, used_channels = procedure.devices_channels_used()
+            if obj in used_devices | used_channels:
+                self.show_ErrorDialog('Object is part of a procedure. Delete the procedure before deleting this object.')
+                return
+
+        ignored = self.show_WarningDialog('Delete objects at your own risk!')
+        if ignored:
+            if isinstance(obj, Device):
+                del self._devices[obj.name]
+            else:
+                dev = self._devices[obj.parent_device.name]
+                del dev.channels[obj.name]
+                dev.update()
+
+
+            self.update_gui_devices()
+            self.device_or_channel_changed()
         print(obj)
 
     @pyqtSlot(object, dict)
@@ -465,7 +483,7 @@ class ControlSystem():
                     return
 
             for attr, val in vals.items():
-                if attr == 'name':
+                if attr == 'name' and editing_device:
                     self._devices[val] = self._devices.pop(obj.name)
                 setattr(obj, attr, val)
 
@@ -487,7 +505,7 @@ class ControlSystem():
                     return
 
             for attr, val in vals.items():
-                if attr == 'name':
+                if attr == 'name' and editing_channel:
                     self._devices[obj.parent_device.name].channels[val] = \
                             self._devices[obj.parent_device.name].channels.pop(obj.name)
                 setattr(obj, attr, val)

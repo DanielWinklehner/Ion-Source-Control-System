@@ -155,6 +155,11 @@ class Device(QWidget):
         if not self._initialized:
             return
 
+        while self._gblayout.count():
+            child = self._gblayout.takeAt(0)
+            if child.widget():
+                child.widget().setParent(None)
+
         chlist = [ch for chname, ch in reversed(sorted(self._channels.items(), 
                                                         key=lambda x: x[1].display_order))]
 

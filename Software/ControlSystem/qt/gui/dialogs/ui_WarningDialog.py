@@ -57,5 +57,5 @@ class Ui_WarningDialog(object):
         WarningDialog.setWindowTitle(_translate("WarningDialog", "Error"))
         self.lblMessage.setText(_translate("WarningDialog", "Error: Object is part of a procedure. Delete the procedure before editing."))
         self.btnIgnore.setText(_translate("WarningDialog", "Ignore"))
-        self.btnClose.setText(_translate("WarningDialog", "Close"))
+        self.btnClose.setText(_translate("WarningDialog", "Cancel"))
 
