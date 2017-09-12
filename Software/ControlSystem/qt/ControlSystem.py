@@ -238,7 +238,6 @@ class ControlSystem():
         self._pinned_channel = None
 
         self._device_file_name = ''
-
         self._window.status_message('Initialization complete.')
 
     # ---- Server Communication ----
@@ -530,12 +529,13 @@ class ControlSystem():
             return False
 
         device.parent = self
-        if device.overview_order == -1:
-            device.overview_order = min([x.overview_order for _, x in self._devices.items()]) - 1
-        device.initialize()
 
         # Add device to the list of devices in the control system
         self._devices[device.name] = device
+
+        if device.overview_order == -1:
+            device.overview_order = min([x.overview_order for _, x in self._devices.items()]) - 1
+        device.initialize()
 
         for chname, ch in device.channels.items():
             self.add_channel(ch)
@@ -600,8 +600,8 @@ class ControlSystem():
             btn.setText('Pause Polling')
 
     def on_stop_click(self):
-        self.shutdown_communication_threads()
         self._plot_timer.stop()
+        self.shutdown_communication_threads()
         self._window.ui.btnStartPause.setText('Start Polling')
         self._window.ui.btnStop_2.setEnabled(False)
 
@@ -651,7 +651,6 @@ class ControlSystem():
                             #self._y_values[(channel.parent_device.name, channel.name)],
                             #clear=True, _callsync='off')
         app.processEvents()
-
 
     def reset_pinned_plot_callback(self):
         x = self._window._gbpinnedplot.layout().itemAt(0).widget()
@@ -979,7 +978,7 @@ if __name__ == '__main__':
 
     app.setStyleSheet(dark_stylesheet())
 
-    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
 
     # connect the closing event to the quit button procedure
     app.aboutToQuit.connect(cs.on_quit_button)

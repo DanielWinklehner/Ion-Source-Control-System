@@ -38,8 +38,8 @@ Adafruit_SSD1306 display(OLED_RESET);
 // Relays and Gauge on/off switches
 #define RELAY1     50  // unused       
 #define RELAY2     51  // Gauge 2 on/off                     
-#define RELAY4     52  // Gauge 1 calibrate    
-#define RELAY3     53  // Gauge 1 on/off
+#define RELAY4     52  // Gauge 1 on/off    
+#define RELAY3     53  // Gauge 1 calibration
 
 #define GAUGE1_ON    18
 #define GAUGE1_CALIB 3
@@ -61,12 +61,15 @@ boolean gauge2_running = false;
 boolean gauge1_err = false;
 boolean gauge2_err = false;
 
-long debouncing_time = 150; //Debouncing Time in Milliseconds
+long debouncing_time = 150000;  // Debouncing Time (us)
 volatile unsigned long last_micros;
+
+long display_sleep_time = 100000;  // Time between updates of the display (us)
+volatile unsigned int display_last_micros;
 
 volatile bool gauge1_calib_flag = false;
 
-int samples = 100;
+int samples = 50;
 double gauge1_raw = 0;
 double gauge2_raw = 0;
 double gauge1_volt = 0.0;
@@ -161,7 +164,7 @@ void gauge1_on_off_interrupt()
 
   //Serial.println("Gauge 1 on off interrupt called.");
   
-  if((long)(micros() - last_micros) >= debouncing_time * 1000) 
+  if((long)(micros() - last_micros) >= debouncing_time) 
   {
     if (!gauge1_running && !gauge1_err)
     {    
@@ -194,7 +197,7 @@ void gauge1_on_off_interrupt()
 
 void gauge1_calib_interrupt()
 {
-  if((long)(micros() - last_micros) >= debouncing_time * 1000) {
+  if((long)(micros() - last_micros) >= debouncing_time) {
     gauge1_calib_flag = true;    
     last_micros = micros();
   }
@@ -205,7 +208,7 @@ void gauge2_on_off_interrupt()
 
   //Serial.println("Gauge 2 on off interrupt called.");
   
-  if((long)(micros() - last_micros) >= debouncing_time * 1000) 
+  if((long)(micros() - last_micros) >= debouncing_time) 
   {
     if (!gauge2_running && !gauge2_err)
     {    
@@ -269,7 +272,7 @@ void loop() {
       gauge1_running = false;
       gauge1_torr_str = String("0.0e-0");
 
-      digitalWrite(RELAY1,HIGH);   // Turns OFF Relay 1
+      digitalWrite(RELAY4,HIGH);   // Turns OFF Relay 1
 
       gauge1_state = String("ERR");
     }
@@ -362,28 +365,31 @@ void loop() {
   //Serial.println(gauge1_torr_str);
   //Serial.println(gauge2_torr_str);
 
-  //--- Update Display ---//
-  // Clear the buffer.
-  display.clearDisplay();
-  // Text Formatting
-  display.setTextSize(2);
-  display.setTextColor(WHITE);
-  // Do the printing
-  display.setCursor(0,0);
-  display.print("APG:");
-  display.setCursor(54,0);
-  display.print(gauge1_state);
-  display.setCursor(54,16);
-  display.print(gauge1_torr_str);
-  display.setCursor(0,32);
-  display.print("AIM:");
-  display.setCursor(54,32);
-  display.print(gauge2_state);
-  display.setCursor(54,48);
-  display.print(gauge2_torr_str);
-  // Show the new display
-  display.display();
-
+  //--- Update Display only every few milliseconds ---//
+  if ((long)(micros() - display_last_micros) >= display_sleep_time)
+  {
+    // Clear the buffer.
+    display.clearDisplay();
+    // Text Formatting
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    // Do the printing
+    display.setCursor(0,0);
+    display.print("APG:");
+    display.setCursor(54,0);
+    display.print(gauge1_state);
+    display.setCursor(54,16);
+    display.print(gauge1_torr_str);
+    display.setCursor(0,32);
+    display.print("AIM:");
+    display.setCursor(54,32);
+    display.print(gauge2_state);
+    display.setCursor(54,48);
+    display.print(gauge2_torr_str);
+    // Show the new display
+    display.display();
+    display_last_micros = micros();
+  }
   // GUI Communication.
   digitalWrite(LED_COM, LOW);
 
