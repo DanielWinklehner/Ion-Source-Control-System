@@ -176,6 +176,7 @@ class ProcedureDialog(QDialog):
             self.ui.txtText.setText(self._newproc.sms)
 
     def initialize_pid_procedure(self):
+        # Get write device/channel
         for i, dev in enumerate(self._devlist):
             if self._newproc._write_channel.parent_device == dev:
                 self.ui.cbPidDeviceWrite.setCurrentIndex(i + 1)
@@ -184,13 +185,14 @@ class ProcedureDialog(QDialog):
         chs = self._newproc._write_channel.parent_device.channels
         chlist = [x for name, x in reversed(sorted(chs.items(), 
                     key=lambda t: t[1].display_order))
-                    if x.mode in ['write', 'both']]
+                    if x.mode in ['write', 'both'] and x.data_type == float]
 
         for i, ch in enumerate(chlist):
             if self._newproc._write_channel == ch:
                 self.ui.cbPidChannelWrite.setCurrentIndex(i + 1)
                 break
         
+        # Get read device/channel
         for i, dev in enumerate(self._devlist):
             if self._newproc._pid.channel.parent_device == dev:
                 self.ui.cbPidDeviceRead.setCurrentIndex(i + 1)
@@ -199,7 +201,7 @@ class ProcedureDialog(QDialog):
         chs = self._newproc._pid.channel.parent_device.channels
         chlist = [x for name, x in reversed(sorted(chs.items(), 
                     key=lambda t: t[1].display_order))
-                    if x.mode in ['read', 'both']]
+                    if x.mode in ['read', 'both'] and x.data_type == float]
 
         for i, ch in enumerate(chlist):
             if self._newproc._pid.channel == ch:

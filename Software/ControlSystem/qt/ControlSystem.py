@@ -198,7 +198,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-             
+                     
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
