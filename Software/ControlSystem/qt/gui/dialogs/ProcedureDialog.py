@@ -82,6 +82,7 @@ class ProcedureDialog(QDialog):
         self.ui.cbPidDeviceWrite.addItems([' - Choose a device - '] + devnamelist)
         self.ui.cbPidDeviceRead.currentIndexChanged.connect(self.on_pid_read_device_cb_changed)
         self.ui.cbPidDeviceWrite.currentIndexChanged.connect(self.on_pid_write_device_cb_changed)
+        self.ui.cbPidChannelWrite.currentIndexChanged.connect(self.on_pid_write_channel_cb_changed)
 
         if self._newproc != None:
             self.ui.txtProcedureName.setText(self._newproc.name)
@@ -213,6 +214,11 @@ class ProcedureDialog(QDialog):
         self.ui.txtI.setText(str(self._newproc._pid.coeffs[1]))
         self.ui.txtD.setText(str(self._newproc._pid.coeffs[2]))
         self.ui.txtdt.setText(str(self._newproc._pid.dt))
+
+        self.ui.txtAverage.setText(str(self._newproc._pid.ma))
+        self.ui.txtWarmup.setText(str(self._newproc._pid.warmup))
+        self.ui.txtOffset.setText(str(self._newproc._pid.offset))
+        self.ui.lblUnit.setText(self._newproc._write_channel.unit)
 
         self._currentTab = 'PID'
         self.ui.gbOptions.setEnabled(False)
@@ -359,6 +365,15 @@ class ProcedureDialog(QDialog):
         else:
             self.ui.cbPidChannelWrite.clear()
             self.ui.cbPidChannelWrite.addItems(['- Choose a device - '])
+
+    def on_pid_write_channel_cb_changed(self, index):
+        if index > 0:
+            chs = self._devlist[self.ui.cbPidDeviceWrite.currentIndex() - 1].channels
+            chlist = [x for name, x in reversed(sorted(chs.items(), 
+                        key=lambda t: t[1].display_order)) 
+                        if x.mode in ['write', 'both'] and x.data_type == float]
+            self.ui.lblUnit.setText(chlist[index - 1].unit)
+
 
     def on_rule_device_cb_changed(self, index):
         if index > 0:
@@ -543,13 +558,17 @@ class ProcedureDialog(QDialog):
             i = float(self.ui.txtI.text())
             d = float(self.ui.txtD.text())
             dt = float(self.ui.txtdt.text())
+            ma = int(self.ui.txtAverage.text())
+            warmup = int(self.ui.txtWarmup.text())
+            offset = float(self.ui.txtOffset.text())
         except:
             print('bad values entered')
             return False
 
         self._newproc = PidProcedure(self.ui.txtProcedureName.text(),
                                      readchannel, writechannel,
-                                     target, [p,i,d], dt)
+                                     target, [p,i,d], dt,
+                                     ma, warmup, offset)
 
         return True
 

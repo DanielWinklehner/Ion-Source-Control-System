@@ -217,12 +217,14 @@ class PidProcedure(Procedure):
     _sig_set = pyqtSignal(object, float)
 
     def __init__(self, name, read_channel, write_channel,
-                 target=0.0, coeffs=[1.0, 1.0, 1.0], dt=0.5):
+                 target=0.0, coeffs=[1.0, 1.0, 1.0], dt=0.5,
+                 ma=1, warmup=0, offset=0.0):
 
         super(PidProcedure, self).__init__(name)
         self._title = '(PID) {}'.format(self._name)
-        self._pid = Pid(read_channel, target, coeffs, dt)
+        self._pid = Pid(read_channel, target, coeffs, dt, ma, warmup, offset)
         self._pid.set_signal.connect(self.on_pid_set_signal)
+        self._pid.skip_signal.connect(self.on_pid_skip_signal)
         self._write_channel = write_channel
         self._pid_thread = None
         
@@ -278,6 +280,13 @@ class PidProcedure(Procedure):
                 '{0:.2f}'.format(val), self._write_channel.unit))
         self._sig_set.emit(self._write_channel, val)
 
+    @pyqtSlot(float)
+    def on_pid_skip_signal(self, val):
+
+        self._txtLog.append('SKIPPING set to {}.{} with value={} {}'.format(
+                self._write_channel.parent_device.label, self._write_channel.label,
+                '{0:.2f}'.format(val), self._write_channel.unit))
+
     @pyqtSlot()
     def on_start_click(self):
         self._txtLog.setText('')
@@ -312,7 +321,9 @@ class PidProcedure(Procedure):
         rval += 'Writing to channel {}.{}\n'.format(self._write_channel.parent_device.label,
                                                     self._write_channel.label)
         rval += 'Target value: {} {}\n'.format(self._pid.target, self._pid.channel.unit)
-        rval += 'Parameters: P={}, I={}, D={}, dt={}s'.format(*self._pid.coeffs, self._pid.dt)
+        rval += 'Parameters: P={}, I={}, D={}, dt={}s\n'.format(*self._pid.coeffs, self._pid.dt)
+        rval += 'Extra Options: Average={} samples, Warmup={} samples, Offset={} {}'.format(
+                self._pid.ma, self._pid.warmup, self._pid.offset, self._write_channel.unit)
 
         return rval
 
@@ -338,5 +349,7 @@ class PidProcedure(Procedure):
                 'target': self._pid.target,
                 'coeffs': self._pid.coeffs,
                 'dt': self._pid.dt,
+                'ma': self._pid.ma,
+                'warmup': self._pid.warmup,
+                'offset': self._pid.offset,
                 }
-    
