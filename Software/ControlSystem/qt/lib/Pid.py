@@ -85,6 +85,10 @@ class Pid(QObject):
     def target(self):
         return self._target
 
+    @target.setter
+    def target(self, val):
+        self._target = val
+
     @property
     def coeffs(self):
         return self._coeffs

@@ -7,7 +7,7 @@
 import operator
 
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, \
-                            QGroupBox, QWidget, QTextEdit
+                            QGroupBox, QWidget, QTextEdit, QLineEdit
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt5.QtGui import QSizePolicy
 
@@ -239,14 +239,23 @@ class PidProcedure(Procedure):
         vbox = QVBoxLayout()
         gb.setLayout(vbox)
         hbox = QHBoxLayout()
-
+        vbox_info = QVBoxLayout()
+        hbox_target = QHBoxLayout()
         self._lblInfo = QLabel(self.info)
         self._txtLog = QTextEdit()
         self._txtLog.setReadOnly(True)
+        self._txtTarget = QLineEdit()
+        self._txtTarget.returnPressed.connect(self.on_target_return_pressed)
         self._txtLog.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         self._txtLog.setMaximumHeight(100)
         self._txtLog.setMaximumWidth(700)
-        hbox.addWidget(self._lblInfo)
+        vbox_info.addWidget(self._lblInfo)
+        lbl = QLabel('Set target:')
+        hbox_target.addWidget(lbl)
+        hbox_target.addWidget(self._txtTarget)
+        hbox_target.addStretch()
+        vbox_info.addLayout(hbox_target)
+        hbox.addLayout(vbox_info)
         hbox.addWidget(self._txtLog)
  
         vbox.addLayout(hbox)
@@ -292,6 +301,21 @@ class PidProcedure(Procedure):
     def on_pid_ma_signal(self, val):
         self._txtLog.append('Averaging values: current value={} {}'.format(
                 '{0:.2f}'.format(val), self._pid.channel.unit))
+
+    @pyqtSlot()
+    def on_target_return_pressed(self):
+        try:
+            val = float(self._txtTarget.text())
+        except:
+            print('bad value entered')
+            return
+
+        self._txtLog.append('Changing target to {} {}'.format(
+            '{0:.2f}'.format(val), self._pid.channel.unit))
+
+        self._pid.target = val
+        self._lblInfo.setText(self.info)
+        self._txtTarget.setText(str(val))
 
     @pyqtSlot()
     def on_start_click(self):
