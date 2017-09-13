@@ -225,6 +225,7 @@ class PidProcedure(Procedure):
         self._pid = Pid(read_channel, target, coeffs, dt, ma, warmup, offset)
         self._pid.set_signal.connect(self.on_pid_set_signal)
         self._pid.skip_signal.connect(self.on_pid_skip_signal)
+        self._pid.ma_signal.connect(self.on_pid_ma_signal)
         self._write_channel = write_channel
         self._pid_thread = None
         
@@ -286,6 +287,11 @@ class PidProcedure(Procedure):
         self._txtLog.append('SKIPPING set to {}.{} with value={} {}'.format(
                 self._write_channel.parent_device.label, self._write_channel.label,
                 '{0:.2f}'.format(val), self._write_channel.unit))
+
+    @pyqtSlot(float)
+    def on_pid_ma_signal(self, val):
+        self._txtLog.append('Averaging values: current value={} {}'.format(
+                '{0:.2f}'.format(val), self._pid.channel.unit))
 
     @pyqtSlot()
     def on_start_click(self):

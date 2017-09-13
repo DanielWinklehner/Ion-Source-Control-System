@@ -8,6 +8,7 @@ class Pid(QObject):
 
     _sig_set_value = pyqtSignal(float)
     _sig_skip_value = pyqtSignal(float)
+    _sig_ma_total = pyqtSignal(float)
 
     def __init__(self, channel, target=0.0, coeffs=[1.0, 1.0, 1.0], dt=0.5,
                  ma=1, warmup=0, offset=0.0,):
@@ -30,28 +31,29 @@ class Pid(QObject):
         ma_sum_values = 0.0
         while not self._terminate:
 
-            err = self._target - self._channel.value
-            integral += err * self._dt
-            deriv = (err - prev_err) / self._dt
-
-            resp = sum(np.multiply([err, integral, deriv], self._coeffs)) + self._offset
-
             if ma_count < self._ma:
                 ma_count += 1
-                ma_sum_values += resp
+                ma_sum_values += self._channel.value
             
             if ma_count < self._ma:
-                self._sig_skip_value.emit(resp)
+                self._sig_ma_total.emit(ma_sum_values / ma_count)
             else:
+                avg = ma_sum_values / self._ma
+                err = self._target - avg
+                integral += err * self._dt * self._ma
+                deriv = (err - prev_err) / (self._dt * self._ma)
+
+                resp = sum(np.multiply([err, integral, deriv], self._coeffs)) + self._offset
+
                 ma_count = 0
-                output = ma_sum_values / self._ma
                 ma_sum_values = 0.0
+
                 if warmup_count < self._warmup:
                     warmup_count += 1
-                    self._sig_skip_value.emit(output)
+                    self._sig_skip_value.emit(resp)
                 else:
-                    self._sig_set_value.emit(output)
-            prev_err = err
+                    self._sig_set_value.emit(resp)
+                prev_err = err
 
             time.sleep(self._dt)
 
@@ -66,6 +68,10 @@ class Pid(QObject):
     @property
     def skip_signal(self):
         return self._sig_skip_value
+
+    @property
+    def ma_signal(self):
+        return self._sig_ma_total
 
     @property
     def channel(self):
