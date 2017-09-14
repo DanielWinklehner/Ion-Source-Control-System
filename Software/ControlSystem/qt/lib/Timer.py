@@ -8,8 +8,8 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 class Timer(QObject):
 
-    _sig_start = pyqtSignal()
-    _sig_stop = pyqtSignal(float)
+    _sig_start = pyqtSignal(str)
+    _sig_stop = pyqtSignal(str, float)
 
     def __init__(self, start_channel, start_val, start_comp, 
                        stop_channel, stop_val, stop_comp, 
@@ -26,6 +26,7 @@ class Timer(QObject):
         self._continuous = continuous
         self._dt = 0.05
         self._terminate = False
+        self._timefmt = '%Y-%m-%d %H:%M:%S'
 
     @pyqtSlot()
     def run(self):
@@ -39,17 +40,19 @@ class Timer(QObject):
                 value = self._start_channel.value
                 if self._start_comp(value, self._start_value):
                     started = True
-                    starttime = dt.now()
-                    _sig_start.emit
+                    starttime = dt.datetime.now()
+                    self._sig_start.emit(starttime.strftime(self._timefmt))
             else:
                 value = self._stop_channel.value
                 if self._stop_comp(value, self._stop_value):
-                    temptime = dt.now()
+                    temptime = dt.datetime.now()
                     if (temptime - starttime).total_seconds() > self._min_time:
                         stoptime = temptime
                         if not self._continuous:
                             self._terminate = True
-                        self._sig_stop.emit((stoptime - starttime).total_seconds())
+                        else:
+                            started = False
+                        self._sig_stop.emit(stoptime.strftime(self._timefmt), (stoptime - starttime).total_seconds())
 
             time.sleep(self._dt)
 

@@ -227,9 +227,9 @@ class TimerProcedure(Procedure):
         self._timer.start_signal.connect(self.on_timer_start)
         self._timer.stop_signal.connect(self.on_timer_stop)
 
-        self._timing_thread = QThread()
-        self._timer.moveToThread(self._timing_thread)
-        self._timing_thread.started.connect(self._timer.run)
+        self._timer_thread = QThread()
+        self._timer.moveToThread(self._timer_thread)
+        self._timer_thread.started.connect(self._timer.run)
 
     def initialize(self):
         gb = QGroupBox(self._title)
@@ -251,21 +251,13 @@ class TimerProcedure(Procedure):
 
         self._widget = gb 
 
-    @pyqtSlot()
-    def on_timer_start(self):
-        pass
-
-    @pyqtSlot()
-    def on_timer_stop(self, value):
-        pass
-
     def control_button_layout(self):
         hbox = QHBoxLayout()
         self._btnStart = QPushButton('Start')
         self._btnStop = QPushButton('Stop')
         self._btnReset = QPushButton('Reset')
-        #self._btnStart.clicked.connect(self.on_start_click)
-        #self._btnStop.clicked.connect(self.on_stop_click)
+        self._btnStart.clicked.connect(self.on_start_click)
+        self._btnStop.clicked.connect(self.on_stop_click)
         self._btnStop.setEnabled(False)
         hbox.addWidget(self._btnStart)
         hbox.addWidget(self._btnStop)
@@ -279,6 +271,34 @@ class TimerProcedure(Procedure):
         hbox.addWidget(self._btnDelete)
 
         return hbox
+
+    @pyqtSlot(str)
+    def on_timer_start(self, time):
+        self._txtLog.append('Timer started at {}'.format(time))
+
+    @pyqtSlot(str, float)
+    def on_timer_stop(self, time, value):
+        self._txtLog.append('Timer stopped at {}, total time elapsed={} s'.format(time, str(value)))
+        if not self._timer.continuous:
+            self.on_stop_click()
+
+    @pyqtSlot()
+    def on_start_click(self):
+        self._btnStart.setEnabled(False)
+        self._btnEdit.setEnabled(False)
+        self._btnDelete.setEnabled(False)
+        self._btnStop.setEnabled(True)
+        self._timer_thread.start()
+
+    @pyqtSlot()
+    def on_stop_click(self):
+        self._timer.terminate()
+        self._timer_thread.quit()
+        self._btnStart.setEnabled(True)
+        self._btnEdit.setEnabled(True)
+        self._btnDelete.setEnabled(True)
+        self._btnStop.setEnabled(False)
+
 
     @property
     def info(self):
