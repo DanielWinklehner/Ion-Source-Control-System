@@ -12,6 +12,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 from PyQt5.QtGui import QSizePolicy
 
 from .Pid import Pid
+from .Timer import Timer
 
 class Procedure(QObject):
 
@@ -210,10 +211,52 @@ class BasicProcedure(Procedure):
 
         return rval
 
+class TimerProcedure(Procedure):
+
+    def __init__(self, name, start_channel, start_val, start_comp, 
+                             stop_channel, stop_val, stop_comp,
+                             min_time, continuous):
+
+        super(TimerProcedure, self).__init__(name)
+
+        #self._timer = Timer(read_channel, start_val, start_comp,
+        #                                  stop_val, stop_comp)
+
+        #self._timer.start_signal.connect(self.on_timer_start)
+        #self._timer.stop_signal.connect(self.on_timer_stop)
+
+        self._timing_thread = QThread()
+        #self._timer.moveToThread(self._timing_thread)
+        self._timing_thread.started.connect(self.on_thread_start)
+
+    @pyqtSlot()
+    def on_timer_start(self):
+        pass
+
+    @pyqtSlot()
+    def on_timer_stop(self, value):
+        pass
+
+    @property
+    def info(self):
+        rval = ''
+        if self._timer.continuous:
+            rval += 'Continuous'
+        rval += 'Start when {}.{} is {} than {} {}'.format(
+                self._timer.start_channel.parent_device.label,
+                self._timer.start_channel.label,
+                self._timer.start_comp_str,
+                self._timer.start_value,
+                self._timer.start_channel.unit)
+        rval += 'Stop when {}.{} is {} than {} {}'.format(
+                self._timer.stop_channel.parent_device.label,
+                self._timer.stop_channel.label,
+                self._timer.stop_comp_str,
+                self._timer.stop_value,
+                self._timer.stop_channel.unit)
+
 class PidProcedure(Procedure):
 
-    _sig_start = pyqtSignal(object)
-    _sig_stop = pyqtSignal(object)
     _sig_set = pyqtSignal(object, float)
 
     def __init__(self, name, read_channel, write_channel,
@@ -234,6 +277,9 @@ class PidProcedure(Procedure):
         self._pid_thread.started.connect(self._pid.run)
         self._pid_thread.finished.connect(self.on_pid_thread_finished)
 
+        self._readfmt = '{' + '0:.{}f'.format(read_channel.precision) + '}'
+        self._writefmt = '{' + '0:.{}f'.format(write_channel.precision) + '}'
+
     def initialize(self):
         gb = QGroupBox(self._title)
         vbox = QVBoxLayout()
@@ -251,8 +297,10 @@ class PidProcedure(Procedure):
         self._txtLog.setMaximumWidth(700)
         vbox_info.addWidget(self._lblInfo)
         lbl = QLabel('Set target:')
+        lbl2 = QLabel(self._pid.channel.unit)
         hbox_target.addWidget(lbl)
         hbox_target.addWidget(self._txtTarget)
+        hbox_target.addWidget(lbl2)
         hbox_target.addStretch()
         vbox_info.addLayout(hbox_target)
         hbox.addLayout(vbox_info)
@@ -284,23 +332,21 @@ class PidProcedure(Procedure):
 
     @pyqtSlot(float)
     def on_pid_set_signal(self, val):
-
         self._txtLog.append('Send SET command to {}.{}. Value={} {}'.format(
                 self._write_channel.parent_device.label, self._write_channel.label,
-                '{0:.2f}'.format(val), self._write_channel.unit))
+                self._writefmt.format(val), self._write_channel.unit))
         self._sig_set.emit(self._write_channel, val)
 
     @pyqtSlot(float)
     def on_pid_skip_signal(self, val):
-
         self._txtLog.append('SKIPPING set to {}.{} with value={} {}'.format(
                 self._write_channel.parent_device.label, self._write_channel.label,
-                '{0:.2f}'.format(val), self._write_channel.unit))
+                self._writefmt.format(val), self._write_channel.unit))
 
     @pyqtSlot(float)
     def on_pid_ma_signal(self, val):
         self._txtLog.append('Averaging values: current value={} {}'.format(
-                '{0:.2f}'.format(val), self._pid.channel.unit))
+                self._readfmt.format(val), self._pid.channel.unit))
 
     @pyqtSlot()
     def on_target_return_pressed(self):
@@ -311,7 +357,7 @@ class PidProcedure(Procedure):
             return
 
         self._txtLog.append('Changing target to {} {}'.format(
-            '{0:.2f}'.format(val), self._pid.channel.unit))
+            self._readfmt.format(val), self._pid.channel.unit))
 
         self._pid.target = val
         self._lblInfo.setText(self.info)

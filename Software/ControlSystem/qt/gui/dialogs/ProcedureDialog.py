@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QDialog, QFrame, QLabel, QPushButton, QVBoxLayout, \
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from .ui_ProcedureDialog import Ui_ProcedureDialog
-from lib.Procedure import Procedure, BasicProcedure, PidProcedure
+from lib.Procedure import Procedure, BasicProcedure, PidProcedure, TimerProcedure
 
 class ProcedureDialog(QDialog):
 
@@ -56,10 +56,6 @@ class ProcedureDialog(QDialog):
         self.ui.gbContact.hide()
 
         self.ui.btnDone.clicked.connect(self.on_done_click)
-        self.ui.cbRuleDevice.currentIndexChanged.connect(self.on_rule_device_cb_changed)
-        self.ui.cbRuleChannel.currentIndexChanged.connect(self.on_rule_channel_cb_changed)
-        self.ui.cbActionDevice.currentIndexChanged.connect(self.on_action_device_cb_changed)
-        self.ui.cbActionChannel.currentIndexChanged.connect(self.on_action_channel_cb_changed)
         self.ui.btnAddAction.clicked.connect(self.on_add_action_click)
         self.ui.chkEmail.stateChanged.connect(self.on_email_check_changed)
         self.ui.chkText.stateChanged.connect(self.on_text_check_changed)
@@ -77,12 +73,23 @@ class ProcedureDialog(QDialog):
         self.ui.cbRuleDevice.addItems([' - Choose a device - '] + devnamelist)
         self.ui.cbActionDevice.addItems([' - Choose a device - '] + devnamelist)
         self.ui.cbRuleCompare.addItems(['<', '>', '=', '<=', '>='])
+        self.ui.cbRuleDevice.currentIndexChanged.connect(self.on_rule_device_cb_changed)
+        self.ui.cbRuleChannel.currentIndexChanged.connect(self.on_rule_channel_cb_changed)
+        self.ui.cbActionDevice.currentIndexChanged.connect(self.on_action_device_cb_changed)
+        self.ui.cbActionChannel.currentIndexChanged.connect(self.on_action_channel_cb_changed)
 
         self.ui.cbPidDeviceRead.addItems([' - Choose a device - '] + devnamelist)
         self.ui.cbPidDeviceWrite.addItems([' - Choose a device - '] + devnamelist)
         self.ui.cbPidDeviceRead.currentIndexChanged.connect(self.on_pid_read_device_cb_changed)
         self.ui.cbPidDeviceWrite.currentIndexChanged.connect(self.on_pid_write_device_cb_changed)
         self.ui.cbPidChannelWrite.currentIndexChanged.connect(self.on_pid_write_channel_cb_changed)
+
+        self.ui.cbTimerDeviceStart.addItems([' - Choose a device - '] + devnamelist)
+        self.ui.cbTimerDeviceStop.addItems([' - Choose a device - '] + devnamelist)
+        self.ui.cbTimerDeviceStart.currentIndexChanged.connect(self.on_timer_start_device_cb_changed)
+        self.ui.cbTimerChannelStart.currentIndexChanged.connect(self.on_timer_start_channel_cb_changed)
+        self.ui.cbTimerDeviceStop.currentIndexChanged.connect(self.on_timer_stop_device_cb_changed)
+        self.ui.cbTimerChannelStop.currentIndexChanged.connect(self.on_timer_stop_channel_cb_changed)
 
         if self._newproc != None:
             self.ui.txtProcedureName.setText(self._newproc.name)
@@ -229,6 +236,10 @@ class ProcedureDialog(QDialog):
             self._currentTab = 'PID'
             self.ui.gbOptions.setEnabled(False)
             self.ui.gbNotify.setEnabled(False)
+        elif idx == 2:
+            self._currentTab = 'Timer'
+            self.ui.gbOptions.setEnabled(False)
+            self.ui.gbNotify.setEnabled(False)
         else:
             self._currentTab = 'Basic'
             self.ui.gbOptions.setEnabled(True)
@@ -341,6 +352,46 @@ class ProcedureDialog(QDialog):
 
         self._actions = newactions
         self._actioncontrols = newactioncontrols
+
+    def on_timer_start_device_cb_changed(self, index):
+        if index > 0:
+            self.ui.cbTimerChannelStart.clear()
+            chs = self._devlist[index - 1].channels
+            chlist = [x.label for name, x in reversed(sorted(chs.items(), 
+                        key=lambda t: t[1].display_order)) 
+                        if x.mode in ['read', 'both'] and x.data_type == float]
+            self.ui.cbTimerChannelStart.addItems(['- Choose a channel -'] + chlist)
+        else:
+            self.ui.cbTimerChannelStart.clear()
+            self.ui.cbTimerChannelStart.addItems(['- Choose a device - '])
+
+    def on_timer_start_channel_cb_changed(self, index):
+        if index > 0:
+            chs = self._devlist[self.ui.cbTimerDeviceStart.currentIndex() - 1].channels
+            chlist = [x for name, x in reversed(sorted(chs.items(), 
+                        key=lambda t: t[1].display_order)) 
+                        if x.mode in ['read', 'both'] and x.data_type == float]
+            self.ui.lblTimerStartUnit.setText(chlist[index - 1].unit)
+
+    def on_timer_stop_device_cb_changed(self, index):
+        if index > 0:
+            self.ui.cbTimerChannelStop.clear()
+            chs = self._devlist[index - 1].channels
+            chlist = [x.label for name, x in reversed(sorted(chs.items(), 
+                        key=lambda t: t[1].display_order)) 
+                        if x.mode in ['read', 'both'] and x.data_type == float]
+            self.ui.cbTimerChannelStop.addItems(['- Choose a channel -'] + chlist)
+        else:
+            self.ui.cbTimerChannelStop.clear()
+            self.ui.cbTimerChannelStop.addItems(['- Choose a device - '])
+
+    def on_timer_stop_channel_cb_changed(self, index):
+        if index > 0:
+            chs = self._devlist[self.ui.cbTimerDeviceStop.currentIndex() - 1].channels
+            chlist = [x for name, x in reversed(sorted(chs.items(), 
+                        key=lambda t: t[1].display_order)) 
+                        if x.mode in ['read', 'both'] and x.data_type == float]
+            self.ui.lblTimerStopUnit.setText(chlist[index - 1].unit)
 
     def on_pid_read_device_cb_changed(self, index):
         if index > 0:
@@ -572,6 +623,58 @@ class ProcedureDialog(QDialog):
 
         return True
 
+    def validate_timer_procedure(self):
+        startdevidx = self.ui.cbTimerDeviceStart.currentIndex() - 1
+        startchidx = self.ui.cbTimerChannelStart.currentIndex() - 1
+        
+        stopdevidx = self.ui.cbTimerDeviceStop.currentIndex() - 1
+        stopchidx = self.ui.cbTimerChannelStop.currentIndex() - 1
+
+        if stopdevidx < 0 or stopchidx < 0 or startdevidx < 0 or startchidx < 0:
+            # Device or channel not selected for rule
+            print('Error: Device or channel not selected for read or write channel')
+            return False
+
+        startdevice = self._devlist[startdevidx]
+        stopdevice = self._devlist[stopdevidx]
+
+        wchs = startdevice.channels
+        rchs = stopdevice.channels
+        rchlist = [x for name, x in reversed(sorted(rchs.items(), 
+                    key=lambda t: t[1].display_order)) 
+                    if x.mode in ['read', 'both'] and x.data_type == float]
+        wchlist = [x for name, x in reversed(sorted(wchs.items(), 
+                    key=lambda t: t[1].display_order)) 
+                    if x.mode in ['read', 'both'] and x.data_type == float]
+
+        startchannel = wchlist[stopchidx]
+        stopchannel = rchlist[stopchidx]
+
+        try:
+            start_value = float(self.ui.txtTimerStart.text())
+            stop_value = float(self.ui.txtTimerStop.text())
+            min_time = float(self.ui.txtTimerMinTime.text())
+        except:
+            print('bad values entered')
+            return False
+
+        if self.ui.cbTimerStartComp.currentIndex() == 0:
+            start_comp = operator.gt
+        else:
+            start_comp = operator.lt
+
+        if self.ui.cbTimerStopComp.currentIndex() == 0:
+            stop_comp = operator.gt
+        else:
+            stop_comp = operator.lt
+
+        self._newproc = TimerProcedure(self.ui.txtProcedureName.text(),
+                                       startchannel, start_value, start_comp,
+                                       stopchannel, stop_value, stop_comp,
+                                       min_time, self.ui.chkTimerContinuous.isChecked())
+
+        return True
+
     def on_done_click(self):
         if self._newproc == None and self.ui.txtProcedureName.text() in self._procnames:
             # if self._newproc is not None, then we are editing a procedure, so ok to overwrite
@@ -584,6 +687,10 @@ class ProcedureDialog(QDialog):
                 self.accept()
         elif self._currentTab == 'PID':
             if self.validate_pid_procedure():
+                self._accepted = True
+                self.accept()
+        elif self._currentTab == 'Timer':
+            if self.validate_timer_procedure():
                 self._accepted = True
                 self.accept()
 

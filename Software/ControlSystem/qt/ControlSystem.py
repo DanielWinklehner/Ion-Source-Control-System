@@ -579,6 +579,7 @@ class ControlSystem():
         self._window.update_plots(self._devices, self._plotted_channels)
         self._window.update_procedures(self._procedures)
 
+    @pyqtSlot()
     def on_start_pause_click(self):
         btn = self._window.ui.btnStartPause
         if btn.text() == 'Start Polling':
@@ -599,6 +600,7 @@ class ControlSystem():
             self._plot_timer.start(50)
             btn.setText('Pause Polling')
 
+    @pyqtSlot()
     def on_stop_click(self):
         self._plot_timer.stop()
         self.shutdown_communication_threads()
