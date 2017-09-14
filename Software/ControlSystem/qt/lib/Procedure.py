@@ -218,16 +218,38 @@ class TimerProcedure(Procedure):
                              min_time, continuous):
 
         super(TimerProcedure, self).__init__(name)
+        self._title = '(Timer) {}'.format(self._name)
 
-        #self._timer = Timer(read_channel, start_val, start_comp,
-        #                                  stop_val, stop_comp)
+        self._timer = Timer(start_channel, start_val, start_comp,
+                            stop_channel, stop_val, stop_comp, 
+                            min_time, continuous)
 
-        #self._timer.start_signal.connect(self.on_timer_start)
-        #self._timer.stop_signal.connect(self.on_timer_stop)
+        self._timer.start_signal.connect(self.on_timer_start)
+        self._timer.stop_signal.connect(self.on_timer_stop)
 
         self._timing_thread = QThread()
-        #self._timer.moveToThread(self._timing_thread)
-        self._timing_thread.started.connect(self.on_thread_start)
+        self._timer.moveToThread(self._timing_thread)
+        self._timing_thread.started.connect(self._timer.run)
+
+    def initialize(self):
+        gb = QGroupBox(self._title)
+        vbox = QVBoxLayout()
+        gb.setLayout(vbox)
+        hbox = QHBoxLayout()
+        vbox_info = QVBoxLayout()
+        self._lblInfo = QLabel(self.info)
+        self._txtLog = QTextEdit()
+        self._txtLog.setReadOnly(True)
+        self._txtLog.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self._txtLog.setMaximumHeight(100)
+        self._txtLog.setMaximumWidth(700)
+        hbox.addWidget(self._lblInfo)
+        hbox.addWidget(self._txtLog)
+ 
+        vbox.addLayout(hbox)
+        vbox.addLayout(self.control_button_layout())
+
+        self._widget = gb 
 
     @pyqtSlot()
     def on_timer_start(self):
@@ -237,23 +259,49 @@ class TimerProcedure(Procedure):
     def on_timer_stop(self, value):
         pass
 
+    def control_button_layout(self):
+        hbox = QHBoxLayout()
+        self._btnStart = QPushButton('Start')
+        self._btnStop = QPushButton('Stop')
+        self._btnReset = QPushButton('Reset')
+        #self._btnStart.clicked.connect(self.on_start_click)
+        #self._btnStop.clicked.connect(self.on_stop_click)
+        self._btnStop.setEnabled(False)
+        hbox.addWidget(self._btnStart)
+        hbox.addWidget(self._btnStop)
+        hbox.addWidget(self._btnReset)
+        hbox.addStretch()
+        self._btnEdit = QPushButton('Edit')
+        self._btnDelete = QPushButton('Delete')
+        self._btnEdit.clicked.connect(lambda: self._sig_edit.emit(self))
+        self._btnDelete.clicked.connect(lambda: self._sig_delete.emit(self))
+        hbox.addWidget(self._btnEdit)
+        hbox.addWidget(self._btnDelete)
+
+        return hbox
+
     @property
     def info(self):
         rval = ''
         if self._timer.continuous:
-            rval += 'Continuous'
-        rval += 'Start when {}.{} is {} than {} {}'.format(
+            rval += 'Continuous\n'
+        
+        rval += 'Start timing when {}.{} is {} than {} {}\n'.format(
                 self._timer.start_channel.parent_device.label,
                 self._timer.start_channel.label,
                 self._timer.start_comp_str,
                 self._timer.start_value,
                 self._timer.start_channel.unit)
-        rval += 'Stop when {}.{} is {} than {} {}'.format(
+        rval += 'Stop timing when {}.{} is {} than {} {}'.format(
                 self._timer.stop_channel.parent_device.label,
                 self._timer.stop_channel.label,
                 self._timer.stop_comp_str,
                 self._timer.stop_value,
                 self._timer.stop_channel.unit)
+        if self._timer.min_time != 0.0:
+            rval += '\nMinimum time: {} s'.format(self._timer.min_time)
+        
+        return rval
 
 class PidProcedure(Procedure):
 
