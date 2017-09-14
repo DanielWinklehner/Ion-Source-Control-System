@@ -213,15 +213,15 @@ class BasicProcedure(Procedure):
 
 class TimerProcedure(Procedure):
 
-    def __init__(self, name, start_channel, start_val, start_comp, 
-                             stop_channel, stop_val, stop_comp,
-                             min_time, continuous):
+    def __init__(self, name, start_channel=None, start_value=0.0, start_comp=operator.gt, 
+                             stop_channel=None, stop_value=0.0, stop_comp=operator.gt,
+                             min_time=0.0, continuous=False):
 
         super(TimerProcedure, self).__init__(name)
         self._title = '(Timer) {}'.format(self._name)
 
-        self._timer = Timer(start_channel, start_val, start_comp,
-                            stop_channel, stop_val, stop_comp, 
+        self._timer = Timer(start_channel, start_value, start_comp,
+                            stop_channel, stop_value, stop_comp, 
                             min_time, continuous)
 
         self._timer.start_signal.connect(self.on_timer_start)
@@ -322,6 +322,23 @@ class TimerProcedure(Procedure):
             rval += '\nMinimum time: {} s'.format(self._timer.min_time)
         
         return rval
+
+    @property
+    def json(self):
+        return {
+                'name': self._name,
+                'type': 'timer',
+                'start-device': self._timer.start_channel.parent_device.name,
+                'start-channel': self._timer.start_channel.name,
+                'stop-device': self._timer.stop_channel.parent_device.name,
+                'stop-channel': self._timer.stop_channel.name,
+                'start_value': self._timer.start_value,
+                'start_comp': self._timer.start_comp_str,
+                'stop_value': self._timer.stop_value,
+                'stop_comp': self._timer.stop_comp_str,
+                'min_time': self._timer.min_time,
+                'continuous': self._timer.continuous,
+                }
 
 class PidProcedure(Procedure):
 

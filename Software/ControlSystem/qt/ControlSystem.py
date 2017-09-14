@@ -11,6 +11,7 @@ import timeit
 import time
 import threading
 import queue
+import operator
 from multiprocessing import Process, Pipe
 from collections import deque
 
@@ -29,7 +30,7 @@ from gui.dialogs.ErrorDialog import ErrorDialog
 from gui.dialogs.WarningDialog import WarningDialog
 from lib.Device import Device
 from lib.Channel import Channel
-from lib.Procedure import Procedure, PidProcedure
+from lib.Procedure import Procedure, PidProcedure, TimerProcedure
 from lib.Pid import Pid
 
 def query_server(com_pipe, server_url, debug=False):
@@ -810,6 +811,10 @@ class ControlSystem():
                     proc_type = value
                 elif key in ['write-channel', 'write-device', 'read-channel', 'read-device']:
                     pass
+                elif key in ['start-channel', 'start-device', 'stop-channel', 'stop-device']:
+                    pass
+                elif key in ['stop_comp', 'start_comp']:
+                    filtered_params[key] = operator.gt if value == 'greater' else operator.lt
                 else:
                     filtered_params[key] = value
 
@@ -819,6 +824,12 @@ class ControlSystem():
                 filtered_params['write_channel'] = \
                     self._devices[proc_data['write-device']].channels[proc_data['write-channel']]
                 proc = PidProcedure(**filtered_params)
+            elif proc_type == 'timer':
+                filtered_params['start_channel'] = \
+                    self._devices[proc_data['start-device']].channels[proc_data['start-channel']]
+                filtered_params['stop_channel'] = \
+                    self._devices[proc_data['stop-device']].channels[proc_data['stop-channel']]
+                proc = TimerProcedure(**filtered_params)
 
             self.add_procedure(proc)
 

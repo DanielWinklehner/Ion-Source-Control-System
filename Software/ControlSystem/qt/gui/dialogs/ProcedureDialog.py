@@ -95,10 +95,16 @@ class ProcedureDialog(QDialog):
             self.ui.txtProcedureName.setText(self._newproc.name)
             if isinstance(self._newproc, BasicProcedure):
                 self.ui.tab_2.setParent(None)
+                self.ui.tab_3.setParent(None)
                 self.initialize_basic_procedure()
             elif isinstance(self._newproc, PidProcedure):
                 self.ui.tab.setParent(None)
+                self.ui.tab_3.setParent(None)
                 self.initialize_pid_procedure()
+            elif isinstance(self._newproc, TimerProcedure):
+                self.ui.tab.setParent(None)
+                self.ui.tab_2.setParent(None)
+                self.initialize_timer_procedure()
 
     def initialize_basic_procedure(self):
         for idx, rule in self._newproc.rules.items():
@@ -228,6 +234,55 @@ class ProcedureDialog(QDialog):
         self.ui.lblUnit.setText(self._newproc._write_channel.unit)
 
         self._currentTab = 'PID'
+        self.ui.gbOptions.setEnabled(False)
+        self.ui.gbNotify.setEnabled(False)
+
+    def initialize_timer_procedure(self):
+        # Get write device/channel
+        for i, dev in enumerate(self._devlist):
+            if self._newproc._timer.start_channel.parent_device == dev:
+                self.ui.cbTimerDeviceStart.setCurrentIndex(i + 1)
+                break
+
+        chs = self._newproc._timer.start_channel.parent_device.channels
+        chlist = [x for name, x in reversed(sorted(chs.items(), 
+                    key=lambda t: t[1].display_order))
+                    if x.mode in ['read', 'both'] and x.data_type == float]
+
+        for i, ch in enumerate(chlist):
+            if self._newproc._timer.start_channel == ch:
+                self.ui.cbTimerChannelStart.setCurrentIndex(i + 1)
+                break
+        
+        # Get read device/channel
+        for i, dev in enumerate(self._devlist):
+            if self._newproc._timer.stop_channel.parent_device == dev:
+                self.ui.cbTimerDeviceStop.setCurrentIndex(i + 1)
+                break
+
+        chs = self._newproc._timer.stop_channel.parent_device.channels
+        chlist = [x for name, x in reversed(sorted(chs.items(), 
+                    key=lambda t: t[1].display_order))
+                    if x.mode in ['read', 'both'] and x.data_type == float]
+
+        for i, ch in enumerate(chlist):
+            if self._newproc._timer.stop_channel == ch:
+                self.ui.cbTimerChannelStop.setCurrentIndex(i + 1)
+                break
+
+        self.ui.txtTimerStart.setText(str(self._newproc._timer.start_value))
+        self.ui.txtTimerStop.setText(str(self._newproc._timer.stop_value))
+
+        if self._newproc._timer.start_comp_str == 'less':
+            self.ui.cbTimerStartComp.setCurrentIndex(1)
+        if self._newproc._timer.stop_comp_str == 'less':
+            self.ui.cbTimerStopComp.setCurrentIndex(1)
+
+        self.ui.txtTimerMinTime.setText(str(self._newproc._timer.min_time))
+        if self._newproc._timer.continuous:
+            self.ui.chkTimerContinuous.toggle()
+
+        self._currentTab = 'Timer'
         self.ui.gbOptions.setEnabled(False)
         self.ui.gbNotify.setEnabled(False)
 
