@@ -12,6 +12,7 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from .ui_ProcedureDialog import Ui_ProcedureDialog
 from lib.Procedure import Procedure, BasicProcedure, PidProcedure, TimerProcedure
+from gui.widgets.DeviceChannelComboBox import DeviceChannelComboBox
 
 class ProcedureDialog(QDialog):
 
@@ -78,18 +79,32 @@ class ProcedureDialog(QDialog):
         self.ui.cbActionDevice.currentIndexChanged.connect(self.on_action_device_cb_changed)
         self.ui.cbActionChannel.currentIndexChanged.connect(self.on_action_channel_cb_changed)
 
-        self.ui.cbPidDeviceRead.addItems([' - Choose a device - '] + devnamelist)
-        self.ui.cbPidDeviceWrite.addItems([' - Choose a device - '] + devnamelist)
-        self.ui.cbPidDeviceRead.currentIndexChanged.connect(self.on_pid_read_device_cb_changed)
-        self.ui.cbPidDeviceWrite.currentIndexChanged.connect(self.on_pid_write_device_cb_changed)
-        self.ui.cbPidChannelWrite.currentIndexChanged.connect(self.on_pid_write_channel_cb_changed)
 
-        self.ui.cbTimerDeviceStart.addItems([' - Choose a device - '] + devnamelist)
-        self.ui.cbTimerDeviceStop.addItems([' - Choose a device - '] + devnamelist)
-        self.ui.cbTimerDeviceStart.currentIndexChanged.connect(self.on_timer_start_device_cb_changed)
-        self.ui.cbTimerChannelStart.currentIndexChanged.connect(self.on_timer_start_channel_cb_changed)
-        self.ui.cbTimerDeviceStop.currentIndexChanged.connect(self.on_timer_stop_device_cb_changed)
-        self.ui.cbTimerChannelStop.currentIndexChanged.connect(self.on_timer_stop_channel_cb_changed)
+        self._cbDevChPidRead = DeviceChannelComboBox(
+                self._devdict, channel_params = {'mode': ('read','both'), 'data_type': (float,)})
+
+        self._cbDevChPidWrite = DeviceChannelComboBox(
+                self._devdict, channel_params = {'mode': ('write','both'), 'data_type': (float,)})
+
+        self.ui.gridPid.addWidget(self._cbDevChPidRead, 0, 1)
+        self.ui.gridPid.addWidget(self._cbDevChPidWrite, 1, 1)
+
+        self._cbDevChPidWrite.channel_changed_signal.connect(
+                self.on_pid_write_channel_cb_changed)
+
+        self._cbDevChTimerStart = DeviceChannelComboBox(
+                self._devdict, channel_params = {'mode': ('read','both')})
+
+        self._cbDevChTimerStop = DeviceChannelComboBox(
+                self._devdict, channel_params = {'mode': ('read','both')})
+
+        self.ui.gbTimerStart.layout().addWidget(self._cbDevChTimerStart, 0, 1)
+        self.ui.gbTimerStop.layout().addWidget(self._cbDevChTimerStop, 0, 1)
+
+        self._cbDevChTimerStart.channel_changed_signal.connect(
+                self.on_timer_start_channel_cb_changed)
+        self._cbDevChTimerStop.channel_changed_signal.connect(
+                self.on_timer_stop_channel_cb_changed)
 
         if self._newproc != None:
             self.ui.txtProcedureName.setText(self._newproc.name)
@@ -191,36 +206,8 @@ class ProcedureDialog(QDialog):
 
     def initialize_pid_procedure(self):
         # Get write device/channel
-        for i, dev in enumerate(self._devlist):
-            if self._newproc._write_channel.parent_device == dev:
-                self.ui.cbPidDeviceWrite.setCurrentIndex(i + 1)
-                break
-
-        chs = self._newproc._write_channel.parent_device.channels
-        chlist = [x for name, x in reversed(sorted(chs.items(), 
-                    key=lambda t: t[1].display_order))
-                    if x.mode in ['write', 'both'] and x.data_type == float]
-
-        for i, ch in enumerate(chlist):
-            if self._newproc._write_channel == ch:
-                self.ui.cbPidChannelWrite.setCurrentIndex(i + 1)
-                break
-        
-        # Get read device/channel
-        for i, dev in enumerate(self._devlist):
-            if self._newproc._pid.channel.parent_device == dev:
-                self.ui.cbPidDeviceRead.setCurrentIndex(i + 1)
-                break
-
-        chs = self._newproc._pid.channel.parent_device.channels
-        chlist = [x for name, x in reversed(sorted(chs.items(), 
-                    key=lambda t: t[1].display_order))
-                    if x.mode in ['read', 'both'] and x.data_type == float]
-
-        for i, ch in enumerate(chlist):
-            if self._newproc._pid.channel == ch:
-                self.ui.cbPidChannelRead.setCurrentIndex(i + 1)
-                break
+        self._cbDevChPidWrite.select(self._newproc._write_channel)
+        self._cbDevChPidRead.select(self._newproc._pid.channel)
 
         self.ui.txtTarget.setText(str(self._newproc._pid.target))
         self.ui.txtP.setText(str(self._newproc._pid.coeffs[0]))
@@ -239,36 +226,8 @@ class ProcedureDialog(QDialog):
 
     def initialize_timer_procedure(self):
         # Get write device/channel
-        for i, dev in enumerate(self._devlist):
-            if self._newproc._timer.start_channel.parent_device == dev:
-                self.ui.cbTimerDeviceStart.setCurrentIndex(i + 1)
-                break
-
-        chs = self._newproc._timer.start_channel.parent_device.channels
-        chlist = [x for name, x in reversed(sorted(chs.items(), 
-                    key=lambda t: t[1].display_order))
-                    if x.mode in ['read', 'both'] and x.data_type == float]
-
-        for i, ch in enumerate(chlist):
-            if self._newproc._timer.start_channel == ch:
-                self.ui.cbTimerChannelStart.setCurrentIndex(i + 1)
-                break
-        
-        # Get read device/channel
-        for i, dev in enumerate(self._devlist):
-            if self._newproc._timer.stop_channel.parent_device == dev:
-                self.ui.cbTimerDeviceStop.setCurrentIndex(i + 1)
-                break
-
-        chs = self._newproc._timer.stop_channel.parent_device.channels
-        chlist = [x for name, x in reversed(sorted(chs.items(), 
-                    key=lambda t: t[1].display_order))
-                    if x.mode in ['read', 'both'] and x.data_type == float]
-
-        for i, ch in enumerate(chlist):
-            if self._newproc._timer.stop_channel == ch:
-                self.ui.cbTimerChannelStop.setCurrentIndex(i + 1)
-                break
+        self._cbDevChTimerStart.select(self._newproc._timer.start_channel)
+        self._cbDevChTimerStop.select(self._newproc._timer.stop_channel)
 
         self.ui.txtTimerStart.setText(str(self._newproc._timer.start_value))
         self.ui.txtTimerStop.setText(str(self._newproc._timer.stop_value))
@@ -408,77 +367,23 @@ class ProcedureDialog(QDialog):
         self._actions = newactions
         self._actioncontrols = newactioncontrols
 
-    def on_timer_start_device_cb_changed(self, index):
-        if index > 0:
-            self.ui.cbTimerChannelStart.clear()
-            chs = self._devlist[index - 1].channels
-            chlist = [x.label for name, x in reversed(sorted(chs.items(), 
-                        key=lambda t: t[1].display_order)) 
-                        if x.mode in ['read', 'both'] and x.data_type == float]
-            self.ui.cbTimerChannelStart.addItems(['- Choose a channel -'] + chlist)
+    def on_timer_start_channel_cb_changed(self, channel):
+        if channel is not None:
+            self.ui.lblTimerStartUnit.setText(channel.unit)
         else:
-            self.ui.cbTimerChannelStart.clear()
-            self.ui.cbTimerChannelStart.addItems(['- Choose a device - '])
+            self.ui.lblTimerStartUnit.setText('')
 
-    def on_timer_start_channel_cb_changed(self, index):
-        if index > 0:
-            chs = self._devlist[self.ui.cbTimerDeviceStart.currentIndex() - 1].channels
-            chlist = [x for name, x in reversed(sorted(chs.items(), 
-                        key=lambda t: t[1].display_order)) 
-                        if x.mode in ['read', 'both'] and x.data_type == float]
-            self.ui.lblTimerStartUnit.setText(chlist[index - 1].unit)
-
-    def on_timer_stop_device_cb_changed(self, index):
-        if index > 0:
-            self.ui.cbTimerChannelStop.clear()
-            chs = self._devlist[index - 1].channels
-            chlist = [x.label for name, x in reversed(sorted(chs.items(), 
-                        key=lambda t: t[1].display_order)) 
-                        if x.mode in ['read', 'both'] and x.data_type == float]
-            self.ui.cbTimerChannelStop.addItems(['- Choose a channel -'] + chlist)
+    def on_timer_stop_channel_cb_changed(self, channel):
+        if channel is not None:
+            self.ui.lblTimerStopUnit.setText(channel.unit)
         else:
-            self.ui.cbTimerChannelStop.clear()
-            self.ui.cbTimerChannelStop.addItems(['- Choose a device - '])
+            self.ui.lblTimerStopUnit.setText('')
 
-    def on_timer_stop_channel_cb_changed(self, index):
-        if index > 0:
-            chs = self._devlist[self.ui.cbTimerDeviceStop.currentIndex() - 1].channels
-            chlist = [x for name, x in reversed(sorted(chs.items(), 
-                        key=lambda t: t[1].display_order)) 
-                        if x.mode in ['read', 'both'] and x.data_type == float]
-            self.ui.lblTimerStopUnit.setText(chlist[index - 1].unit)
-
-    def on_pid_read_device_cb_changed(self, index):
-        if index > 0:
-            self.ui.cbPidChannelRead.clear()
-            chs = self._devlist[index - 1].channels
-            chlist = [x.label for name, x in reversed(sorted(chs.items(), 
-                        key=lambda t: t[1].display_order)) 
-                        if x.mode in ['read', 'both'] and x.data_type == float]
-            self.ui.cbPidChannelRead.addItems(['- Choose a channel -'] + chlist)
+    def on_pid_write_channel_cb_changed(self, channel):
+        if channel is not None:
+            self.ui.lblUnit.setText(channel.unit)
         else:
-            self.ui.cbPidChannelRead.clear()
-            self.ui.cbPidChannelRead.addItems(['- Choose a device - '])
-
-    def on_pid_write_device_cb_changed(self, index):
-        if index > 0:
-            self.ui.cbPidChannelWrite.clear()
-            chs = self._devlist[index - 1].channels
-            chlist = [x.label for name, x in reversed(sorted(chs.items(), 
-                        key=lambda t: t[1].display_order)) 
-                        if x.mode in ['write', 'both'] and x.data_type == float]
-            self.ui.cbPidChannelWrite.addItems(['- Choose a channel -'] + chlist)
-        else:
-            self.ui.cbPidChannelWrite.clear()
-            self.ui.cbPidChannelWrite.addItems(['- Choose a device - '])
-
-    def on_pid_write_channel_cb_changed(self, index):
-        if index > 0:
-            chs = self._devlist[self.ui.cbPidDeviceWrite.currentIndex() - 1].channels
-            chlist = [x for name, x in reversed(sorted(chs.items(), 
-                        key=lambda t: t[1].display_order)) 
-                        if x.mode in ['write', 'both'] and x.data_type == float]
-            self.ui.lblUnit.setText(chlist[index - 1].unit)
+            self.ui.lblUnit.setText('')
 
 
     def on_rule_device_cb_changed(self, index):
@@ -632,31 +537,12 @@ class ProcedureDialog(QDialog):
         return True
     
     def validate_pid_procedure(self):
-        writedevidx = self.ui.cbPidDeviceWrite.currentIndex() - 1
-        writechidx = self.ui.cbPidChannelWrite.currentIndex() - 1
-        
-        readdevidx = self.ui.cbPidDeviceRead.currentIndex() - 1
-        readchidx = self.ui.cbPidChannelRead.currentIndex() - 1
+        readchannel = self._cbDevChPidRead.selected_channel
+        writechannel = self._cbDevChPidWrite.selected_channel
 
-        if writedevidx < 0 or writechidx < 0 or readdevidx < 0 or readchidx < 0:
-            # Device or channel not selected for rule
-            print('Error: Device or channel not selected for read or write channel')
+        if readchannel is None or writechannel is None:
+            print('Channel not selected')
             return False
-
-        writedevice = self._devlist[writedevidx]
-        readdevice = self._devlist[readdevidx]
-
-        wchs = writedevice.channels
-        rchs = readdevice.channels
-        rchlist = [x for name, x in reversed(sorted(rchs.items(), 
-                    key=lambda t: t[1].display_order)) 
-                    if x.mode in ['read', 'both'] and x.data_type == float]
-        wchlist = [x for name, x in reversed(sorted(wchs.items(), 
-                    key=lambda t: t[1].display_order)) 
-                    if x.mode in ['write', 'both'] and x.data_type == float]
-
-        writechannel = wchlist[writechidx]
-        readchannel = rchlist[readchidx]
 
         try:
             target = float(self.ui.txtTarget.text())
@@ -679,31 +565,12 @@ class ProcedureDialog(QDialog):
         return True
 
     def validate_timer_procedure(self):
-        startdevidx = self.ui.cbTimerDeviceStart.currentIndex() - 1
-        startchidx = self.ui.cbTimerChannelStart.currentIndex() - 1
-        
-        stopdevidx = self.ui.cbTimerDeviceStop.currentIndex() - 1
-        stopchidx = self.ui.cbTimerChannelStop.currentIndex() - 1
+        startchannel = self._cbDevChTimerStart.selected_channel
+        stopchannel = self._cbDevChTimerStop.selected_channel
 
-        if stopdevidx < 0 or stopchidx < 0 or startdevidx < 0 or startchidx < 0:
-            # Device or channel not selected for rule
-            print('Error: Device or channel not selected for read or write channel')
+        if startchannel is None or stopchannel is None:
+            print('Channel not selected')
             return False
-
-        startdevice = self._devlist[startdevidx]
-        stopdevice = self._devlist[stopdevidx]
-
-        wchs = startdevice.channels
-        rchs = stopdevice.channels
-        rchlist = [x for name, x in reversed(sorted(rchs.items(), 
-                    key=lambda t: t[1].display_order)) 
-                    if x.mode in ['read', 'both'] and x.data_type == float]
-        wchlist = [x for name, x in reversed(sorted(wchs.items(), 
-                    key=lambda t: t[1].display_order)) 
-                    if x.mode in ['read', 'both'] and x.data_type == float]
-
-        startchannel = wchlist[stopchidx]
-        stopchannel = rchlist[stopchidx]
 
         try:
             start_value = float(self.ui.txtTimerStart.text())

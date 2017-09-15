@@ -8,6 +8,9 @@ from PyQt5.QtWidgets import QFrame, QHBoxLayout, QComboBox, QLabel, QWidget
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QSizePolicy
 
+from lib.Device import Device
+from lib.Channel import Channel
+
 class DeviceChannelComboBox(QWidget):
 
     _sig_device_changed = pyqtSignal(object)
@@ -41,6 +44,7 @@ class DeviceChannelComboBox(QWidget):
         self._cbDevices.currentIndexChanged.connect(self.on_device_cb_changed)
         self._cbChannels = QComboBox(self)
         self._cbChannels.addItems(['- Choose a device -'])
+        self._cbChannels.currentIndexChanged.connect(self.on_channel_cb_changed)
         
         lblSep = QLabel('.', self)
         lblSep.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -49,7 +53,17 @@ class DeviceChannelComboBox(QWidget):
         self._layout.addWidget(lblSep)
         self._layout.addWidget(self._cbChannels)
 
+    def select(self, obj):
+        """ Sets this object's comboboxes to the index of the passed device or channel """
+        if isinstance(obj, Device):
+            self._cbDevices.setCurrentIndex(self._devlist.index(obj) + 1)
+        else:
+            self._cbDevices.setCurrentIndex(self._devlist.index(obj.parent_device) + 1)
+            chlist = self.channel_list(obj.parent_device)
+            self._cbChannels.setCurrentIndex(chlist.index(obj) + 1)
+            
     def channel_list(self, device):
+        """ Get the filtered list of channels for a given device """
         chlist = []
         for channel_name, channel in device.channels.items():
             valid = True
@@ -81,10 +95,10 @@ class DeviceChannelComboBox(QWidget):
     @pyqtSlot(int)
     def on_channel_cb_changed(self, idx):
         if idx > 0:
-            chlist = self.channel_list(self._devlist.index(self._selected_device))
+            chlist = self.channel_list(self._selected_device)
             self._selected_channel = chlist[idx - 1]
         else:
-            self._selected_channels = None
+            self._selected_channel = None
 
         self._sig_channel_changed.emit(self._selected_channel)
 
@@ -95,3 +109,11 @@ class DeviceChannelComboBox(QWidget):
     @property
     def selected_channel(self):
         return self._selected_channel
+
+    @property
+    def channel_changed_signal(self):
+        return self._sig_channel_changed
+
+    @property
+    def device_changed_signal(self):
+        return self._sig_device_changed

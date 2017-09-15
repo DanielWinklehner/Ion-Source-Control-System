@@ -442,7 +442,7 @@
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
-            <layout class="QGridLayout" name="gridLayout_5">
+            <layout class="QGridLayout" name="gridPid">
              <item row="1" column="0">
               <widget class="QLabel" name="label_17">
                <property name="text">
@@ -450,96 +450,12 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <layout class="QHBoxLayout" name="horizontalLayout_4">
-               <item>
-                <widget class="QComboBox" name="cbPidDeviceRead">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                 <property name="currentText">
-                  <string/>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_9">
-                 <property name="text">
-                  <string>.</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="cbPidChannelRead">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                 <property name="currentText">
-                  <string>- Choose a device -</string>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>- Choose a device -</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-              </layout>
-             </item>
              <item row="0" column="0">
               <widget class="QLabel" name="label_16">
                <property name="text">
                 <string>Read Channel:</string>
                </property>
               </widget>
-             </item>
-             <item row="1" column="1">
-              <layout class="QHBoxLayout" name="horizontalLayout_10">
-               <item>
-                <widget class="QComboBox" name="cbPidDeviceWrite">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                 <property name="currentText">
-                  <string/>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_15">
-                 <property name="text">
-                  <string>.</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="cbPidChannelWrite">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                 <property name="currentText">
-                  <string>- Choose a device -</string>
-                 </property>
-                 <item>
-                  <property name="text">
-                   <string>- Choose a device -</string>
-                  </property>
-                 </item>
-                </widget>
-               </item>
-              </layout>
              </item>
              <item row="2" column="0">
               <widget class="QLabel" name="label_10">
@@ -793,7 +709,7 @@
           </spacer>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_6">
+          <widget class="QGroupBox" name="gbTimerStart">
            <property name="title">
             <string>Start Condition</string>
            </property>
@@ -804,41 +720,6 @@
                <string>Channel:</string>
               </property>
              </widget>
-            </item>
-            <item row="0" column="1">
-             <layout class="QHBoxLayout" name="horizontalLayout_14">
-              <item>
-               <widget class="QComboBox" name="cbTimerDeviceStart"/>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_30">
-                <property name="text">
-                 <string>.</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QComboBox" name="cbTimerChannelStart">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="currentText">
-                 <string>- Choose a device -</string>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>- Choose a device -</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-             </layout>
             </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_23">
@@ -886,7 +767,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="groupBox_7">
+          <widget class="QGroupBox" name="gbTimerStop">
            <property name="title">
             <string>Stop Condition</string>
            </property>
@@ -897,41 +778,6 @@
                <string>Channel:</string>
               </property>
              </widget>
-            </item>
-            <item row="0" column="1">
-             <layout class="QHBoxLayout" name="horizontalLayout_15">
-              <item>
-               <widget class="QComboBox" name="cbTimerDeviceStop"/>
-              </item>
-              <item>
-               <widget class="QLabel" name="label_35">
-                <property name="text">
-                 <string>.</string>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QComboBox" name="cbTimerChannelStop">
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="currentText">
-                 <string>- Choose a device -</string>
-                </property>
-                <item>
-                 <property name="text">
-                  <string>- Choose a device -</string>
-                 </property>
-                </item>
-               </widget>
-              </item>
-             </layout>
             </item>
             <item row="1" column="0">
              <widget class="QLabel" name="label_24">
