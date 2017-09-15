@@ -57,10 +57,13 @@ class DeviceChannelComboBox(QWidget):
         """ Sets this object's comboboxes to the index of the passed device or channel """
         if isinstance(obj, Device):
             self._cbDevices.setCurrentIndex(self._devlist.index(obj) + 1)
-        else:
+        elif isinstance(obj, Channel):
             self._cbDevices.setCurrentIndex(self._devlist.index(obj.parent_device) + 1)
             chlist = self.channel_list(obj.parent_device)
             self._cbChannels.setCurrentIndex(chlist.index(obj) + 1)
+        else:
+            self._cbDevices.setCurrentIndex(0)
+            self._cbChannels.setCurrentIndex(0)
             
     def channel_list(self, device):
         """ Get the filtered list of channels for a given device """

@@ -94,7 +94,7 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <layout class="QHBoxLayout" name="hlayoutRule">
             <item>
              <spacer name="horizontalSpacer_3">
               <property name="orientation">
@@ -107,27 +107,6 @@
                </size>
               </property>
              </spacer>
-            </item>
-            <item>
-             <widget class="QComboBox" name="cbRuleDevice">
-              <property name="currentText">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_3">
-              <property name="text">
-               <string>.</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="cbRuleChannel">
-              <property name="currentText">
-               <string/>
-              </property>
-             </widget>
             </item>
             <item>
              <widget class="QLabel" name="label_4">
@@ -242,32 +221,11 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <item>
-           <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <layout class="QHBoxLayout" name="hlayoutAction">
             <item>
              <widget class="QLabel" name="label_2">
               <property name="text">
                <string>Set</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="cbActionDevice">
-              <property name="currentText">
-               <string/>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QLabel" name="label_5">
-              <property name="text">
-               <string>.</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QComboBox" name="cbActionChannel">
-              <property name="currentText">
-               <string/>
               </property>
              </widget>
             </item>

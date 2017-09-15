@@ -71,20 +71,26 @@ class ProcedureDialog(QDialog):
 
         # Fill comboboxes with devices/channels
         devnamelist = [x.label for x in self._devlist]
-        self.ui.cbRuleDevice.addItems([' - Choose a device - '] + devnamelist)
-        self.ui.cbActionDevice.addItems([' - Choose a device - '] + devnamelist)
+        self._cbDevChRule = DeviceChannelComboBox(self._devdict)
+        self._cbDevChAction = DeviceChannelComboBox(self._devdict)
+
+        self.ui.hlayoutRule.insertWidget(1, self._cbDevChRule)
+        self.ui.hlayoutAction.insertWidget(1, self._cbDevChAction)
+
         self.ui.cbRuleCompare.addItems(['<', '>', '=', '<=', '>='])
-        self.ui.cbRuleDevice.currentIndexChanged.connect(self.on_rule_device_cb_changed)
-        self.ui.cbRuleChannel.currentIndexChanged.connect(self.on_rule_channel_cb_changed)
-        self.ui.cbActionDevice.currentIndexChanged.connect(self.on_action_device_cb_changed)
-        self.ui.cbActionChannel.currentIndexChanged.connect(self.on_action_channel_cb_changed)
+        self._cbDevChRule.channel_changed_signal.connect(self.on_rule_channel_cb_changed)
+        self._cbDevChAction.channel_changed_signal.connect(self.on_action_channel_cb_changed)
 
-
+        # pid device/channel selectors -- channels must be floats
         self._cbDevChPidRead = DeviceChannelComboBox(
-                self._devdict, channel_params = {'mode': ('read','both'), 'data_type': (float,)})
+                self._devdict, channel_params = {'mode': ('read','both'), 
+                                                 'data_type': (float,)
+                                                 })
 
         self._cbDevChPidWrite = DeviceChannelComboBox(
-                self._devdict, channel_params = {'mode': ('write','both'), 'data_type': (float,)})
+                self._devdict, channel_params = {'mode': ('write','both'), 
+                                                 'data_type': (float,)
+                                                 })
 
         self.ui.gridPid.addWidget(self._cbDevChPidRead, 0, 1)
         self.ui.gridPid.addWidget(self._cbDevChPidWrite, 1, 1)
@@ -92,6 +98,7 @@ class ProcedureDialog(QDialog):
         self._cbDevChPidWrite.channel_changed_signal.connect(
                 self.on_pid_write_channel_cb_changed)
 
+        # timer device/channel selectors
         self._cbDevChTimerStart = DeviceChannelComboBox(
                 self._devdict, channel_params = {'mode': ('read','both')})
 
@@ -124,20 +131,8 @@ class ProcedureDialog(QDialog):
     def initialize_basic_procedure(self):
         for idx, rule in self._newproc.rules.items():
             # TODO: currently only works with 1 rule
-            for i, dev in enumerate(self._devlist):
-                if rule['device'] == dev:
-                    # Set device combobox
-                    self.ui.cbRuleDevice.setCurrentIndex(i + 1)
-                    break
+            self._cbDevChRule.select(rule['channel'])
 
-            chs = rule['device'].channels
-            chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-            for i, ch in enumerate(chlist):
-                # Set channel combobox
-                if rule['channel'] == ch:
-                    self.ui.cbRuleChannel.setCurrentIndex(i + 1)
-                    break
-            
             # Set comparison operator and value
             if rule['channel'].data_type != bool:
                 self.ui.txtRuleVal.setText(str(rule['value']))
@@ -162,19 +157,7 @@ class ProcedureDialog(QDialog):
 
         # add the actions
         for idx, action in self._newproc.actions.items():
-            for i, dev in enumerate(self._devlist):
-                #set the device combobox
-                if action['device'] == dev:
-                    self.ui.cbActionDevice.setCurrentIndex(i + 1)
-                    break
-
-            chs = action['device'].channels
-            chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-            for i, ch in enumerate(chlist):
-                # Set channel combobox
-                if action['channel'] == ch:
-                    self.ui.cbActionChannel.setCurrentIndex(i + 1)
-                    break
+            self._cbDevChAction.select(action['channel'])
 
             # set the data text
             if action['channel'].data_type != bool:
@@ -270,13 +253,10 @@ class ProcedureDialog(QDialog):
         self.ui.cbEvent.setEnabled(isChecked)
 
     def on_add_action_click(self):
-        if self.ui.cbActionDevice.currentIndex() == 0 or self.ui.cbActionChannel.currentIndex() == 0:
+        if self._cbDevChAction.selected_channel is None:
             return
 
-        device = self._devlist[self.ui.cbActionDevice.currentIndex() - 1]
-        chs = device.channels
-        chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-        channel = chlist[self.ui.cbActionChannel.currentIndex() - 1]
+        channel = self._cbDevChAction.selected_channel
         if channel.data_type != bool:
             try:
                 value = channel.data_type(self.ui.txtActionVal.text())
@@ -298,8 +278,7 @@ class ProcedureDialog(QDialog):
         fm = QFrame()
         
         vbox = QVBoxLayout()
-        lblDevCh = QLabel(self.ui.cbActionDevice.currentText() + '.' + \
-                          self.ui.cbActionChannel.currentText())
+        lblDevCh = QLabel(channel.parent_device.label + '.' + channel.label)
         if channel.data_type != bool:
             lblSetVal = QLabel('Set value: {} {}'.format(str(value), channel.unit))
         else:
@@ -326,12 +305,14 @@ class ProcedureDialog(QDialog):
         self._vboxActions.insertWidget(0, fm)
 
         self.ui.txtActionVal.setText('')
-        self.ui.cbActionDevice.setCurrentIndex(0)
+        self._cbDevChAction.select(None)
         self.ui.cbActionBool.hide()
         self.ui.txtActionVal.show()
 
-        self._actions[index] = {'device' : device, 'channel' : channel, 'value' : value}
-        self._actioncontrols[index] = {'button' : btnDel, 'frame' : fm, 'label' : lblNum, 'layout' : hbox}
+        self._actions[index] = {'device' : channel.parent_device, 
+                                'channel' : channel, 'value' : value}
+        self._actioncontrols[index] = {'button' : btnDel, 'frame' : fm, 
+                                       'label' : lblNum, 'layout' : hbox}
 
     def on_delete_action_click(self, index):
         del self._actions[index]
@@ -385,24 +366,10 @@ class ProcedureDialog(QDialog):
         else:
             self.ui.lblUnit.setText('')
 
-
-    def on_rule_device_cb_changed(self, index):
-        if index > 0:
-            self.ui.cbRuleChannel.clear()
-            chs = self._devlist[index - 1].channels
-            chlist = [x.label for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-            self.ui.cbRuleChannel.addItems(['- Choose a channel -'] + chlist)
-        else:
-            self.ui.cbRuleChannel.clear()
-            self.ui.cbRuleChannel.addItems(['- Choose a device - '])
-
-    def on_rule_channel_cb_changed(self, index):
-        if index > 0:
-            chs = self._devlist[self.ui.cbRuleDevice.currentIndex() - 1].channels
-            chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-            currentChannel = chlist[index - 1]
-            self.ui.lblRuleUnit.setText(currentChannel.unit)
-            if currentChannel.data_type == bool:
+    def on_rule_channel_cb_changed(self, channel):
+        if channel is not None:
+            self.ui.lblRuleUnit.setText(channel.unit)
+            if channel.data_type == bool:
                 # switch text field for combobox
                 self.ui.cbRuleBool.show()
                 self.ui.txtRuleVal.hide()
@@ -419,24 +386,10 @@ class ProcedureDialog(QDialog):
             self.ui.txtRuleVal.show()
             self.ui.cbRuleCompare.show()
 
-
-    def on_action_device_cb_changed(self, index):
-        if index > 0:
-            self.ui.cbActionChannel.clear()
-            chs = self._devlist[index - 1].channels
-            chlist = [x.label for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-            self.ui.cbActionChannel.addItems(['- Choose a channel -'] + chlist)
-        else:
-            self.ui.cbActionChannel.clear()
-            self.ui.cbActionChannel.addItems(['- Choose a device - '])
-
-    def on_action_channel_cb_changed(self, index):
-        if index > 0:
-            chs = self._devlist[self.ui.cbActionDevice.currentIndex() - 1].channels
-            chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-            currentChannel = chlist[index - 1]
-            self.ui.lblActionUnit.setText(currentChannel.unit)
-            if currentChannel.data_type == bool:
+    def on_action_channel_cb_changed(self, channel):
+        if channel is not None:
+            self.ui.lblActionUnit.setText(channel.unit)
+            if channel.data_type == bool:
                 # switch text field for combobox
                 self.ui.cbActionBool.show()
                 self.ui.lblActionUnit.hide()
@@ -481,22 +434,11 @@ class ProcedureDialog(QDialog):
             print('Error: Procedure name already in use')
             return False
 
-        ruledevidx = self.ui.cbRuleDevice.currentIndex() - 1
-        rulechidx = self.ui.cbRuleChannel.currentIndex() - 1
-        
-        if ruledevidx < 0 or rulechidx < 0:
-            # Device or channel not selected for rule
-            print('Error: Device or channel not selected for Procedure rule')
-            return False
+        channel = self._cbDevChRule.selected_channel
 
-        device = self._devlist[ruledevidx]
-        chs = device.channels
-        chlist = [x for name, x in reversed(sorted(chs.items(), key=lambda t: t[1].display_order))]
-        currentChannel = chlist[rulechidx]
-
-        if currentChannel.data_type != bool:
+        if channel.data_type != bool:
             try:
-                value = currentChannel.data_type(self.ui.txtRuleVal.text())
+                value = channel.data_type(self.ui.txtRuleVal.text())
             except:
                 print('Error: Bad value for Rule')
                 return False
@@ -506,7 +448,7 @@ class ProcedureDialog(QDialog):
             else:
                 value = False
 
-        if currentChannel.data_type != bool:
+        if channel.data_type != bool:
             comptext = self.ui.cbRuleCompare.currentText()
             if comptext == '=':
                 comp = operator.eq
@@ -522,8 +464,8 @@ class ProcedureDialog(QDialog):
             comp = operator.eq
 
 
-        rule = {'1' : {'device' : device, 'channel' : currentChannel, 'value' : value,
-                        'comp' : comp}}
+        rule = {'1' : {'device' : channel.parent_device, 
+                       'channel' : channel, 'value' : value,'comp' : comp}}
 
         self._newproc = BasicProcedure(self.ui.txtProcedureName.text(), 
                                        rule, self._actions, 
