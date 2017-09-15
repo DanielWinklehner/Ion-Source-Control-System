@@ -6,8 +6,12 @@
 
 from PyQt5.QtWidgets import QFrame, QHBoxLayout, QComboBox, QLabel, QWidget
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QSizePolicy
 
 class DeviceChannelComboBox(QWidget):
+
+    _sig_device_changed = pyqtSignal(object)
+    _sig_channel_changed = pyqtSignal(object)
 
     def __init__(self, devices, device_params={}, channel_params={}):
         super().__init__()
@@ -39,6 +43,7 @@ class DeviceChannelComboBox(QWidget):
         self._cbChannels.addItems(['- Choose a device -'])
         
         lblSep = QLabel('.', self)
+        lblSep.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
         self._layout.addWidget(self._cbDevices)
         self._layout.addWidget(lblSep)
@@ -71,6 +76,8 @@ class DeviceChannelComboBox(QWidget):
             self._cbChannels.clear()
             self._cbChannels.addItems(['- Choose a device -'])
 
+        self._sig_device_changed.emit(self._selected_device)
+
     @pyqtSlot(int)
     def on_channel_cb_changed(self, idx):
         if idx > 0:
@@ -78,6 +85,8 @@ class DeviceChannelComboBox(QWidget):
             self._selected_channel = chlist[idx - 1]
         else:
             self._selected_channels = None
+
+        self._sig_channel_changed.emit(self._selected_channel)
 
     @property
     def selected_device(self):
