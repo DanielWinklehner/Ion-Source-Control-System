@@ -28,6 +28,7 @@ from gui.dialogs.PlotSettingsDialog import PlotSettingsDialog
 from gui.dialogs.ProcedureDialog import ProcedureDialog
 from gui.dialogs.ErrorDialog import ErrorDialog
 from gui.dialogs.WarningDialog import WarningDialog
+from gui.widgets.DeviceChannelComboBox import DeviceChannelComboBox
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure, PidProcedure, TimerProcedure
@@ -199,7 +200,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-                     
+        """                 
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -220,7 +221,7 @@ class ControlSystem():
                                             device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        
+        """
         ## Set up communication pipes.
         self._keep_communicating = False
         self._polling_rate = 30.0
@@ -840,7 +841,7 @@ class ControlSystem():
             self._device_file_name = filename
             self.update_gui_devices()
             self._window.status_message('Loaded {} devices from JSON.'.format(successes))
-
+        
     @pyqtSlot()
     def show_PlotChooseDialog(self):
         _plotchoosedialog = PlotChooseDialog(self._devices, self._plotted_channels)
