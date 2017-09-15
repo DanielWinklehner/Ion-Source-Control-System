@@ -13,12 +13,10 @@ import threading
 import queue
 import operator
 from multiprocessing import Process, Pipe
-from collections import deque
 
 from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QFileDialog 
 
-import pyqtgraph as pg
 import numpy as np
 
 from gui.style import dark_stylesheet
@@ -31,7 +29,6 @@ from gui.dialogs.WarningDialog import WarningDialog
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure, PidProcedure, TimerProcedure
-from lib.Pid import Pid
 
 def query_server(com_pipe, server_url, debug=False):
     """ Sends info from RasPi server to communicator pipe """
