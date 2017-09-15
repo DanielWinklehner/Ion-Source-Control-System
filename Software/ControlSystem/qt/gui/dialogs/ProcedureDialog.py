@@ -237,7 +237,7 @@ class ProcedureDialog(QDialog):
             self._currentTab = 'Timer'
             self.ui.gbOptions.setEnabled(False)
             self.ui.gbNotify.setEnabled(False)
-        else:
+        elif idx == 0:
             self._currentTab = 'Basic'
             self.ui.gbOptions.setEnabled(True)
             self.ui.gbNotify.setEnabled(True)
@@ -429,11 +429,6 @@ class ProcedureDialog(QDialog):
                 self.ui.gbContact.hide()
 
     def validate_basic_procedure(self):
-        if self._newproc == None and self.ui.txtProcedureName.text() in self._procnames:
-            # if self._newproc is not None, then we are editing a procedure, so ok to overwrite
-            print('Error: Procedure name already in use')
-            return False
-
         channel = self._cbDevChRule.selected_channel
 
         if channel.data_type != bool:
