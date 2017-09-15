@@ -323,6 +323,16 @@ class TimerProcedure(Procedure):
         
         return rval
 
+    def devices_channels_used(self):
+        devices = set()
+        channels = set()
+        devices.add(self._timer.start_channel.parent_device)
+        devices.add(self._timer.stop_channel.parent_device)
+        channels.add(self._timer.start_channel)
+        channels.add(self._timer.stop_channel)
+
+        return (devices, channels)
+
     @property
     def json(self):
         return {
