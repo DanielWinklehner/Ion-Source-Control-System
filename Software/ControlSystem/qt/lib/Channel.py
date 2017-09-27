@@ -3,7 +3,7 @@ import datetime
 from collections import deque
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel, \
-    QRadioButton, QLineEdit, QPushButton
+    QRadioButton, QLineEdit, QPushButton, QDial
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from gui.widgets.DateTimePlotWidget import DateTimePlotWidget
@@ -24,7 +24,8 @@ class Channel(QWidget):
     def __init__(self, name='', label='', upper_limit=0.0, lower_limit=0.0, 
                  data_type=float, unit="", scaling=1.0, scaling_read=None, 
                  mode="both", display_order=0, display_mode="f", precision=2, 
-                 default_value=0.0, plot_settings = None, stored_values=500):
+                 default_value=0.0, plot_settings = None, stored_values=500,
+                 write_mode='text'):
 
         super().__init__()
 
@@ -41,6 +42,7 @@ class Channel(QWidget):
         self._mode = mode
         self._precision = precision
         self._display_mode = display_mode
+        self._write_mode = write_mode
         self._display_order = display_order
 
         # derived properties
@@ -87,6 +89,7 @@ class Channel(QWidget):
         self._overview_widget = gb
         self._unit_labels = []
         self._write_widget = None
+        self._dial_widget = None
         self._read_widget = None
 
         if self._data_type == bool:
@@ -104,16 +107,21 @@ class Channel(QWidget):
             vbox_readwrite = QVBoxLayout()
             self._overview_widget.setLayout(vbox_readwrite)
             if self._mode in ['write', 'both']:
-            # add first row
+                # add first row
                 hbox_write = QHBoxLayout()
-                lblUnit = QLabel(self._unit)
-                self._unit_labels.append(lblUnit)
-                txtWrite = QLineEdit(str(self._lower_limit))
-                txtWrite.returnPressed.connect(self.set_value_callback)
-                self._write_widget = txtWrite
-
-                hbox_write.addWidget(txtWrite)
-                hbox_write.addWidget(lblUnit)
+                if self._write_mode == 'text':
+                    lblUnit = QLabel(self._unit)
+                    self._unit_labels.append(lblUnit)
+                    txtWrite = QLineEdit(str(self._lower_limit))
+                    txtWrite.returnPressed.connect(self.set_value_callback)
+                    self._write_widget = txtWrite
+                    hbox_write.addWidget(self._write_widget)
+                    hbox_write.addWidget(lblUnit)
+                elif self._write_mode == 'dial':
+                    dial = QDial()
+                    self._dial_widget = dial
+                    self._dial_widget.valueChanged.connect(self.set_value_callback_dial)
+                    hbox_write.addWidget(self._dial_widget)
                 vbox_readwrite.addLayout(hbox_write)
 
             if self._mode in ['read', 'both']:
@@ -125,7 +133,7 @@ class Channel(QWidget):
                 txtRead.setDisabled(True)
                 self._read_widget = txtRead
 
-                hbox_read.addWidget(txtRead)
+                hbox_read.addWidget(self._read_widget)
                 hbox_read.addWidget(lblUnit)
                 vbox_readwrite.addLayout(hbox_read)
 
@@ -192,6 +200,8 @@ class Channel(QWidget):
                 value = display_mode_map[val]
             elif prop_name == 'mode':
                 value = val.lower()
+            elif prop_name == 'write_mode':
+                value = val.lower()
             elif prop_name == 'data_type':
                 value = data_type
             elif prop_name == 'unit':
@@ -255,43 +265,50 @@ class Channel(QWidget):
                     'defaults': ['Float', 'Scientific'],
                     'display_order': 6
                     },
+                'write_mode': {
+                    'display_name': 'Write Mode', 
+                    'entry_type': 'combo',
+                    'value': 'Dial' if self._write_mode == 'dial' else 'Text',
+                    'defaults': ['Text', 'Dial'],
+                    'display_order': 7
+                    },
                 'lower_limit': {
                     'display_name': 'Lower Limit', 
                     'entry_type': 'text',
                     'value': self._lower_limit,
-                    'display_order': 7
+                    'display_order': 8
                     },
                 'upper_limit': {
                     'display_name': 'Upper Limit', 
                     'entry_type': 'text',
                     'value': self._upper_limit,
-                    'display_order': 8
+                    'display_order': 9
                     },
                 'data_type': {
                     'display_name': 'Data Type', 
                     'entry_type': 'combo',
                     'value': str(self._data_type).split("'")[1].title(),
                     'defaults': ['Float', 'Int', 'Bool'],
-                    'display_order': 9
+                    'display_order': 10
                     },
                 'mode': {
                     'display_name': 'Mode', 
                     'entry_type': 'combo',
                     'value': self._mode.title(),
                     'defaults': ['Read', 'Write', 'Both'],
-                    'display_order': 10
+                    'display_order': 11
                     },
                 'display_order': {
                     'display_name': 'Display Order', 
                     'entry_type': 'text',
                     'value': self._display_order,
-                    'display_order': 11
+                    'display_order': 12
                     },
                 'stored_values': {
                     'display_name': '# Stored Values', 
                     'entry_type': 'text',
                     'value': self._retain_last_n_values,
-                    'display_order': 12
+                    'display_order': 13
                     },
                 }
 
@@ -333,6 +350,25 @@ class Channel(QWidget):
             self._set_signal.emit(self, val)
         else:
             self._set_signal.emit(self, self._write_widget.isChecked())
+
+    @pyqtSlot()
+    def set_value_callback_dial(self):
+        """ Function called when user scrolls/moves the dial """
+        value = self._dial_widget.value() / float(self._dial_widget.maximum())
+
+        val = self._upper_limit * value
+
+        try:
+            val = self._data_type(val)
+        except:
+            print('bad value entered')
+            return
+
+        if val > self._upper_limit or val < self._lower_limit:
+            print('value exceeds limits')
+            return
+
+        self._set_signal.emit(self, val)
 
     @pyqtSlot()
     def set_pin_callback(self):
@@ -401,6 +437,14 @@ class Channel(QWidget):
     def precision(self, precision):
         self._precision = precision
         self._displayformat = '.{}{}'.format(self._precision, self._display_mode)
+
+    @property
+    def write_mode(self):
+        return self._write_mode
+
+    @write_mode.setter
+    def write_mode(self, val):
+        self._write_mode = val
 
     @property
     def display_mode(self):
@@ -563,7 +607,8 @@ class Channel(QWidget):
             'display_mode': self._display_mode,
             'display_order': self._display_order,
             'plot_settings': self._plot_settings,
-            'stored_values': self._retain_last_n_values
+            'stored_values': self._retain_last_n_values,
+            'write_mode': self._write_mode,
             }
 
         return properties #json.dumps(properties)
