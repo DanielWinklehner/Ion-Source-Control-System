@@ -119,6 +119,7 @@ class Channel(QWidget):
                     hbox_write.addWidget(lblUnit)
                 elif self._write_mode == 'dial':
                     dial = QDial()
+                    dial.setMaximum(10**self._precision)
                     self._dial_widget = dial
                     self._dial_widget.valueChanged.connect(self.set_value_callback_dial)
                     hbox_write.addWidget(self._dial_widget)
