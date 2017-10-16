@@ -196,7 +196,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-        """                     
+        
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -217,7 +217,7 @@ class ControlSystem():
                                             device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        """
+        
         ## Set up communication pipes.
         self._keep_communicating = False
         self._polling_rate = 30.0
@@ -309,6 +309,7 @@ class ControlSystem():
                         channel = device.get_channel_by_name(channel_name)
                         if channel is None:
                             device.error_message = 'Could not find channel with name {}.'.format(channel_name)
+                            self.test_retry_connection(device)
                             continue
 
                         # Scale value back to channel
@@ -323,6 +324,18 @@ class ControlSystem():
                 else:
                     if device.error_message != parsed_response[device_id]:
                         device.error_message = parsed_response[device_id]
+                    self.test_retry_connection(device)
+
+    def test_retry_connection(self, device):
+        device.lock()
+        self.device_or_channel_changed()
+        new_set_thread = threading.Thread(target=self.test_retry_device, args=(device,))
+        new_set_thread.start()
+
+    def test_retry_device(self, device):
+        time.sleep(5)
+        device.unlock()
+        self.device_or_channel_changed()
 
     def device_or_channel_changed(self):
         """ Sends a device changed request to the pipe """
@@ -988,7 +1001,7 @@ if __name__ == '__main__':
 
     app.setStyleSheet(dark_stylesheet())
 
-    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
 
     # connect the closing event to the quit button procedure
     app.aboutToQuit.connect(cs.on_quit_button)

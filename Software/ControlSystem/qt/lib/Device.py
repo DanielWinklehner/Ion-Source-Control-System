@@ -1,5 +1,6 @@
 import json
 import time
+import threading
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QLabel, QFrame
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
@@ -180,8 +181,16 @@ class Device(QWidget):
         if self._error_message != '':
             if not self._hasError:
                 self._hasError = True
+                fm = QFrame()
+                vbox = QVBoxLayout()
+                vbox.setContentsMargins(0, 0, 0, 0)
+                fm.setLayout(vbox)
                 txtError = QLabel('<font color="red">{}</font>'.format(self._error_message))
-                self._overview_widget.layout().insertWidget(0, txtError)
+                txtError.setWordWrap(True)
+                txtRetry = QLabel('Retrying in 5 seconds...')
+                vbox.addWidget(txtError)
+                vbox.addWidget(txtRetry)
+                self._overview_widget.layout().insertWidget(0, fm)
                 self._gblayout.parent().setEnabled(False)
                 for name, ch in self.channels.items():
                     ch.update()
@@ -275,14 +284,14 @@ class Device(QWidget):
 
     def lock(self):
         if not self._locked:
-            for channel_name, channel in self._channels.items():
-                channel.lock()
+            #for channel_name, channel in self._channels.items():
+            #    channel.lock()
             self._locked = True
 
     def unlock(self):
         if self._locked:
-            for channel_name, channel in self._channels.items():
-                channel.unlock()
+            #for channel_name, channel in self._channels.items():
+            #    channel.unlock()
             self._locked = False
 
     @property
