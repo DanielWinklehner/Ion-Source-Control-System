@@ -20,10 +20,12 @@ class DeviceWidget(QWidget):
     def __init__(self, device):
         super().__init__()
         
+        self._device = device
+
         self._layout = QVBoxLayout()
         self.setLayout(self._layout)
 
-        gb = QGroupBox(device.label)
+        gb = QGroupBox(self._device.label)
         self._layout.addWidget(gb)
         self._layout.addStretch()
 
@@ -31,7 +33,7 @@ class DeviceWidget(QWidget):
         gb.setLayout(self._gblayout)
 
         self._hasMessage = False
-        self._retry_time = device._retry_time
+        self._retry_time = self._device._retry_time
 
         self._retry_thread = None
 
@@ -68,6 +70,7 @@ class DeviceWidget(QWidget):
         for i in range(self._retry_time):
             self._txtretry.setText('Retrying in {} seconds...'.format(self._retry_time - i))
             time.sleep(1)
+        self._device.unlock()
 
     def hide_error_message(self):
         if self._hasMessage:
@@ -84,6 +87,9 @@ class Device(QObject):
 
     _sig_entry_form_ok = pyqtSignal(object, dict)
     _sig_delete = pyqtSignal(object)
+
+    # emit when device changes need to be send to server (lock/unlock)
+    _sig_update_server = pyqtSignal()
 
     def __init__(self, name='', device_id='', label='', channels=None, 
                  driver='Arduino', overview_order=-1):
@@ -166,11 +172,14 @@ class Device(QObject):
     def sig_delete(self):
         return self._sig_delete
 
+    @property
+    def sig_update_server(self):
+        return self._sig_update_server
+
     @staticmethod
     def driver_list():
         return ['Arduino', 'RS485', 'FT232R', 'Teensy', 'Prolific']
 
-    #@staticmethod
     def user_edit_properties(self):
         """ Returns list of properties that should be user-editable 
             key name must match a property of this class """
@@ -325,11 +334,13 @@ class Device(QObject):
         if not self._locked:
             self._overview_widget.show_error_message(self._error_message)
             self._locked = True
+            self._sig_update_server.emit()
 
     def unlock(self):
         if self._locked:
             #self._overview_widget.hide_error_message()
             self._locked = False
+            self._sig_update_server.emit()
 
     @property
     def locked(self):

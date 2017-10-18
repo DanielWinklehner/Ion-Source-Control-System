@@ -310,7 +310,7 @@ class ControlSystem():
                 continue
 
             if "ERROR" in parsed_response[device_id]:
-                self.test_retry_connection(device, parsed_response[device_id])
+                device.lock(message=parsed_response[device_id])
                 continue
 
             device._overview_widget.hide_error_message()
@@ -318,8 +318,7 @@ class ControlSystem():
             for channel_name, value in parsed_response[device_id].items():
                 channel = device.get_channel_by_name(channel_name)
                 if channel is None:
-                    self.test_retry_connection(device, 
-                            'Could not find channel with name {}.'.format(channel_name))
+                    device.lock(message='Could not find channel with name {}.'.format(channel_name))
                     continue
 
                 # Scale value back to channel
@@ -332,21 +331,7 @@ class ControlSystem():
                     if self.debug:
                         print("Exception '{}' caught while trying to log data.".format(e))
 
-    def test_retry_connection(self, device, message):
-        """ Temporary function, until I can figure out how to update the 
-        device countdown label in a thread-safe way """
-
-        device.lock(message=message)
-        self.device_or_channel_changed()
-        new_set_thread = threading.Thread(target=self.test_retry_device, args=(device,))
-        new_set_thread.start()
-
-    def test_retry_device(self, device):
-        """ After 5 seconds, unlock the device so that it may be polled again """
-        time.sleep(device._retry_time)
-        device.unlock()
-        self.device_or_channel_changed()
-
+    @pyqtSlot()
     def device_or_channel_changed(self):
         """ Sends a device changed request to the pipe """
         device_dict_list = [{
@@ -560,6 +545,9 @@ class ControlSystem():
 
         for chname, ch in device.channels.items():
             self.add_channel(ch)
+
+        # if the device gets disconnected and reconnected, need to send a message to the server
+        device.sig_update_server.connect(self.device_or_channel_changed)
 
         return True
 

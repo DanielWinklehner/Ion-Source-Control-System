@@ -1,9 +1,16 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Thomas Wester <twester@mit.edu>
+#
+# Device representation class
+
 import json
 import datetime
 from collections import deque
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLabel, \
-    QRadioButton, QLineEdit, QPushButton, QDial
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, \
+        QLabel, QRadioButton, QLineEdit, QPushButton, QDial
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from gui.widgets.DateTimePlotWidget import DateTimePlotWidget
