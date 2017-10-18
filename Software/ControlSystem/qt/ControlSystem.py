@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+#
 # Thomas Wester <twester@mit.edu>
+#
 # Code adapted from MIST1ControlSystem.py (Python 2/gtk3+ version)
 
 import sys, os
@@ -19,13 +20,16 @@ from PyQt5.QtWidgets import QApplication, QFileDialog
 
 import numpy as np
 
-from gui.style import dark_stylesheet
 from gui import MainWindow
+
 from gui.dialogs.PlotChooseDialog import PlotChooseDialog
 from gui.dialogs.PlotSettingsDialog import PlotSettingsDialog
 from gui.dialogs.ProcedureDialog import ProcedureDialog
 from gui.dialogs.ErrorDialog import ErrorDialog
 from gui.dialogs.WarningDialog import WarningDialog
+
+from gui.style import dark_stylesheet
+
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure, PidProcedure, TimerProcedure
@@ -301,43 +305,45 @@ class ControlSystem():
 
         for device_name, device in self._devices.items():
             device_id = device.device_id
-            if not device.locked and device_id in parsed_response.keys():
-                if "ERROR" not in parsed_response[device_id]:
-                    if device.locked:
-                        device.unlock()
-                    for channel_name, value in parsed_response[device_id].items():
-                        channel = device.get_channel_by_name(channel_name)
-                        if channel is None:
-                            device.lock(message='Could not find channel with name {}.'.format(channel_name))
-                            self.test_retry_connection(device)
-                            continue
 
-                        # Scale value back to channel
-                        channel.value = value / channel.scaling
-                        self.update_stored_values(device_name, channel_name, timestamp)
+            if device.locked or device_id not in parsed_response.keys():
+                continue
 
-                        try:
-                            self.log_data(channel, timestamp)
-                        except Exception as e:
-                            if self.debug:
-                                print("Exception '{}' caught while trying to log data.".format(e))
-                else:
-                    if device.error_message != parsed_response[device_id]:
-                        device.lock(message=parsed_response[device_id])
-                    self.test_retry_connection(device)
+            if "ERROR" in parsed_response[device_id]:
+                self.test_retry_connection(device, parsed_response[device_id])
+                continue
 
-    def test_retry_connection(self, device):
+            device._overview_widget.hide_error_message()
+
+            for channel_name, value in parsed_response[device_id].items():
+                channel = device.get_channel_by_name(channel_name)
+                if channel is None:
+                    self.test_retry_connection(device, 
+                            'Could not find channel with name {}.'.format(channel_name))
+                    continue
+
+                # Scale value back to channel
+                channel.value = value / channel.scaling
+                self.update_stored_values(device_name, channel_name, timestamp)
+
+                try:
+                    self.log_data(channel, timestamp)
+                except Exception as e:
+                    if self.debug:
+                        print("Exception '{}' caught while trying to log data.".format(e))
+
+    def test_retry_connection(self, device, message):
         """ Temporary function, until I can figure out how to update the 
         device countdown label in a thread-safe way """
 
-        #device.lock()
+        device.lock(message=message)
         self.device_or_channel_changed()
         new_set_thread = threading.Thread(target=self.test_retry_device, args=(device,))
         new_set_thread.start()
 
     def test_retry_device(self, device):
         """ After 5 seconds, unlock the device so that it may be polled again """
-        time.sleep(5)
+        time.sleep(device._retry_time)
         device.unlock()
         self.device_or_channel_changed()
 

@@ -1,5 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Thomas Wester <twester@mit.edu>
+#
+# Device representation class
+
 import json
 import time
+import threading
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QLabel, QFrame
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject
@@ -22,23 +30,51 @@ class DeviceWidget(QWidget):
         self._gblayout = QVBoxLayout()
         gb.setLayout(self._gblayout)
 
+        self._hasMessage = False
+        self._retry_time = device._retry_time
+
+        self._retry_thread = None
+
     def show_error_message(self, message=''):
-        fm = QFrame()
-        vbox = QVBoxLayout()
-        vbox.setContentsMargins(0, 0, 0, 0)
-        fm.setLayout(vbox)
-        txtError = QLabel('<font color="red">{}</font>'.format(message))
-        txtError.setWordWrap(True)
-        txtRetry = QLabel('Retrying in 5 seconds...')
-        vbox.addWidget(txtError)
-        vbox.addWidget(txtRetry)
-        self._layout.insertWidget(0, fm)
-        self.setEnabled(False)
+        if not self._hasMessage:
+
+            self._messageframe = QFrame()
+            vbox = QVBoxLayout()
+            vbox.setContentsMargins(0, 0, 0, 0)
+            self._messageframe.setLayout(vbox)
+
+            self._txtmessage = QLabel()
+            self._txtmessage.setWordWrap(True)
+            vbox.addWidget(self._txtmessage)
+
+            self._txtretry = QLabel('Retrying in {} seconds...'.format(self._retry_time))
+            vbox.addWidget(self._txtretry)
+
+            self.setEnabled(False)
+            self._layout.insertWidget(0, self._messageframe)
+
+            self._hasMessage = True
+
+        self._txtmessage.setText('<font color="red">{}</font>'.format(message))
+
+        if self._retry_thread is not None:
+            # probably ok since the thread isn't doing anything critical
+            del self._retry_thread
+
+        self._retry_thread = threading.Thread(target=self.test_update_retry_label, args=())
+        self._retry_thread.start()
+
+    def test_update_retry_label(self):
+        for i in range(self._retry_time):
+            self._txtretry.setText('Retrying in {} seconds...'.format(self._retry_time - i))
+            time.sleep(1)
 
     def hide_error_message(self):
-        wdg = self._layout.takeAt(0).widget()
-        wdg.deleteLater()
-        self.setEnabled(True)
+        if self._hasMessage:
+            wdg = self._layout.itemAt(0).widget()
+            wdg.deleteLater()
+            self.setEnabled(True)
+            self._hasMessage = False
 
     @property
     def gblayout(self):
@@ -70,7 +106,7 @@ class Device(QObject):
         self._overview_order = overview_order
 
         self._error_message = ''
-        self._hasError = False
+        self._retry_time = 10
 
         self._entry_form = EntryForm(self._label, '', self.user_edit_properties(), self)
         self._entry_form.sig_save.connect(self.save_changes)
@@ -284,7 +320,7 @@ class Device(QObject):
         self.update()
 
     def lock(self, message=''):
-    """ Disable the device, and display an error message """
+        """ Disable the device, and display an error message """
         self._error_message = message
         if not self._locked:
             self._overview_widget.show_error_message(self._error_message)
@@ -292,7 +328,7 @@ class Device(QObject):
 
     def unlock(self):
         if self._locked:
-            self._overview_widget.hide_error_message()
+            #self._overview_widget.hide_error_message()
             self._locked = False
 
     @property
