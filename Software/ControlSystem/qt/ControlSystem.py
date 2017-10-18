@@ -303,12 +303,12 @@ class ControlSystem():
             device_id = device.device_id
             if not device.locked and device_id in parsed_response.keys():
                 if "ERROR" not in parsed_response[device_id]:
-                    if device.error_message != '':
-                        device.error_message = ''
+                    if device.locked:
+                        device.unlock()
                     for channel_name, value in parsed_response[device_id].items():
                         channel = device.get_channel_by_name(channel_name)
                         if channel is None:
-                            device.error_message = 'Could not find channel with name {}.'.format(channel_name)
+                            device.lock(message='Could not find channel with name {}.'.format(channel_name))
                             self.test_retry_connection(device)
                             continue
 
@@ -323,16 +323,20 @@ class ControlSystem():
                                 print("Exception '{}' caught while trying to log data.".format(e))
                 else:
                     if device.error_message != parsed_response[device_id]:
-                        device.error_message = parsed_response[device_id]
+                        device.lock(message=parsed_response[device_id])
                     self.test_retry_connection(device)
 
     def test_retry_connection(self, device):
-        device.lock()
+        """ Temporary function, until I can figure out how to update the 
+        device countdown label in a thread-safe way """
+
+        #device.lock()
         self.device_or_channel_changed()
         new_set_thread = threading.Thread(target=self.test_retry_device, args=(device,))
         new_set_thread.start()
 
     def test_retry_device(self, device):
+        """ After 5 seconds, unlock the device so that it may be polled again """
         time.sleep(5)
         device.unlock()
         self.device_or_channel_changed()
@@ -375,8 +379,8 @@ class ControlSystem():
             values = float(val)
         if self.debug:
             print('Set value callback was called with widget {}, '
-                  'type {}, and scaled value {}.'.format(channel, 
-                                                         channel.data_type, 
+                  'type {}, and scaled value {}.'.format(channel,
+                                                         channel.data_type,
                                                          channel.value))
 
         _data = {'device_driver': channel.parent_device.driver,

@@ -1,14 +1,50 @@
 import json
 import time
-import threading
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QLabel, QFrame
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject
 
 from .Channel import Channel
 from gui.widgets.EntryForm import EntryForm
 
-class Device(QWidget):
+class DeviceWidget(QWidget):
+
+    def __init__(self, device):
+        super().__init__()
+        
+        self._layout = QVBoxLayout()
+        self.setLayout(self._layout)
+
+        gb = QGroupBox(device.label)
+        self._layout.addWidget(gb)
+        self._layout.addStretch()
+
+        self._gblayout = QVBoxLayout()
+        gb.setLayout(self._gblayout)
+
+    def show_error_message(self, message=''):
+        fm = QFrame()
+        vbox = QVBoxLayout()
+        vbox.setContentsMargins(0, 0, 0, 0)
+        fm.setLayout(vbox)
+        txtError = QLabel('<font color="red">{}</font>'.format(message))
+        txtError.setWordWrap(True)
+        txtRetry = QLabel('Retrying in 5 seconds...')
+        vbox.addWidget(txtError)
+        vbox.addWidget(txtRetry)
+        self._layout.insertWidget(0, fm)
+        self.setEnabled(False)
+
+    def hide_error_message(self):
+        wdg = self._layout.takeAt(0).widget()
+        wdg.deleteLater()
+        self.setEnabled(True)
+
+    @property
+    def gblayout(self):
+        return self._gblayout
+    
+class Device(QObject):
 
     _sig_entry_form_ok = pyqtSignal(object, dict)
     _sig_delete = pyqtSignal(object)
@@ -49,19 +85,9 @@ class Device(QWidget):
     def initialize(self):
 
         # create gui representation
-        fr = QFrame()
-        vbox_main = QVBoxLayout()
-        fr.setLayout(vbox_main)
-        gb = QGroupBox(self._label)
-        vbox_main.addWidget(gb)
-        vbox_main.addStretch()
+        self._overview_widget = DeviceWidget(self)
+        self._gblayout = self._overview_widget.gblayout
 
-        vbox_gb = QVBoxLayout()
-        gb.setLayout(vbox_gb)
-
-        self._gblayout = vbox_gb
-        self._overview_widget = fr
-    
         self._initialized = True
         self._entry_form.add_delete_button()
 
@@ -177,32 +203,7 @@ class Device(QWidget):
     @error_message.setter
     def error_message(self, value):
         self._error_message = value
-       
-        if self._error_message != '':
-            if not self._hasError:
-                self._hasError = True
-                fm = QFrame()
-                vbox = QVBoxLayout()
-                vbox.setContentsMargins(0, 0, 0, 0)
-                fm.setLayout(vbox)
-                txtError = QLabel('<font color="red">{}</font>'.format(self._error_message))
-                txtError.setWordWrap(True)
-                txtRetry = QLabel('Retrying in 5 seconds...')
-                vbox.addWidget(txtError)
-                vbox.addWidget(txtRetry)
-                self._overview_widget.layout().insertWidget(0, fm)
-                self._gblayout.parent().setEnabled(False)
-                for name, ch in self.channels.items():
-                    ch.update()
-        else:
-            if self._hasError:
-                self._hasError = False
-                txtError = self._overview_widget.layout().takeAt(0).widget()
-                txtError.deleteLater()
-                self._gblayout.parent().setEnabled(True)
-                for name, ch in self.channels.items():
-                    ch.update()
-      
+
     @property
     def device_id(self):
         return self._device_id
@@ -282,16 +283,16 @@ class Device(QWidget):
         self._channels[channel.name] = channel
         self.update()
 
-    def lock(self):
+    def lock(self, message=''):
+    """ Disable the device, and display an error message """
+        self._error_message = message
         if not self._locked:
-            #for channel_name, channel in self._channels.items():
-            #    channel.lock()
+            self._overview_widget.show_error_message(self._error_message)
             self._locked = True
 
     def unlock(self):
         if self._locked:
-            #for channel_name, channel in self._channels.items():
-            #    channel.unlock()
+            self._overview_widget.hide_error_message()
             self._locked = False
 
     @property
