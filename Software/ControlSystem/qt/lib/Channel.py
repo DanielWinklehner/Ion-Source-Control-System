@@ -15,6 +15,7 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 
 from gui.widgets.DateTimePlotWidget import DateTimePlotWidget
 from gui.widgets.EntryForm import EntryForm
+from gui.widgets.ChannelDial import ChannelDial
 
 class Channel(QWidget):
     # emits itself and the new value
@@ -125,7 +126,7 @@ class Channel(QWidget):
                     hbox_write.addWidget(self._write_widget)
                     hbox_write.addWidget(lblUnit)
                 elif self._write_mode == 'dial':
-                    dial = QDial()
+                    dial = ChannelDial()
                     dial.setMaximum(10**self._precision)
                     self._dial_widget = dial
                     self._dial_widget.valueChanged.connect(self.set_value_callback_dial)
