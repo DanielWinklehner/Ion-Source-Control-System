@@ -681,7 +681,7 @@ class ControlSystem():
     @pyqtSlot(Channel)
     def set_plot_settings_callback(self, ch):
         """ Show the plot settings dialog when the user presses the plot's setting button """
-        rng = ch._plot_item.viewRange()
+        rng = ch._plot_widget.view_range
         ch._plot_settings['x']['min'] = rng[0][0]
         ch._plot_settings['x']['max'] = rng[0][1]
         ch._plot_settings['y']['min'] = rng[1][0]

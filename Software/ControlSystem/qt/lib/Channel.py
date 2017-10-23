@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/us/MatryoshkaWOM/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Thomas Wester <twester@mit.edu>
+# thomas wester <twester@mit.edu>
 #
-# Device representation class
+# channel representation class
 
 import json
 import datetime
@@ -11,13 +11,70 @@ from collections import deque
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, \
         QLabel, QRadioButton, QLineEdit, QPushButton, QDial
-from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject
 
 from gui.widgets.DateTimePlotWidget import DateTimePlotWidget
 from gui.widgets.EntryForm import EntryForm
 from gui.widgets.ChannelDial import ChannelDial
 
-class Channel(QWidget):
+class ChannelWidget():
+    # TODO
+    pass
+
+class ChannelPlotWidget(QGroupBox):
+    
+    def __init__(self, channel):
+        super().__init__()
+        
+        self._channel = channel
+        self.setMinimumSize(350, 300)
+
+        self._plot_item = DateTimePlotWidget(settings=channel.plot_settings)
+        self._plot_curve = self._plot_item.curve
+
+        vbox = QVBoxLayout()
+        self.setLayout(vbox)
+        hbox = QHBoxLayout()
+        self._btnpin = QPushButton('Pin')
+        self._btnsettings = QPushButton('Settings')
+        hbox.addWidget(self._btnsettings)
+        hbox.addStretch()
+        hbox.addWidget(self._btnpin)
+        vbox.addWidget(self._plot_item)
+        vbox.addLayout(hbox)
+
+    def clear(self):
+        self._plot_item.setData(0, 0)
+    
+    @property
+    def view_range(self):
+        return self._plot_item.viewRange()
+
+    @property
+    def plot_item(self):
+        return self._plot_item
+
+    @property
+    def plot_curve(self):
+        return self._plot_curve
+
+    @property
+    def btnpin(self):
+        return self._btnpin
+
+    @property
+    def btnsettings(self):
+        return self._btnsettings
+
+    @property
+    def settings(self):
+        return self._plot_item.settings
+
+    @settings.setter
+    def settings(self, newvals):
+        self._plot_item.settings = newvals
+
+class Channel(QObject):
     # emits itself and the new value
     _set_signal = pyqtSignal(object, object)
 
@@ -65,7 +122,7 @@ class Channel(QWidget):
                           'label': '', 'grid': False},
                     'y': {'mode': 'auto', 'min': 0, 'max': 0, 'log': False,
                           'label': '', 'grid': False},
-                    'widget': {'color': '#FF0000'}
+                    'widget': {'color': '#ff0000'}
                     }
         else:
             self._plot_settings = plot_settings
@@ -74,7 +131,7 @@ class Channel(QWidget):
         self._x_values = deque(maxlen=self._retain_last_n_values)
         self._y_values = deque(maxlen=self._retain_last_n_values)
 
-        # entry form representation (settings page in GUI)
+        # entry form representation (settings page in gui)
         self._entry_form = EntryForm(self.label, '',
                                      self.user_edit_properties(), self)
         self._entry_form.sig_save.connect(self.save_changes)
@@ -87,7 +144,7 @@ class Channel(QWidget):
         return self._initialized
 
     def initialize(self):
-        """ Create widgets for this channel """
+        """ create widgets for this channel """
         self._initialized = True
 
         self._entry_form.add_delete_button()
@@ -103,13 +160,13 @@ class Channel(QWidget):
         if self._data_type == bool:
             hbox_radio = QHBoxLayout()
             self._overview_widget.setLayout(hbox_radio)
-            rbOn = QRadioButton('On')
-            self._write_widget = rbOn
-            rbOn.toggled.connect(self.set_value_callback)
-            rbOff = QRadioButton('Off')
-            rbOff.toggle()
-            hbox_radio.addWidget(rbOn)
-            hbox_radio.addWidget(rbOff)
+            rbon = QRadioButton('On')
+            self._write_widget = rbon
+            rbon.toggled.connect(self.set_value_callback)
+            rboff = QRadioButton('Off')
+            rboff.toggle()
+            hbox_radio.addWidget(rbon)
+            hbox_radio.addWidget(rboff)
 
         else:
             vbox_readwrite = QVBoxLayout()
@@ -118,13 +175,13 @@ class Channel(QWidget):
                 # add first row
                 hbox_write = QHBoxLayout()
                 if self._write_mode == 'text':
-                    lblUnit = QLabel(self._unit)
-                    self._unit_labels.append(lblUnit)
-                    txtWrite = QLineEdit(str(self._lower_limit))
-                    txtWrite.returnPressed.connect(self.set_value_callback)
-                    self._write_widget = txtWrite
+                    lblunit = QLabel(self._unit)
+                    self._unit_labels.append(lblunit)
+                    txtwrite = QLineEdit(str(self._lower_limit))
+                    txtwrite.returnPressed.connect(self.set_value_callback)
+                    self._write_widget = txtwrite
                     hbox_write.addWidget(self._write_widget)
-                    hbox_write.addWidget(lblUnit)
+                    hbox_write.addWidget(lblunit)
                 elif self._write_mode == 'dial':
                     dial = ChannelDial()
                     dial.setMaximum(10**self._precision)
@@ -136,39 +193,29 @@ class Channel(QWidget):
             if self._mode in ['read', 'both']:
                 # add readonly second row
                 hbox_read = QHBoxLayout()
-                lblUnit = QLabel(self._unit)
-                self._unit_labels.append(lblUnit)
-                txtRead = QLineEdit()
-                txtRead.setDisabled(True)
-                self._read_widget = txtRead
+                lblunit = QLabel(self._unit)
+                self._unit_labels.append(lblunit)
+                txtread = QLineEdit()
+                txtread.setDisabled(True)
+                self._read_widget = txtread
 
                 hbox_read.addWidget(self._read_widget)
-                hbox_read.addWidget(lblUnit)
+                hbox_read.addWidget(lblunit)
                 vbox_readwrite.addLayout(hbox_read)
 
         # plot widget
-        gb_plot = QGroupBox()
-        gb_plot.setMinimumSize(350, 300)
-        
-        self._plot_item = DateTimePlotWidget(settings=self._plot_settings)
-        self._plot_curve = self._plot_item.curve
 
-        vbox = QVBoxLayout()
-        gb_plot.setLayout(vbox)
-        hbox = QHBoxLayout()
-        btnPin = QPushButton('Pin')
-        btnSettings = QPushButton('Settings')
-        btnPin.clicked.connect(self.set_pin_callback)
-        btnSettings.clicked.connect(self.settings_callback)
-        hbox.addWidget(btnSettings)
-        hbox.addStretch()
-        hbox.addWidget(btnPin)
-        vbox.addWidget(self._plot_item)
-        vbox.addLayout(hbox)
-        self._plot_widget = gb_plot
+        self._plot_widget = ChannelPlotWidget(self)
+        self._plot_curve = self._plot_widget.plot_curve
 
+        self._plot_widget.btnpin.clicked.connect(self.set_pin_callback)
+        self._plot_widget.btnsettings.clicked.connect(self.settings_callback)
 
-    # ---- Entry form ----
+    @property
+    def plot_widget(self):
+        return self._plot_widget
+
+    # ---- entry form ----
 
     def reset_entry_form(self):
         self._entry_form.properties = self.user_edit_properties()
@@ -180,8 +227,8 @@ class Channel(QWidget):
 
     @pyqtSlot(dict)
     def save_changes(self, newvals):
-        """ Validates the user data entered into the channel's Entry Form. 
-            Returns a dictionary of values to update if there are no errors. """
+        """ validates the user data entered into the channel's entry form. 
+            returns a dictionary of values to update if there are no errors. """
         data_type_map = {'Float': float, 'Int': int, 'Bool': bool}
         display_mode_map = {'Float': 'f', 'Scientific': 'e'}
         data_type = data_type_map[newvals['data_type']]
@@ -219,7 +266,7 @@ class Channel(QWidget):
                 if val != '':
                     value = val
                 else:
-                    print('No value entered for {}.'.format(prop_name))
+                    print('no value entered for {}.'.format(prop_name))
                     return
 
             validvals[prop_name] = value
@@ -324,10 +371,10 @@ class Channel(QWidget):
     def delete(self):
         self._sig_delete.emit(self)
         
-    # ---- GUI interaction ----
+    # ---- gui interaction ----
 
     def update(self):
-        """ Update the GUI representation of this channel """
+        """ update the gui representation of this channel """
         self._overview_widget.setTitle(self._label)
         for lbl in self._unit_labels:
             lbl.setText(self._unit)
@@ -338,12 +385,12 @@ class Channel(QWidget):
                 self._plot_widget.setTitle('{}/{}'.format(
                     self._parent_device.label, self._label))
             else:
-                self._plot_widget.setTitle('(Error) {}/{}'.format(
+                self._plot_widget.setTitle('(error) {}/{}'.format(
                     self._parent_device.label, self._label))
 
     @pyqtSlot()
     def set_value_callback(self):
-        """ Function called when user enters a value into this channel's write widget """
+        """ function called when user enters a value into this channel's write widget """
         if self._data_type != bool:
             try:
                 val = self._data_type(self._write_widget.text())
@@ -358,11 +405,11 @@ class Channel(QWidget):
             self._write_widget.setText(str(self._data_type(val)))
             self._set_signal.emit(self, val)
         else:
-            self._set_signal.emit(self, self._write_widget.isChecked())
+            self._set_signal.emit(self, self._write_widget.ischecked())
 
     @pyqtSlot()
     def set_value_callback_dial(self):
-        """ Function called when user scrolls/moves the dial """
+        """ function called when user scrolls/moves the dial """
         value = self._dial_widget.value() / float(self._dial_widget.maximum())
 
         val = self._upper_limit * value
@@ -381,7 +428,7 @@ class Channel(QWidget):
 
     @pyqtSlot()
     def set_pin_callback(self):
-        """ Called when user presses the channel's pin button """
+        """ called when user presses the channel's pin button """
         self._pin_signal.emit(self.parent_device, self)
 
     @pyqtSlot()
@@ -395,7 +442,7 @@ class Channel(QWidget):
     @plot_settings.setter
     def plot_settings(self, newsettings):
         self._plot_settings = newsettings
-        self._plot_item.settings = self._plot_settings
+        self._plot_widget.settings = self._plot_settings
 
     @property
     def x_values(self):
@@ -434,9 +481,9 @@ class Channel(QWidget):
     def clear_data(self):
         self._x_values.clear()
         self._y_values.clear()
-        self._plot_item.setData(0,0)
+        self._plot_widget.clear() #setdata(0,0)
 
-    # ---- Properties ----
+    # ---- properties ----
 
     @property
     def precision(self):
@@ -466,7 +513,7 @@ class Channel(QWidget):
 
     @property
     def displayformat(self):
-        # should not be edited directly. Changed when precision is changed
+        # should not be edited directly. changed when precision is changed
         return self._displayformat
 
     def lock(self):
@@ -631,5 +678,5 @@ class Channel(QWidget):
 
        properties['data_type'] = eval(data_type_str.split("'")[1])
 
-       return Channel(**properties)
+       return channel(**properties)
 
