@@ -1,9 +1,9 @@
-#!/us/MatryoshkaWOM/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# thomas wester <twester@mit.edu>
+# Thomas Wester <twester@mit.edu>
 #
-# channel representation class
+# Channel representation class
 
 import json
 import datetime
@@ -41,8 +41,27 @@ class ChannelWidget(QGroupBox):
         for label in self._unit_labels:
             label.setText(self._channel.unit)
 
+    def clear(self, layout):
+        if layout is not None: 
+            while layout.count():
+                child = layout.takeAt(0)
+                if child.widget():
+                    child.widget().deleteLater()
+                elif child.layout():
+                    self.clear(child)
+
+
     def setup(self):
-        
+        # clear everything from this widget
+        self.clear(self.layout())
+
+        ### HACK -- move the layout to a temp widget, which gets deleted later
+        if self.layout() is not None:
+            QWidget().setLayout(self.layout())
+
+        print('here')
+        print(self._channel.label, self._channel.write_mode)
+
         if self._channel.data_type == bool:
             hbox_radio = QHBoxLayout()
             self.setLayout(hbox_radio)
@@ -314,6 +333,7 @@ class Channel(QObject):
             validvals[prop_name] = value
 
         self._sig_entry_form_ok.emit(self, validvals)
+        self._overview_widget.setup()
 
     @property
     def sig_entry_form_ok(self):

@@ -249,7 +249,8 @@ class MainWindow(QMainWindow):
         self._statusbar.showMessage(text)
         self._messagelog.append(time.strftime('[%Y-%m-%d %H:%M:%S] ', time.localtime()) + text)
 
-    def clearLayout(self, layout):
+    @staticmethod
+    def clearLayout(layout):
         """ Removes all widgets from a QLayout. Does not delete the widget """
         while layout.count():
             child = layout.takeAt(0)
