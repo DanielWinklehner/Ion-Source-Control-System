@@ -17,9 +17,102 @@ from gui.widgets.DateTimePlotWidget import DateTimePlotWidget
 from gui.widgets.EntryForm import EntryForm
 from gui.widgets.ChannelDial import ChannelDial
 
-class ChannelWidget():
-    # TODO
-    pass
+class ChannelWidget(QGroupBox):
+
+    _sig_set_value = pyqtSignal(object, object) 
+
+    def __init__(self, channel):
+        super().__init__(channel.label)
+        self._channel = channel
+
+        self._unit_labels = []
+        self._write_widget = None
+        self._dial_widget = None
+        self._read_widget = None
+
+        self.setup()
+        
+    @property
+    def sig_set_value(self):
+        return self._sig_set_value
+
+    def update(self):
+        self.setTitle(self._channel.label)
+        for label in self._unit_labels:
+            label.setText(self._channel.unit)
+
+    def setup(self):
+        
+        if self._channel.data_type == bool:
+            hbox_radio = QHBoxLayout()
+            self.setLayout(hbox_radio)
+            rbon = QRadioButton('On')
+            self._write_widget = rbon
+            rbon.toggled.connect(self.set_value_callback)
+            rboff = QRadioButton('Off')
+            rboff.toggle()
+            hbox_radio.addWidget(rbon)
+            hbox_radio.addWidget(rboff)
+
+        else:
+            vbox_readwrite = QVBoxLayout()
+            self.setLayout(vbox_readwrite)
+            if self._channel.mode in ['write', 'both']:
+                # add first row
+                hbox_write = QHBoxLayout()
+                if self._channel.write_mode == 'text':
+                    lblunit = QLabel(self._channel.unit)
+                    self._unit_labels.append(lblunit)
+                    txtwrite = QLineEdit(str(self._channel.lower_limit))
+                    txtwrite.returnPressed.connect(self.set_value_callback)
+                    self._write_widget = txtwrite
+                    hbox_write.addWidget(self._write_widget)
+                    hbox_write.addWidget(lblunit)
+                elif self._channel.write_mode == 'dial':
+                    dial = ChannelDial()
+                    dial.setMaximum(10**self._channel.precision)
+                    self._dial_widget = dial
+                    self._dial_widget.valueChanged.connect(self.set_value_callback)
+                    hbox_write.addWidget(self._dial_widget)
+                vbox_readwrite.addLayout(hbox_write)
+
+            if self._channel.mode in ['read', 'both']:
+                # add readonly second row
+                hbox_read = QHBoxLayout()
+                lblunit = QLabel(self._channel.unit)
+                self._unit_labels.append(lblunit)
+                txtread = QLineEdit()
+                txtread.setDisabled(True)
+                self._read_widget = txtread
+
+                hbox_read.addWidget(self._read_widget)
+                hbox_read.addWidget(lblunit)
+                vbox_readwrite.addLayout(hbox_read)
+
+    def set_value_callback(self):
+        if self._channel.data_type == bool:
+            val = self._write_widget.isChecked()
+
+        else:
+            if self._channel.write_mode == 'text':
+                try:
+                    val = self._channel.data_type(self._write_widget.text())
+                except:
+                    print('bad value entered')
+                    return
+
+                self._write_widget.setText(str(self._channel.data_type(val)))
+
+            elif self._channel.write_mode == 'dial':
+                value = self._dial_widget.value() / float(self._dial_widget.maximum())
+
+                val = self._channel.upper_limit * value
+
+            if val > self._channel.upper_limit or val < self._channel.lower_limit:
+                print('value exceeds limits')
+                return
+
+        self._sig_set_value.emit(self._channel, val)
 
 class ChannelPlotWidget(QGroupBox):
     
@@ -150,61 +243,10 @@ class Channel(QObject):
         self._entry_form.add_delete_button()
 
         # overview widget
-        gb = QGroupBox(self._label)
-        self._overview_widget = gb
-        self._unit_labels = []
-        self._write_widget = None
-        self._dial_widget = None
-        self._read_widget = None
-
-        if self._data_type == bool:
-            hbox_radio = QHBoxLayout()
-            self._overview_widget.setLayout(hbox_radio)
-            rbon = QRadioButton('On')
-            self._write_widget = rbon
-            rbon.toggled.connect(self.set_value_callback)
-            rboff = QRadioButton('Off')
-            rboff.toggle()
-            hbox_radio.addWidget(rbon)
-            hbox_radio.addWidget(rboff)
-
-        else:
-            vbox_readwrite = QVBoxLayout()
-            self._overview_widget.setLayout(vbox_readwrite)
-            if self._mode in ['write', 'both']:
-                # add first row
-                hbox_write = QHBoxLayout()
-                if self._write_mode == 'text':
-                    lblunit = QLabel(self._unit)
-                    self._unit_labels.append(lblunit)
-                    txtwrite = QLineEdit(str(self._lower_limit))
-                    txtwrite.returnPressed.connect(self.set_value_callback)
-                    self._write_widget = txtwrite
-                    hbox_write.addWidget(self._write_widget)
-                    hbox_write.addWidget(lblunit)
-                elif self._write_mode == 'dial':
-                    dial = ChannelDial()
-                    dial.setMaximum(10**self._precision)
-                    self._dial_widget = dial
-                    self._dial_widget.valueChanged.connect(self.set_value_callback_dial)
-                    hbox_write.addWidget(self._dial_widget)
-                vbox_readwrite.addLayout(hbox_write)
-
-            if self._mode in ['read', 'both']:
-                # add readonly second row
-                hbox_read = QHBoxLayout()
-                lblunit = QLabel(self._unit)
-                self._unit_labels.append(lblunit)
-                txtread = QLineEdit()
-                txtread.setDisabled(True)
-                self._read_widget = txtread
-
-                hbox_read.addWidget(self._read_widget)
-                hbox_read.addWidget(lblunit)
-                vbox_readwrite.addLayout(hbox_read)
+        self._overview_widget = ChannelWidget(self)
+        self._overview_widget.sig_set_value.connect(self.set_value_callback)
 
         # plot widget
-
         self._plot_widget = ChannelPlotWidget(self)
         self._plot_curve = self._plot_widget.plot_curve
 
@@ -375,10 +417,8 @@ class Channel(QObject):
 
     def update(self):
         """ update the gui representation of this channel """
-        self._overview_widget.setTitle(self._label)
-        for lbl in self._unit_labels:
-            lbl.setText(self._unit)
-
+        self._overview_widget.update() 
+        
         self._plot_widget.layout().itemAt(0).widget().setLabel('left', '{} [{}]'.format(self._label, self._unit))
         if self._parent_device is not None:
             if self._parent_device.error_message == '':
@@ -388,43 +428,10 @@ class Channel(QObject):
                 self._plot_widget.setTitle('(error) {}/{}'.format(
                     self._parent_device.label, self._label))
 
-    @pyqtSlot()
-    def set_value_callback(self):
+    @pyqtSlot(object, object)
+    def set_value_callback(self, channel, value):
         """ function called when user enters a value into this channel's write widget """
-        if self._data_type != bool:
-            try:
-                val = self._data_type(self._write_widget.text())
-            except:
-                print('bad value entered')
-                return
-
-            if val > self._upper_limit or val < self._lower_limit:
-                print('value exceeds limits')
-                return
-
-            self._write_widget.setText(str(self._data_type(val)))
-            self._set_signal.emit(self, val)
-        else:
-            self._set_signal.emit(self, self._write_widget.ischecked())
-
-    @pyqtSlot()
-    def set_value_callback_dial(self):
-        """ function called when user scrolls/moves the dial """
-        value = self._dial_widget.value() / float(self._dial_widget.maximum())
-
-        val = self._upper_limit * value
-
-        try:
-            val = self._data_type(val)
-        except:
-            print('bad value entered')
-            return
-
-        if val > self._upper_limit or val < self._lower_limit:
-            print('value exceeds limits')
-            return
-
-        self._set_signal.emit(self, val)
+        self._set_signal.emit(channel, value)
 
     @pyqtSlot()
     def set_pin_callback(self):
@@ -484,6 +491,10 @@ class Channel(QObject):
         self._plot_widget.clear() #setdata(0,0)
 
     # ---- properties ----
+
+    @property
+    def read_widget(self):
+        return self._overview_widget._read_widget
 
     @property
     def precision(self):

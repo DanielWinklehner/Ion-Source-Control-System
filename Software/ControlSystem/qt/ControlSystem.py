@@ -642,13 +642,13 @@ class ControlSystem():
             # update read values on overview page
             for name, device in self._devices.items():
                 for chname, channel in device.channels.items():
-                    if channel._read_widget is None:
+                    if channel.read_widget is None:
                         continue
 
                     if channel.data_type in [int, float]:
                         fmt = '{:' + channel.displayformat + '}'
                         val = str(fmt.format(channel.value))
-                        channel._read_widget.setText(val)
+                        channel.read_widget.setText(val)
                         
         elif self._window.current_tab == 'plots':
             # update the plotted channels
