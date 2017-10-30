@@ -653,14 +653,10 @@ class ControlSystem():
         elif self._window.current_tab == 'plots':
             # update the plotted channels
             for device_name, device in self._devices.items():
-                #for channel_name, channel in device.channels.items():
                 for channel in self._plotted_channels:
                     channel._plot_curve.setData(channel.x_values, channel.y_values,
                                                 clear=True, _callsync='off')
                             
-                            #self._x_values[(channel.parent_device.name, channel.name)],
-                            #self._y_values[(channel.parent_device.name, channel.name)],
-                            #clear=True, _callsync='off')
         app.processEvents()
 
     def reset_pinned_plot_callback(self):
@@ -674,7 +670,7 @@ class ControlSystem():
         
         # update plot settings
         x = self._window._gbpinnedplot.layout().itemAt(0).widget()
-        x.setLabel('left', '{} [{}]'.format(channel.label, channel.unit))
+        x._plot.setLabel('left', '{} [{}]'.format(channel.label, channel.unit))
         x.settings = channel.plot_settings
         self._window._gbpinnedplot.setTitle('{}.{}'.format(device.label, channel.label))
 

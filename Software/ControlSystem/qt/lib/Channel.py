@@ -59,9 +59,6 @@ class ChannelWidget(QGroupBox):
         if self.layout() is not None:
             QWidget().setLayout(self.layout())
 
-        print('here')
-        print(self._channel.label, self._channel.write_mode)
-
         if self._channel.data_type == bool:
             hbox_radio = QHBoxLayout()
             self.setLayout(hbox_radio)
@@ -439,7 +436,7 @@ class Channel(QObject):
         """ update the gui representation of this channel """
         self._overview_widget.update() 
         
-        self._plot_widget.layout().itemAt(0).widget().setLabel('left', '{} [{}]'.format(self._label, self._unit))
+        self._plot_widget.layout().itemAt(0).widget()._plot.setLabel('left', '{} [{}]'.format(self._label, self._unit))
         if self._parent_device is not None:
             if self._parent_device.error_message == '':
                 self._plot_widget.setTitle('{}/{}'.format(
