@@ -200,7 +200,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-        
+            
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -221,7 +221,7 @@ class ControlSystem():
                                             device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        
+         
         ## Set up communication pipes.
         self._keep_communicating = False
         self._polling_rate = 30.0
@@ -1005,9 +1005,6 @@ if __name__ == '__main__':
     app.aboutToQuit.connect(cs.on_quit_button)
 
     mydebug = False
-
-    #cs.add_device(dummy_device(1, "95432313837351706152"))
-    #cs.add_device(dummy_device(2, "95433343933351B012C2"))
 
     cs.run()
     sys.exit(app.exec_())

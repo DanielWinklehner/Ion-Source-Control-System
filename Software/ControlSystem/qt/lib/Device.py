@@ -71,6 +71,7 @@ class DeviceWidget(QWidget):
             self._txtretry.setText('Retrying in {} seconds...'.format(self._retry_time - i))
             time.sleep(1)
         self._device.unlock()
+        self._txtretry.setText('Retrying')
 
     def hide_error_message(self):
         if self._hasMessage:

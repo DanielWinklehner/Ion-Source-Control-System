@@ -59,9 +59,6 @@ class ChannelWidget(QGroupBox):
         if self.layout() is not None:
             QWidget().setLayout(self.layout())
 
-        print('here')
-        print(self._channel.label, self._channel.write_mode)
-
         if self._channel.data_type == bool:
             hbox_radio = QHBoxLayout()
             self.setLayout(hbox_radio)
@@ -88,7 +85,7 @@ class ChannelWidget(QGroupBox):
                     hbox_write.addWidget(self._write_widget)
                     hbox_write.addWidget(lblunit)
                 elif self._channel.write_mode == 'dial':
-                    dial = ChannelDial()
+                    dial = ChannelDial(self._channel)
                     dial.setMaximum(10**self._channel.precision)
                     self._dial_widget = dial
                     self._dial_widget.valueChanged.connect(self.set_value_callback)
