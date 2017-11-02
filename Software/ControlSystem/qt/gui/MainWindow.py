@@ -258,18 +258,3 @@ class MainWindow(QMainWindow):
                 child.widget().setParent(None)
             elif child.layout():
                 self.clearLayout(child)
-
-# ----- Custom Controls ----- #
-class QPushButtonObj(QPushButton):
-    """ QPushButton which returns an object on click """
-    clicked_ = pyqtSignal(object)
-
-    def __init__(self, text, obj):
-        super().__init__()
-        self.obj = obj
-        self.setText(text)
-        self.clicked.connect(self.on_clicked)
-
-    @pyqtSlot()
-    def on_clicked(self):
-        self.clicked_.emit(self.obj)

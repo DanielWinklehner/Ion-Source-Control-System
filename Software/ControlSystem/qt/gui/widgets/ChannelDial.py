@@ -55,6 +55,7 @@ class ChannelDial(QWidget):
             print('bad value entered')
             return
 
+        # this indirectly calls on_dial_value_changed, which sends the signal and formats the text box
         self._dial.setValue( (val / self._channel.upper_limit) * self.maximum())
 
     @pyqtSlot(object)
