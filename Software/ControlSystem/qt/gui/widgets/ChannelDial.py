@@ -20,6 +20,8 @@ class ChannelDial(QWidget):
         self._dial.valueChanged.connect(self.on_dial_value_changed)
 
         self._txtWrite = QLineEdit()
+        self._txtWrite.returnPressed.connect(self.on_text_return_pressed)
+
         self._lblUnit = QLabel(self._channel.unit)
 
         hbox = QHBoxLayout()
@@ -40,6 +42,20 @@ class ChannelDial(QWidget):
 
     def update(self):
         self._lblUnit.setText(self._channel.unit)
+
+    @pyqtSlot()
+    def on_text_return_pressed(self):
+        try:
+            val = self._channel.data_type(self._txtWrite.text())
+        except:
+            print('bad value entered')
+            return
+
+        if val > self._channel.upper_limit or val < self._channel.lower_limit:
+            print('bad value entered')
+            return
+
+        self._dial.setValue( (val / self._channel.upper_limit) * self.maximum())
 
     @pyqtSlot(object)
     def on_dial_value_changed(self, val):
