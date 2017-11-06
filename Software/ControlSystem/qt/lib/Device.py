@@ -9,7 +9,8 @@ import json
 import time
 import threading
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QGroupBox, QLabel, QFrame
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, \
+        QGroupBox, QLabel, QFrame
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject
 
 from .Channel import Channel
