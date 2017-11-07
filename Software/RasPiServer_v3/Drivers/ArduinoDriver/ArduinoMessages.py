@@ -171,4 +171,3 @@ def parse_arduino_output_message(output_messages):
                 result[channel_name] = value
 
     return result
-

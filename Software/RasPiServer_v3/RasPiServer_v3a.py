@@ -9,6 +9,7 @@ import threading
 import json
 from MIST1DeviceDriver import MIST1DeviceDriver, driver_mapping
 from SerialCOM import *
+from HtmlPage import * 
 
 
 class MyManager(BaseManager):
@@ -250,7 +251,7 @@ def kill():
 def all_devices():
 
     global _ports_by_ids
-    return json.dumps(_ports_by_ids)
+    return devices_as_html(json.dumps(_ports_by_ids))
 
 
 @app.route("/initialize/")
