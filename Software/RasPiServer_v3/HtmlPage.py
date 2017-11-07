@@ -1,23 +1,24 @@
 import json
 
-html_header = '''
-<html>
-    <body>
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Driver</th>
-                <th>Port</th>
-            </tr>
-'''
-
-html_footer = '''
-        </table>
-    </body>
-</html>
-'''
-
 def devices_as_html(devstr):
+
+    html_header = '''
+    <html>
+        <body>
+            <table>
+                <tr>
+                    <th>ID</th>
+                    <th>Driver</th>
+                    <th>Port</th>
+                </tr>
+    '''
+
+    html_footer = '''
+            </table>
+        </body>
+    </html>
+    '''
+
     devdict = json.loads(devstr)
 
     htmlstr = html_header 

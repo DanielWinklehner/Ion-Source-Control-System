@@ -247,11 +247,15 @@ def kill():
     return "Shutting down..."
 
 
+@app.route("/device/active_table")
+def all_devices_table():
+    return devices_as_html(all_devices())
+
 @app.route("/device/active/")
 def all_devices():
 
     global _ports_by_ids
-    return devices_as_html(json.dumps(_ports_by_ids))
+    return json.dumps(_ports_by_ids)
 
 
 @app.route("/initialize/")
