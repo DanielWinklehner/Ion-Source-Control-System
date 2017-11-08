@@ -1,7 +1,7 @@
 import json
 from flask import *
 
-def devices_as_html(devstr):
+def devices_as_html(_devstr, querystr=''):
 
     html_header = '''
     <html>
@@ -14,6 +14,7 @@ def devices_as_html(devstr):
                     <th>ID</th>
                     <th>Driver</th>
                     <th>Port</th>
+                    <th>Read Channels</th>
                 </tr>
     '''.format(url_for('static',filename='styles/style.css'))
 
@@ -23,22 +24,39 @@ def devices_as_html(devstr):
     </html>
     '''
 
-    devdict = json.loads(devstr)
-
     htmlstr = html_header 
+    devstr = ''
+    
+    try:
+        devdict = json.loads(_devstr)
+        querydict = json.loads(querystr)
+    except:
+        return _devstr, querystr
 
     for dev_id, dev_info in devdict.iteritems():
-        devstr = '            <tr>\n'
-        devstr += '                <th>{}</th>\n'.format(dev_id)
+        deventries = []
+        deventries.append(dev_id)
         for key, val in dev_info.iteritems():
-            devstr += '                <th>{}</th>\n'.format(val)
+            deventries.append(val)
 
-        devstr += '            </tr>\n'
-        htmlstr += devstr
+        deventries.append(', '.join([ch_name for ch_name, _  in querydict[dev_id].iteritems()]))
 
+        devstr += tableify(deventries)
+
+    htmlstr += devstr
+        
     htmlstr += html_footer
-
     return htmlstr
+
+def tableify(entries=()):
+    outstr = '<tr>\n'
+
+    for entry in entries:
+        outstr += '<th>{}</th>\n'.format(entry)
+
+    outstr += '</tr>\n'
+
+    return outstr
 
 if __name__ == '__main__':
     samplestr = '''

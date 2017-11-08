@@ -249,7 +249,10 @@ def kill():
 
 @app.route("/device/active_table/")
 def all_devices_table():
-    return devices_as_html(all_devices())
+    try:
+        return devices_as_html(all_devices(), currentResponses)
+    except:
+        return devices_as_html(all_devices())
 
 @app.route("/device/active/")
 def all_devices():
@@ -427,8 +430,14 @@ def query_device():
     except Exception as e:
         print("Something went wrong! Exception: {}".format(e))
 
-    return json.dumps(devices_responses)
+    global currentResponses
+    currentResponses = json.dumps(devices_responses)
+    return currentResponses
+    #return json.dumps(devices_responses)
 
+#@app.route("/device/query_table/")
+#def query_table():
+#    return currentResponses
 
 def mp_worker(args):
     port, messages = args
