@@ -247,7 +247,7 @@ def kill():
     return "Shutting down..."
 
 
-@app.route("/device/active_table")
+@app.route("/device/active_table/")
 def all_devices_table():
     return devices_as_html(all_devices())
 

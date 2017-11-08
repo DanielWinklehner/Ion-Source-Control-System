@@ -1,9 +1,13 @@
 import json
+from flask import *
 
 def devices_as_html(devstr):
 
     html_header = '''
     <html>
+        <head>
+            <link rel="stylesheet" type="text/css" href="{}">
+        </head>
         <body>
             <table>
                 <tr>
@@ -11,7 +15,7 @@ def devices_as_html(devstr):
                     <th>Driver</th>
                     <th>Port</th>
                 </tr>
-    '''
+    '''.format(url_for('static',filename='styles/style.css'))
 
     html_footer = '''
             </table>
