@@ -224,6 +224,7 @@ class ControlSystem():
          
         ## Set up communication pipes.
         self._keep_communicating = False
+        self._retry_devices = False
         self._polling_rate = 30.0
         self._com_period = 1.0 / self._polling_rate
 
@@ -232,6 +233,7 @@ class ControlSystem():
         self._procedures = {}
         self._critical_procedures = {}
         self._plotted_channels = []
+        self._locked_devices = []
 
         # keep persistent communicator thread
         self._com_thread = QThread() 
@@ -271,6 +273,11 @@ class ControlSystem():
         # Start the query process:
         self._com_process.start()
 
+        # this thread auto retries device connection every 30 seconds
+        self._retry_devices = True
+        self._retry_thread = threading.Thread(target=self.update_device_retry_labels, args=())
+        self._retry_thread.start()
+
     def shutdown_communication_threads(self):
         self._keep_communicating = False
         try:
@@ -283,6 +290,12 @@ class ControlSystem():
         try:
             self._communicator.terminate()
             self._com_thread.quit()
+        except AttributeError:
+            pass
+
+        self._retry_devices = False
+        try:
+            del self._retry_thread
         except AttributeError:
             pass
 
@@ -311,14 +324,20 @@ class ControlSystem():
 
             if "ERROR" in parsed_response[device_id]:
                 device.lock(message=parsed_response[device_id])
+                if not device in self._locked_devices:
+                    self._locked_devices.append(device)
                 continue
 
-            device._overview_widget.hide_error_message()
+            if device in self._locked_devices: 
+                self._locked_devices.remove(device)
+                device._overview_widget.hide_error_message()
 
             for channel_name, value in parsed_response[device_id].items():
                 channel = device.get_channel_by_name(channel_name)
                 if channel is None:
                     device.lock(message='Could not find channel with name {}.'.format(channel_name))
+                    if not device in self._locked_devices:
+                        self._locked_devices.append(device)
                     continue
 
                 # Scale value back to channel
@@ -386,6 +405,21 @@ class ControlSystem():
         # waits for an answer.
         new_set_thread = threading.Thread(target=self.update_device_on_server, args=(_data,))
         new_set_thread.start()
+
+    def update_device_retry_labels(self):
+        while self._retry_devices:
+            tr = 30
+            for i in range(tr):
+                tr -= 1
+                for device in self._locked_devices:
+                    device._overview_widget.set_retry_label(tr)
+                time.sleep(1)
+                if not self._retry_devices:
+                    return
+
+            for device in self._locked_devices:
+                device.unlock()
+            self.device_or_channel_changed()
 
     def update_device_on_server(self, _data):
         """ Sends POST request to RasPi server with new device/channel info """
@@ -615,6 +649,10 @@ class ControlSystem():
         self.shutdown_communication_threads()
         self._window.ui.btnStartPause.setText('Start Polling')
         self._window.ui.btnStop_2.setEnabled(False)
+        for device in self._locked_devices:
+            device.unlock()
+            device._overview_widget.hide_error_message()
+        self._locked_devices = []
 
         for device_name, device in self._devices.items():
             device.error_message = ''

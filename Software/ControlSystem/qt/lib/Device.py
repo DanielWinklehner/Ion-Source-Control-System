@@ -50,7 +50,7 @@ class DeviceWidget(QWidget):
             self._txtmessage.setWordWrap(True)
             vbox.addWidget(self._txtmessage)
 
-            self._txtretry = QLabel('Retrying in {} seconds...'.format(self._retry_time))
+            self._txtretry = QLabel() #'Retrying in {} seconds...'.format(self._retry_time))
             vbox.addWidget(self._txtretry)
 
             self.setEnabled(False)
@@ -64,15 +64,20 @@ class DeviceWidget(QWidget):
             # probably ok since the thread isn't doing anything critical
             del self._retry_thread
 
-        self._retry_thread = threading.Thread(target=self.test_update_retry_label, args=())
-        self._retry_thread.start()
+        #self._retry_thread = threading.Thread(target=self.test_update_retry_label, args=())
+        #self._retry_thread.start()
 
+    '''
     def test_update_retry_label(self):
         for i in range(self._retry_time):
             self._txtretry.setText('Retrying in {} seconds...'.format(self._retry_time - i))
             time.sleep(1)
         self._device.unlock()
         self._txtretry.setText('Retrying')
+    '''
+
+    def set_retry_label(self, time):
+        self._txtretry.setText('Retrying in {} seconds...'.format(str(time)))
 
     def hide_error_message(self):
         if self._hasMessage:
@@ -114,7 +119,7 @@ class Device(QObject):
         self._overview_order = overview_order
 
         self._error_message = ''
-        self._retry_time = 10
+        self._retry_time = 30
 
         self._entry_form = EntryForm(self._label, '', self.user_edit_properties(), self)
         self._entry_form.sig_save.connect(self.save_changes)
