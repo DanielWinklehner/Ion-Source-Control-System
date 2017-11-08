@@ -583,6 +583,7 @@ class ControlSystem():
         # if the device gets disconnected and reconnected, need to send a message to the server
         device.sig_update_server.connect(self.device_or_channel_changed)
 
+        # return true if successful
         return True
 
         """

@@ -6,8 +6,7 @@ New features:
  - No interruption on device disconnect (requires newest RasPi server)
  - Procedures
 
-Features in Progress:
- - Device/Channel editor
+Features from the old control system that haven't been implemented:
  - h5 logging
 
 Requirements:

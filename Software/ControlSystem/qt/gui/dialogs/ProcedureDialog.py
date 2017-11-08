@@ -138,13 +138,13 @@ class ProcedureDialog(QDialog):
                 self.ui.txtRuleVal.setText(str(rule['value']))
                 if rule['comp'] == operator.lt:
                     self.ui.cbRuleCompare.setCurrentIndex(0)
-                if rule['comp'] == operator.gt:
+                elif rule['comp'] == operator.gt:
                     self.ui.cbRuleCompare.setCurrentIndex(1)
-                if rule['comp'] == operator.eq:
+                elif rule['comp'] == operator.eq:
                     self.ui.cbRuleCompare.setCurrentIndex(2)
-                if rule['comp'] == operator.le:
+                elif rule['comp'] == operator.le:
                     self.ui.cbRuleCompare.setCurrentIndex(3)
-                if rule['comp'] == operator.ge:
+                elif rule['comp'] == operator.ge:
                     self.ui.cbRuleCompare.setCurrentIndex(4)
 
             else:
