@@ -26,12 +26,12 @@ class DeviceWidget(QWidget):
         self._layout = QVBoxLayout()
         self.setLayout(self._layout)
 
-        gb = QGroupBox(self._device.label)
-        self._layout.addWidget(gb)
+        self._gb = QGroupBox(self._device.label)
+        self._layout.addWidget(self._gb)
         self._layout.addStretch()
 
         self._gblayout = QVBoxLayout()
-        gb.setLayout(self._gblayout)
+        self._gb.setLayout(self._gblayout)
 
         self._hasMessage = False
         self._retry_time = self._device._retry_time
@@ -50,11 +50,19 @@ class DeviceWidget(QWidget):
             self._txtmessage.setWordWrap(True)
             vbox.addWidget(self._txtmessage)
 
-            self._txtretry = QLabel() #'Retrying in {} seconds...'.format(self._retry_time))
+            self._txtretry = QLabel('Retrying ...') #in {} seconds...'.format(self._retry_time))
             vbox.addWidget(self._txtretry)
 
-            self.setEnabled(False)
+            self._gb.setEnabled(False)
             self._layout.insertWidget(0, self._messageframe)
+
+            self._hbox = QHBoxLayout()
+            self._btnRetry = QPushButton('Force Retry')
+            self._btnRetry.clicked.connect(self.force_retry_connect)
+            self._hbox.addStretch()
+            self._hbox.addWidget(self._btnRetry)
+            self._hbox.addStretch()
+            self._layout.insertLayout(2, self._hbox)
 
             self._hasMessage = True
 
@@ -66,6 +74,9 @@ class DeviceWidget(QWidget):
 
         #self._retry_thread = threading.Thread(target=self.test_update_retry_label, args=())
         #self._retry_thread.start()
+
+    def force_retry_connect(self):
+        self._device.unlock()
 
     '''
     def test_update_retry_label(self):
@@ -83,8 +94,11 @@ class DeviceWidget(QWidget):
         if self._hasMessage:
             wdg = self._layout.itemAt(0).widget()
             wdg.deleteLater()
-            self.setEnabled(True)
+            self._gb.setEnabled(True)
             self._hasMessage = False
+
+            self._btnRetry.deleteLater()
+            self._hbox.setParent(None)
 
     @property
     def gblayout(self):
