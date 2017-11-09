@@ -122,7 +122,7 @@ class ChannelWidget(QGroupBox):
             elif self._channel.write_mode == 'dial':
                 value = self._dial_widget.value() / float(self._dial_widget.maximum())
 
-                val = self._channel.upper_limit * value
+                val = (self._channel.upper_limit - self._channel.lower_limit) * value + self._channel.lower_limit
 
             if val > self._channel.upper_limit or val < self._channel.lower_limit:
                 print('value exceeds limits')

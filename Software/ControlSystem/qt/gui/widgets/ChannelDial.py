@@ -56,13 +56,14 @@ class ChannelDial(QWidget):
             return
 
         # this indirectly calls on_dial_value_changed, which sends the signal and formats the text box
-        self._dial.setValue( (val / self._channel.upper_limit) * self.maximum())
+        self._dial.setValue(val / (self._channel.upper_limit - self._channel.lower_limit) * self.maximum())
+        #self._dial.setValue( (val / self._channel.upper_limit) * self.maximum())
 
     @pyqtSlot(int)
     def on_dial_value_changed(self, val):
         self.valueChanged.emit(val)
-        dispval = self._channel.upper_limit * self._channel.data_type(val) / self.maximum()
-        self._txtWrite.setText('{1:.{0}f}'.format(self._channel.precision, dispval))
+        dispval = val / (self._channel.upper_limit - self._channel.lower_limit) * self.maximum())
+        self._txtWrite.setText('{1:.{0}{2}}'.format(self._channel.precision, dispval, self._channel.display_mode))
 
     @property
     def dial(self):

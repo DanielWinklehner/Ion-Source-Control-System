@@ -322,7 +322,8 @@ class ControlSystem():
             if device.locked or device_id not in parsed_response.keys():
                 continue
 
-            if "ERROR" in parsed_response[device_id]:
+            #if "ERROR" in parsed_response[device_id]:
+            if any(resp in parsed_response[device_id] for resp in ("ERROR", "TIMEOUT"):
                 device.lock(message=parsed_response[device_id])
                 if not device in self._locked_devices:
                     self._locked_devices.append(device)

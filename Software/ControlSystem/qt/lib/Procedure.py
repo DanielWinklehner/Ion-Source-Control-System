@@ -372,8 +372,8 @@ class PidProcedure(Procedure):
         self._pid_thread.started.connect(self._pid.run)
         self._pid_thread.finished.connect(self.on_pid_thread_finished)
 
-        self._readfmt = '{' + '0:.{}f'.format(read_channel.precision) + '}'
-        self._writefmt = '{' + '0:.{}f'.format(write_channel.precision) + '}'
+        self._readfmt = '{' + '0:.{}{}'.format(read_channel.precision, read_channel.display_mode) + '}'
+        self._writefmt = '{' + '0:.{}{}'.format(write_channel.precision, write_channel.display_mode) + '}'
 
     def initialize(self):
         gb = QGroupBox(self._title)

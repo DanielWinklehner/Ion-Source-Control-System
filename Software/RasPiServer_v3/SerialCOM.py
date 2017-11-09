@@ -59,7 +59,7 @@ class SerialCOM(object):
 	    if message[1]:
 
                 start_time = time.time()
-                while True and not (time.time() - start_time) > self._timeout:
+                while not (time.time() - start_time) > self._timeout:
                     resp = self._ser.read(1)
                     if resp:
                         response += bytes(resp)
@@ -69,6 +69,8 @@ class SerialCOM(object):
                             # Handle MFC Readout (read in two more bytes for checksum and break)
                             response += bytes(self._ser.read(2))
                             break
+                else: # thanks, python
+                    response += b'TIMEOUT'
 
             else:
                 response += b"Didn't wait :P"
