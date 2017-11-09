@@ -460,12 +460,20 @@ class PidProcedure(Procedure):
 
     @pyqtSlot()
     def on_start_click(self):
-        self._txtLog.setText('')
-        self._btnStart.setEnabled(False)
-        self._btnEdit.setEnabled(False)
-        self._btnDelete.setEnabled(False)
-        self._btnStop.setEnabled(True)
-        self._pid_thread.start()
+        if self._btnStart.text() == 'Start':
+            self._txtLog.setText('')
+            #self._btnStart.setEnabled(False)
+            self._btnStart.setText('Pause')
+            self._btnEdit.setEnabled(False)
+            self._btnDelete.setEnabled(False)
+            self._btnStop.setEnabled(True)
+            self._pid_thread.start()
+        elif self._btnStart.text() == 'Pause':
+            self._pid.pause()
+            self._btnStart.text() == 'Resume'
+        elif self._btnStart.text() == 'Resume':
+           self._pid.unpause()
+           self._btnStart.text() == 'Pause'
 
     @pyqtSlot()
     def on_stop_click(self):

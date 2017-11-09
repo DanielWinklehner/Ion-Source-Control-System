@@ -24,12 +24,17 @@ class Pid(QObject):
     @pyqtSlot()
     def run(self):
         self._terminate = False
+        self._pause = False
         prev_err = 0.
         integral = 0.
         ma_count = 0
         warmup_count = 0
         ma_sum_values = 0.0
         while not self._terminate:
+
+            if self._pause:
+                time.sleep(self._dt)
+                continue
 
             if ma_count < self._ma:
                 ma_count += 1
@@ -60,6 +65,14 @@ class Pid(QObject):
     @pyqtSlot()
     def terminate(self):
         self._terminate = True
+
+    @pyqtSlot()
+    def pause(self):
+        self._pause = True
+
+    @pyqtSlot()
+    def unpause(self):
+        self._pause = False
 
     @property
     def set_signal(self):
