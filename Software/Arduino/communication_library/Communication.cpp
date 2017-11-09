@@ -348,9 +348,6 @@ void mist1::Communication::respond_to_input_message() {
             
             char * buff = float2s(valueToOutput, precisions[channelIndex]);
 
-            //static char error[4] = 
-            
-            
             char precisionErrorString[4] = {'E', 'R', 'R', '2'};
 
             // Terrible way to do this.

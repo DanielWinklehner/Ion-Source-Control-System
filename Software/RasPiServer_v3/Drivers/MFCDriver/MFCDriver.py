@@ -86,7 +86,7 @@ class MFCDriver:
         else:
             msg += "?"
 
-        print(type(data_type), isinstance(data_type, float))
+        #print(type(data_type), isinstance(data_type, float))
 
         if value is not None and msg_type:
             # Handle the numerical values
@@ -151,7 +151,7 @@ class MFCDriver:
             if parsed_message['acknowledged']:
 
                 drivers_response_to_server[channel_id] = float(parsed_message['value'])
-                print(parsed_message['value'])
+                #print(parsed_message['value'])
 
             else:
 

@@ -39,7 +39,10 @@ def devices_as_html(_devstr, querystr=''):
         for key, val in dev_info.iteritems():
             deventries.append(val)
 
-        deventries.append(', '.join([ch_name for ch_name, _  in querydict[dev_id].iteritems()]))
+        try:
+            deventries.append(', '.join([ch_name for ch_name, _  in querydict[dev_id].iteritems()]))
+        except KeyError:
+            deventries.append('No channels?')
 
         devstr += tableify(deventries)
 
