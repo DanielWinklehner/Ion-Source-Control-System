@@ -62,7 +62,7 @@ class ChannelDial(QWidget):
     @pyqtSlot(int)
     def on_dial_value_changed(self, val):
         self.valueChanged.emit(val)
-        dispval = val / (self._channel.upper_limit - self._channel.lower_limit) * self.maximum())
+        dispval = val / (self._channel.upper_limit - self._channel.lower_limit) * self.maximum()
         self._txtWrite.setText('{1:.{0}{2}}'.format(self._channel.precision, dispval, self._channel.display_mode))
 
     @property

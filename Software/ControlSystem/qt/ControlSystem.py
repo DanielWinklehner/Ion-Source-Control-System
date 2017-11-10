@@ -323,7 +323,7 @@ class ControlSystem():
                 continue
 
             #if "ERROR" in parsed_response[device_id]:
-            if any(resp in parsed_response[device_id] for resp in ("ERROR", "TIMEOUT"):
+            if any(resp in parsed_response[device_id] for resp in ("ERROR", "TIMEOUT")):
                 device.lock(message=parsed_response[device_id])
                 if not device in self._locked_devices:
                     self._locked_devices.append(device)
@@ -1039,7 +1039,7 @@ if __name__ == '__main__':
 
     app.setStyleSheet(dark_stylesheet())
 
-    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
 
     # connect the closing event to the quit button procedure
     app.aboutToQuit.connect(cs.on_quit_button)

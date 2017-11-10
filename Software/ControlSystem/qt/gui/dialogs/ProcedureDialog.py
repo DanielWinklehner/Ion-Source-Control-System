@@ -540,13 +540,13 @@ class ProcedureDialog(QDialog):
             print('Error: Procedure name already in use')
             return
 
-        bool validated = False
+        validated = False
 
         if self._currentTab == 'Basic':
             validated = self.validate_basic_procedure()
         elif self._currentTab == 'PID':
             validated = self.validate_pid_procedure()
-        elif self._currentTab = 'Timer':
+        elif self._currentTab == 'Timer':
             validated = self.validate_timer_procedure()
 
         if validated:

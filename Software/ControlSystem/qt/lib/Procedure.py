@@ -9,7 +9,7 @@ import operator
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QPushButton, \
                             QGroupBox, QWidget, QTextEdit, QLineEdit
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
-from PyQt5.QtGui import QSizePolicy
+from PyQt5.QtGui import QSizePolicy, QPixmap, QIcon
 
 from .Pid import Pid
 from .Timer import Timer
@@ -410,6 +410,7 @@ class PidProcedure(Procedure):
         hbox = QHBoxLayout()
         self._btnStart = QPushButton('Start')
         self._btnStop = QPushButton('Stop')
+        self._btnStart.setIcon(QIcon(QPixmap('gui/images/icons/media-playback-start.png')))
         self._btnStart.clicked.connect(self.on_start_click)
         self._btnStop.clicked.connect(self.on_stop_click)
         self._btnStop.setEnabled(False)
@@ -464,22 +465,27 @@ class PidProcedure(Procedure):
             self._txtLog.setText('')
             #self._btnStart.setEnabled(False)
             self._btnStart.setText('Pause')
+            self._btnStart.setIcon(QIcon(QPixmap('gui/images/icons/media-playback-pause.png')))
             self._btnEdit.setEnabled(False)
             self._btnDelete.setEnabled(False)
             self._btnStop.setEnabled(True)
             self._pid_thread.start()
         elif self._btnStart.text() == 'Pause':
             self._pid.pause()
-            self._btnStart.text() == 'Resume'
+            self._btnStart.setText('Resume')
+            self._btnStart.setIcon(QIcon(QPixmap('gui/images/icons/media-playback-start.png')))
         elif self._btnStart.text() == 'Resume':
-           self._pid.unpause()
-           self._btnStart.text() == 'Pause'
+            self._pid.unpause()
+            self._btnStart.setText('Pause')
+            self._btnStart.setIcon(QIcon(QPixmap('gui/images/icons/media-playback-pause.png')))
 
     @pyqtSlot()
     def on_stop_click(self):
         self._pid.terminate()
         self._pid_thread.quit()
-        self._btnStart.setEnabled(True)
+        #self._btnStart.setEnabled(True)
+        self._btnStart.setText('Start')
+        self._btnStart.setIcon(QIcon(QPixmap('gui/images/icons/media-playback-start.png')))
         self._btnEdit.setEnabled(True)
         self._btnDelete.setEnabled(True)
         self._btnStop.setEnabled(False)
