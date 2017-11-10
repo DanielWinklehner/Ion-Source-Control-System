@@ -50,6 +50,12 @@ class ChannelWidget(QGroupBox):
                 elif child.layout():
                     self.clear(child)
 
+    def setMaximum(self, val):
+        # need to disconnect the signal to prevent changing the maximum from emitting a signal
+        self._dial_widget.valueChanged.disconnect()
+        self._dial_widget.setMaximum(val)
+        self._dial_widget.valueChanged.connect(self.set_value_callback)
+
 
     def setup(self):
         # clear everything from this widget
@@ -521,6 +527,9 @@ class Channel(QObject):
     def precision(self, precision):
         self._precision = precision
         self._displayformat = '.{}{}'.format(self._precision, self._display_mode)
+        if self._write_mode == 'dial':
+            self._overview_widget.setMaximum(10**self._precision)
+            #self._overview_widget._dial_widget.setMaximum(10**self._precision)
 
     @property
     def write_mode(self):
