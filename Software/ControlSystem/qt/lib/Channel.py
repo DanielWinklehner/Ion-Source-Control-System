@@ -51,6 +51,7 @@ class ChannelWidget(QGroupBox):
                     self.clear(child)
 
     def setMaximum(self, val):
+        ''' Set maximum value for the dial widget '''
         # need to disconnect the signal to prevent changing the maximum from emitting a signal
         self._dial_widget.valueChanged.disconnect()
         self._dial_widget.setMaximum(val)

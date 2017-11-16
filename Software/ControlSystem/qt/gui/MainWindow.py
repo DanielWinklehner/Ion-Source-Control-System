@@ -6,9 +6,9 @@
 
 import time
 import copy
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, \
-                            QGroupBox, QLineEdit, QFrame, QLabel, \
+                            QGroupBox, QLineEdit, QLabel, \
                             QRadioButton, QScrollArea, QPushButton, \
                             QWidget, QSizePolicy, QAction, QTreeWidgetItem, \
                             QComboBox

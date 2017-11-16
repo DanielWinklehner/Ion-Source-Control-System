@@ -64,4 +64,6 @@ F 3 "" H 2250 1950 60  0000 C CNN
 	1    1850 2000
 	0    1    1    0   
 $EndComp
+Text GLabel 3000 2050 2    60   Input ~ 0
+SCK
 $EndSCHEMATC
