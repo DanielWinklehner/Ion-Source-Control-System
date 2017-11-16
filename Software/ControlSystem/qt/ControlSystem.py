@@ -442,6 +442,10 @@ class ControlSystem():
     def update_stored_values(self, device_name, channel_name, timestamp):
         """ Update the value deques for each channel """
         ch = self._devices[device_name].channels[channel_name]
+
+        # zero values will crash log scale plots
+        if ch.value == 0:
+            ch.value = 1e-20
         ch.append_data(timestamp, ch.value)
 
     @pyqtSlot(object)
@@ -695,12 +699,10 @@ class ControlSystem():
             for device_name, device in self._devices.items():
                 #for channel_name, channel in device.channels.items():
                 for channel in self._plotted_channels:
+                    # pyqtgraph cant plot log of 0
                     channel._plot_curve.setData(channel.x_values, channel.y_values,
                                                 clear=True, _callsync='off')
-                            
-                            #self._x_values[(channel.parent_device.name, channel.name)],
-                            #self._y_values[(channel.parent_device.name, channel.name)],
-                            #clear=True, _callsync='off')
+
         app.processEvents()
 
     def reset_pinned_plot_callback(self):
@@ -1039,7 +1041,7 @@ if __name__ == '__main__':
 
     app.setStyleSheet(dark_stylesheet())
 
-    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
 
     # connect the closing event to the quit button procedure
     app.aboutToQuit.connect(cs.on_quit_button)
