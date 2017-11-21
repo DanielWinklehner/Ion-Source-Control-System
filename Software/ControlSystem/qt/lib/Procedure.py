@@ -439,6 +439,7 @@ class PidProcedure(Procedure):
 
     @pyqtSlot(float)
     def on_pid_set_signal(self, val):
+        val = max(self._write_channel.lower_limit, min(val, self._write_channel.upper_limit))
         self._txtLog.append('Send SET command to {}.{}. Value={} {}'.format(
                 self._write_channel.parent_device.label, self._write_channel.label,
                 self._writefmt.format(val), self._write_channel.unit))
