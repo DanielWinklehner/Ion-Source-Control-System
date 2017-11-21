@@ -274,7 +274,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLineEdit" name="lineEdit">
+             <widget class="QLineEdit" name="txtDelay">
               <property name="text">
                <string>0.0</string>
               </property>

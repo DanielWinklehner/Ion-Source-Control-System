@@ -159,6 +159,8 @@ class ProcedureDialog(QDialog):
         for idx, action in self._newproc.actions.items():
             self._cbDevChAction.select(action['channel'])
 
+            self.ui.txtDelay.setText(str(action['delay']))
+
             # set the data text
             if action['channel'].data_type != bool:
                 self.ui.txtActionVal.setText(str(action['value']))
@@ -243,8 +245,7 @@ class ProcedureDialog(QDialog):
             self.ui.gbNotify.setEnabled(True)
 
     def on_value_toggled(self, isChecked):
-        self.ui.cbRuleDevice.setEnabled(isChecked)
-        self.ui.cbRuleChannel.setEnabled(isChecked)
+        self._cbDevChRule.setEnabled(isChecked)
         self.ui.cbRuleCompare.setEnabled(isChecked)
         self.ui.cbRuleBool.setEnabled(isChecked)
         self.ui.txtRuleVal.setEnabled(isChecked)
@@ -253,14 +254,21 @@ class ProcedureDialog(QDialog):
         self.ui.cbEvent.setEnabled(isChecked)
 
     def on_add_action_click(self):
-        if self._cbDevChAction.selected_channel is None:
+        channel = self._cbDevChAction.selected_channel
+
+        if channel is None:
             return
 
-        channel = self._cbDevChAction.selected_channel
+        try:
+            delay = float(self.ui.txtDelay.text())
+        except ValueError:
+            print('Error: Bad delay input')
+            return
+
         if channel.data_type != bool:
             try:
                 value = channel.data_type(self.ui.txtActionVal.text())
-            except:
+            except ValueError:
                 print('Error: Bad input')
                 return
 
@@ -280,12 +288,13 @@ class ProcedureDialog(QDialog):
         vbox = QVBoxLayout()
         lblDevCh = QLabel(channel.parent_device.label + '.' + channel.label)
         if channel.data_type != bool:
-            lblSetVal = QLabel('Set value: {} {}'.format(str(value), channel.unit))
+            lblSetVal = QLabel('Set value: {} {}, delay: {} seconds'.format(
+                str(value), channel.unit, delay))
         else:
             if value:
-                lblSetVal = QLabel('Set value: On')
+                lblSetVal = QLabel('Set value: On, delay: {} seconds'.format(delay))
             else:
-                lblSetVal = QLabel('Set value: Off')
+                lblSetVal = QLabel('Set value: Off, delay: {} seconds'.format(delay))
 
         vbox.addWidget(lblDevCh)
         vbox.addWidget(lblSetVal)
@@ -294,7 +303,7 @@ class ProcedureDialog(QDialog):
         btnDel.clickedX.connect(self.on_delete_action_click)
 
         hbox = QHBoxLayout()
-        lblNum = QLabel(str(index + 1) + ') ')
+        lblNum = QLabel(str(index + 1) + '. ')
         hbox.addWidget(lblNum)
         hbox.addLayout(vbox)
         hbox.addStretch()
@@ -305,12 +314,14 @@ class ProcedureDialog(QDialog):
         self._vboxActions.insertWidget(0, fm)
 
         self.ui.txtActionVal.setText('')
+        self.ui.txtDelay.setText('0.0')
         self._cbDevChAction.select(None)
         self.ui.cbActionBool.hide()
         self.ui.txtActionVal.show()
 
         self._actions[index] = {'device' : channel.parent_device, 
-                                'channel' : channel, 'value' : value}
+                                'channel' : channel, 'value' : value,
+                                'delay': delay}
         self._actioncontrols[index] = {'button' : btnDel, 'frame' : fm, 
                                        'label' : lblNum, 'layout' : hbox}
 
@@ -337,7 +348,7 @@ class ProcedureDialog(QDialog):
             newactions[i] = action
             
             controls = actioncontrollist[i]
-            controls['label'].setText(str(i + 1) + ') ')
+            controls['label'].setText(str(i + 1) + '. ')
             btnDel = QPushButtonX('Delete', i)
             btnDel.clickedX.connect(self.on_delete_action_click)
             controls['button'] = btnDel
@@ -376,7 +387,7 @@ class ProcedureDialog(QDialog):
                 self.ui.lblRuleUnit.hide()
                 self.ui.cbRuleCompare.hide()
             else:
-                # switch combobox for test field
+                # switch combobox for text field
                 self.ui.cbRuleBool.hide()
                 self.ui.txtRuleVal.show()
                 self.ui.lblRuleUnit.show()
@@ -430,6 +441,8 @@ class ProcedureDialog(QDialog):
 
     def validate_basic_procedure(self):
         channel = self._cbDevChRule.selected_channel
+        if channel is None:
+            return False
 
         if channel.data_type != bool:
             try:

@@ -80,14 +80,22 @@ class BasicProcedure(Procedure):
 
     _sig_trigger = pyqtSignal(object)
 
-    def __init__(self, name, rules, actions, critical=False, email='', sms=''):
+    def __init__(self, name, rules, actions, critical=False, triggertype='', email='', sms=''):
         super(BasicProcedure, self).__init__(name)
 
         self._rules = rules
         self._actions = actions
         self._critical = critical
         
-        # these will trigger sending email/sms if not blank
+        if  triggertype not in ('startpoll', 'stoppoll', 'emstop', ''):
+            print('invalid trigger type, setting manual mode...')
+            self._triggertype = ''
+        else:
+            self._triggertype = triggertype
+
+        if self._rules is None:
+
+        # these should trigger sending email/sms if not blank
         self._email = email
         self._sms = sms
         
@@ -196,11 +204,14 @@ class BasicProcedure(Procedure):
             rval += 'If {}.{} is {} {} {}:\n'.format(rule['device'].label, rule['channel'].label,
                                                 comptext, rulevalstr, rule['channel'].unit)
 
+        totaldelay = 0
         for idx, action in self._actions.items():
+            totaldelay += action['delay']
             actionvalstr = val_to_str(action['channel'].data_type, action['value'])
-            rval += '  {}) Set {}.{} to {} {}\n'.format(str(idx + 1), action['device'].label, 
+            rval += '  {}. Set {}.{} to {} {} after {} seconds\n'.format(str(idx + 1), action['device'].label, 
                                                    action['channel'].label, actionvalstr, 
-                                                   action['channel'].unit)
+                                                   action['channel'].unit,
+                                                   totaldelay)
 
 
         if self._email != '':

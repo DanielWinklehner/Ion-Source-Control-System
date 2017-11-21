@@ -221,7 +221,7 @@ class ControlSystem():
                                             device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-         
+        
         ## Set up communication pipes.
         self._keep_communicating = False
         self._retry_devices = False
