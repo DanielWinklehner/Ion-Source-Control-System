@@ -33,6 +33,7 @@ from gui.style import dark_stylesheet
 from lib.Device import Device
 from lib.Channel import Channel
 from lib.Procedure import Procedure, PidProcedure, TimerProcedure
+from lib.FileOps import load_from_csv
 
 def query_server(com_pipe, server_url, debug=False):
     """ Sends info from RasPi server to communicator pipe """
@@ -814,76 +815,23 @@ class ControlSystem():
         if filename == '':
             return
 
-        with open(filename, 'r') as f:
-            try:
-                data = json.loads(f.read())
-            except:
-                self.show_ErrorDialog('Unable to read JSON file')
-                return
+        res = load_from_csv(filename)
+        if res is None:
+            self._window.status_message('Unable to read JSON.')
+            return
+        else:
+            devices, procedures, winsettings, cssettings = res 
 
-        devices = {}
-        procedures = {}
-        cssettings = {}
-        try:
-            self._window.apply_settings(data['window-settings'])
-            devices = data['devices']
-            procedures = data['procedures']
-            cssettings = data['control-system-settings']
-        except:
-            # using old version
-            devices = data
-    
-        # Load devices
-        for device_name, device_data in devices.items():
-            filtered_params = {}
-            for key, value in device_data.items():
-                if not key == "channels":
-                    filtered_params[key] = value
-
-            device = Device(**filtered_params)
-
-            for channel_name, channel_data in device_data['channels'].items():
-                data_type_str = channel_data['data_type']
-                channel_data['data_type'] = eval(data_type_str.split("'")[1])
-
-                ch = Channel(**channel_data)
-                device.add_channel(ch)
-
-            if self.add_device(device):
+        # Add devices and procedures
+        for _, dev in devices.items():
+            if self.add_device(dev):
                 successes += 1
 
-        # Load procedures
-        for proc_name, proc_data in procedures.items():
-            filtered_params = {}
-            proc_type = ''
-            for key, value in proc_data.items():
-                if key == 'type':
-                    proc_type = value
-                elif key in ['write-channel', 'write-device', 'read-channel', 'read-device']:
-                    pass
-                elif key in ['start-channel', 'start-device', 'stop-channel', 'stop-device']:
-                    pass
-                elif key in ['stop_comp', 'start_comp']:
-                    filtered_params[key] = operator.gt if value == 'greater' else operator.lt
-                else:
-                    filtered_params[key] = value
-
-            if proc_type == 'pid':
-                filtered_params['read_channel'] = \
-                    self._devices[proc_data['read-device']].channels[proc_data['read-channel']]
-                filtered_params['write_channel'] = \
-                    self._devices[proc_data['write-device']].channels[proc_data['write-channel']]
-                proc = PidProcedure(**filtered_params)
-            elif proc_type == 'timer':
-                filtered_params['start_channel'] = \
-                    self._devices[proc_data['start-device']].channels[proc_data['start-channel']]
-                filtered_params['stop_channel'] = \
-                    self._devices[proc_data['stop-device']].channels[proc_data['stop-channel']]
-                proc = TimerProcedure(**filtered_params)
-
+        for _, proc in procedures.items():
             self.add_procedure(proc)
 
         # Load control system settings
+        self._window.apply_settings(winsettings)
         self.apply_settings(cssettings)
 
         if successes > 0:
@@ -1041,7 +989,7 @@ if __name__ == '__main__':
 
     app.setStyleSheet(dark_stylesheet())
 
-    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.3', server_port=5000, debug=False)
 
     # connect the closing event to the quit button procedure
     app.aboutToQuit.connect(cs.on_quit_button)
