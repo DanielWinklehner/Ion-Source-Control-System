@@ -93,7 +93,7 @@ class BasicProcedure(Procedure):
         else:
             self._triggertype = triggertype
 
-        if self._rules is None:
+        #if self._rules is None:
 
         # these should trigger sending email/sms if not blank
         self._email = email
