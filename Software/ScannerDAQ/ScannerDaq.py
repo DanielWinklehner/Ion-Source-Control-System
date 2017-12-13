@@ -10,6 +10,9 @@ import socket
 import select
 import time
 import timeit
+from collections import deque
+
+import numpy as np
 
 from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QApplication, QFileDialog 
@@ -103,6 +106,7 @@ class DaqView():
         self._window.btnConnect.clicked.connect(self.connect_to_server)
 
         self._values = {'vol': 0.0, 'ver': 0.0, 'hor': 0.0, 'cur': 0.0}
+        self._deques = {'vol': deque(maxlen=10), 'ver': 0.0, 'hor': 0.0, 'cur': deque(maxlen=5)}
 
         self._vercalib = False
         self._horcalib = False
@@ -175,7 +179,12 @@ class DaqView():
         self._values['vol'] = vol
         self._values['ver'] = ver
         self._values['hor'] = hor
-        self._values['cur'] = cur
+        #self._values['cur'] = cur
+
+        self._deques['cur'].append(cur)
+        if len(self._deques['cur']) == 5:
+            self._values['cur'] = np.mean(self._deques['cur'])
+            self._deques['cur'].clear()
 
         self.update_display_values()
 

@@ -19,6 +19,7 @@ p = Pico('/dev/ttyUSB0')
 pico_thread = threading.Thread(target=p.run)
 pico_thread.start()
 
+
 def poll():
     # dummy function, actually get values from devices here
     a = [p.current_value, 13439.0, 165.1, 34509.11]
@@ -47,14 +48,17 @@ fmap = {
 
 # print a welcome message
 print "Scanner DAQ Server accepting connections"
-while True:
-    conn, addr = s.accept()
-    print "got connection at {}".format(addr)
+try:
     while True:
-        data = conn.recv(BUFFER_SIZE)
-        if not data:
-            break
-        print "received data:", data
-        conn.send(fmap[data]())  # echo
-    conn.close()
-
+        conn, addr = s.accept()
+        print "got connection at {}".format(addr)
+        while True:
+            data = conn.recv(BUFFER_SIZE)
+            if not data:
+                break
+            print "received data:", data
+            conn.send(fmap[data]())  # echo
+        conn.close()
+except KeyboardInterrupt:
+    p.terminate()
+    pico_thread.join()

@@ -3,7 +3,7 @@
   (general
     (links 136)
     (no_connects 0)
-    (area 114.224999 83.744999 212.165001 147.395001)
+    (area 100.079839 83.744999 223.67 153.750001)
     (thickness 1.6)
     (drawings 28)
     (tracks 416)
@@ -87,7 +87,7 @@
       (mirror false)
       (drillshape 0)
       (scaleselection 1)
-      (outputdirectory C:/Users/Thomas/Desktop/))
+      (outputdirectory C:/Users/Thomas/Dropbox/Work/conrad/isodar/Ion-Source-Control-System/Hardware/KiCAD/TemperatureSensor/gerber/))
   )
 
   (net 0 "")

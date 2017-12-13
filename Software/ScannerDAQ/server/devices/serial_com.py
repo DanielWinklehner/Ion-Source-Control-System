@@ -1,11 +1,11 @@
 import time
 
-def fast_read(ser):
+def fast_read(ser, timeout=1.0):
     # Our own 'readline()' function
     response = b''
 
     start_time = time.time()
-    while (time.time() - start_time) < 1.0:
+    while (time.time() - start_time) < timeout:
         resp = ser.read(1)
         if resp:
             response += bytes(resp)
