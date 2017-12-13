@@ -1,4 +1,4 @@
-(module ARDUINO_MICRO_SHIELD (layer F.Cu) (tedit 5A314D46)
+(module ARDUINO_MICRO_SHIELD1 (layer F.Cu) (tedit 5A314D46)
   (tags "ARDUINO, MICRO")
   (fp_text reference U1 (at 26.67 -10.16) (layer F.SilkS)
     (effects (font (size 1.2 1.2) (thickness 0.15)))

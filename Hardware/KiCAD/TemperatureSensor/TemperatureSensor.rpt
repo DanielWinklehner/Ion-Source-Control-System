@@ -1,0 +1,104 @@
+** Drc report for D:/Daniel/Dropbox (MIT)/Projects/IsoDAR/Ion Source/Control System/Hardware/KiCAD/TemperatureSensor/TemperatureSensor.kicad_pcb **
+** Created on  **
+
+** Found 0 DRC errors **
+
+** Found 32 unconnected pads **
+ErrType(2): Unconnected pads
+    @ (142.113 mm,114.030 mm): Pad 2 on F.Cu, Non-copper of C3 net GND
+    @ (144.288 mm,113.665 mm): Pad 2 on F.Cu, Non-copper of C9
+ErrType(2): Unconnected pads
+    @ (150.098 mm,136.525 mm): Pad 2 on F.Cu, Non-copper of C21 net GND
+    @ (150.143 mm,130.130 mm): Pad 14 on F.Cu, Non-copper of U5
+ErrType(2): Unconnected pads
+    @ (150.098 mm,125.095 mm): Pad 2 on F.Cu, Non-copper of C22 net GND
+    @ (150.143 mm,118.700 mm): Pad 14 on F.Cu, Non-copper of U6
+ErrType(2): Unconnected pads
+    @ (180.848 mm,99.076 mm): Pad 2 on F.Cu, Non-copper of C2 net GND
+    @ (179.324 mm,105.664 mm): Pad 1 on F.Cu, B.Cu, Internal, Non-copper of U2
+ErrType(2): Unconnected pads
+    @ (186.436 mm,99.076 mm): Pad 2 on F.Cu, Non-copper of C1 net GND
+    @ (180.848 mm,99.076 mm): Pad 2 on F.Cu, Non-copper of C2
+ErrType(2): Unconnected pads
+    @ (188.468 mm,99.026 mm): Pad 2 on F.Cu, Non-copper of D11 net GND
+    @ (186.436 mm,99.076 mm): Pad 2 on F.Cu, Non-copper of C1
+ErrType(2): Unconnected pads
+    @ (150.143 mm,130.130 mm): Pad 14 on F.Cu, Non-copper of U5 net GND
+    @ (150.098 mm,125.095 mm): Pad 2 on F.Cu, Non-copper of C22
+ErrType(2): Unconnected pads
+    @ (150.143 mm,107.270 mm): Pad 14 on F.Cu, Non-copper of U3 net GND
+    @ (150.098 mm,102.235 mm): Pad 2 on F.Cu, Non-copper of C12
+ErrType(2): Unconnected pads
+    @ (144.243 mm,95.840 mm): Pad 1 on F.Cu, Non-copper of U4 net GND
+    @ (150.143 mm,95.840 mm): Pad 14 on F.Cu, Non-copper of U4
+ErrType(2): Unconnected pads
+    @ (180.284 mm,137.430 mm): Pad GND on F.Cu, B.Cu, Internal, Non-copper of U1 net GND
+    @ (175.204 mm,121.938 mm): Pad GND on F.Cu, B.Cu, Internal, Non-copper of U1
+ErrType(2): Unconnected pads
+    @ (150.143 mm,118.700 mm): Pad 14 on F.Cu, Non-copper of U6 net GND
+    @ (150.098 mm,113.665 mm): Pad 2 on F.Cu, Non-copper of C11
+ErrType(2): Unconnected pads
+    @ (179.324 mm,105.664 mm): Pad 1 on F.Cu, B.Cu, Internal, Non-copper of U2 net GND
+    @ (175.204 mm,121.938 mm): Pad GND on F.Cu, B.Cu, Internal, Non-copper of U1
+ErrType(2): Unconnected pads
+    @ (207.168 mm,104.648 mm): Pad 2 on F.Cu, B.Cu, Internal, Non-copper of J5 net GND
+    @ (204.168 mm,99.948 mm): Pad 3 on F.Cu, B.Cu, Internal, Non-copper of J5
+ErrType(2): Unconnected pads
+    @ (204.168 mm,99.948 mm): Pad 3 on F.Cu, B.Cu, Internal, Non-copper of J5 net GND
+    @ (188.468 mm,99.026 mm): Pad 2 on F.Cu, Non-copper of D11
+ErrType(2): Unconnected pads
+    @ (209.296 mm,112.776 mm): Pad 1 on F.Cu, B.Cu, Internal, Non-copper of SW1 net GND
+    @ (207.168 mm,104.648 mm): Pad 2 on F.Cu, B.Cu, Internal, Non-copper of J5
+ErrType(2): Unconnected pads
+    @ (175.204 mm,121.938 mm): Pad GND on F.Cu, B.Cu, Internal, Non-copper of U1 net GND
+    @ (150.098 mm,125.095 mm): Pad 2 on F.Cu, Non-copper of C22
+ErrType(2): Unconnected pads
+    @ (128.270 mm,130.810 mm): Pad 1 on F.Cu, B.Cu, Internal, Non-copper of J6 net GND
+    @ (128.270 mm,135.890 mm): Pad 3 on F.Cu, B.Cu, Internal, Non-copper of J6
+ErrType(2): Unconnected pads
+    @ (128.270 mm,135.890 mm): Pad 3 on F.Cu, B.Cu, Internal, Non-copper of J6 net GND
+    @ (142.113 mm,136.890 mm): Pad 2 on F.Cu, Non-copper of C13
+ErrType(2): Unconnected pads
+    @ (144.288 mm,125.095 mm): Pad 2 on F.Cu, Non-copper of C20 net GND
+    @ (150.098 mm,125.095 mm): Pad 2 on F.Cu, Non-copper of C22
+ErrType(2): Unconnected pads
+    @ (150.098 mm,102.235 mm): Pad 2 on F.Cu, Non-copper of C12 net GND
+    @ (150.143 mm,95.840 mm): Pad 14 on F.Cu, Non-copper of U4
+ErrType(2): Unconnected pads
+    @ (150.098 mm,113.665 mm): Pad 2 on F.Cu, Non-copper of C11 net GND
+    @ (150.143 mm,107.270 mm): Pad 14 on F.Cu, Non-copper of U3
+ErrType(2): Unconnected pads
+    @ (142.113 mm,136.890 mm): Pad 2 on F.Cu, Non-copper of C13 net GND
+    @ (144.288 mm,136.525 mm): Pad 2 on F.Cu, Non-copper of C19
+ErrType(2): Unconnected pads
+    @ (142.113 mm,104.410 mm): Pad 2 on F.Cu, Non-copper of C5 net GND
+    @ (142.113 mm,102.600 mm): Pad 2 on F.Cu, Non-copper of C4
+ErrType(2): Unconnected pads
+    @ (144.288 mm,102.235 mm): Pad 2 on F.Cu, Non-copper of C10 net GND
+    @ (150.098 mm,102.235 mm): Pad 2 on F.Cu, Non-copper of C12
+ErrType(2): Unconnected pads
+    @ (142.113 mm,125.460 mm): Pad 2 on F.Cu, Non-copper of C14 net GND
+    @ (144.288 mm,125.095 mm): Pad 2 on F.Cu, Non-copper of C20
+ErrType(2): Unconnected pads
+    @ (144.288 mm,113.665 mm): Pad 2 on F.Cu, Non-copper of C9 net GND
+    @ (150.098 mm,113.665 mm): Pad 2 on F.Cu, Non-copper of C11
+ErrType(2): Unconnected pads
+    @ (142.113 mm,127.270 mm): Pad 2 on F.Cu, Non-copper of C15 net GND
+    @ (142.113 mm,125.460 mm): Pad 2 on F.Cu, Non-copper of C14
+ErrType(2): Unconnected pads
+    @ (142.113 mm,115.840 mm): Pad 2 on F.Cu, Non-copper of C17 net GND
+    @ (142.113 mm,114.030 mm): Pad 2 on F.Cu, Non-copper of C3
+ErrType(2): Unconnected pads
+    @ (142.113 mm,102.600 mm): Pad 2 on F.Cu, Non-copper of C4 net GND
+    @ (144.288 mm,102.235 mm): Pad 2 on F.Cu, Non-copper of C10
+ErrType(2): Unconnected pads
+    @ (144.288 mm,136.525 mm): Pad 2 on F.Cu, Non-copper of C19 net GND
+    @ (150.098 mm,136.525 mm): Pad 2 on F.Cu, Non-copper of C21
+ErrType(2): Unconnected pads
+    @ (182.824 mm,121.938 mm): Pad NC on F.Cu, B.Cu, Internal, Non-copper of U1 net Net-(U1-PadNC)
+    @ (185.364 mm,121.938 mm): Pad NC on F.Cu, B.Cu, Internal, Non-copper of U1
+ErrType(2): Unconnected pads
+    @ (177.744 mm,137.430 mm): Pad RST on F.Cu, B.Cu, Internal, Non-copper of U1 net Net-(SW1-Pad2)
+    @ (177.744 mm,121.938 mm): Pad RST on F.Cu, B.Cu, Internal, Non-copper of U1
+
+** End of Report **
