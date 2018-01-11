@@ -1,0 +1,1036 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="D">
+  <design>
+    <source>C:/Users/Thomas/Dropbox/Work/conrad/isodar/Ion-Source-Control-System/Hardware/KiCAD/TemperatureSensor/TemperatureSensor.sch</source>
+    <date>1/9/2018 12:59:36 PM</date>
+    <tool>Eeschema 4.0.7</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>TemperatureSensor.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+    <sheet number="2" name="/TempSensors/" tstamps="/5A00E52F/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>tempsensors.sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="U1">
+      <value>ARDUINO_MICRO_SHIELD</value>
+      <footprint>TemperatureSensor:ARDUINO_MICRO_SHIELD1</footprint>
+      <libsource lib="TemperatureSensor-cache" part="ARDUINO_MICRO_SHIELD"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5A00EB35</tstamp>
+    </comp>
+    <comp ref="SW1">
+      <value>SW_Push</value>
+      <footprint>Buttons_Switches_THT:SW_Tactile_SPST_Angled_PTS645Vx39-2LFS</footprint>
+      <libsource lib="TemperatureSensor-cache" part="SW_Push"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5A20263C</tstamp>
+    </comp>
+    <comp ref="J6">
+      <value>Conn_01x04</value>
+      <footprint>TerminalBlocks_Phoenix:TerminalBlock_Phoenix_MPT-2.54mm_4pol</footprint>
+      <libsource lib="TemperatureSensor-cache" part="Conn_01x04"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamp>5A26C022</tstamp>
+    </comp>
+    <comp ref="R6">
+      <value>1k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A00E98A</tstamp>
+    </comp>
+    <comp ref="D4">
+      <value>LED</value>
+      <footprint>LEDs:LED_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="LED"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A00E982</tstamp>
+    </comp>
+    <comp ref="C7">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A00E96E</tstamp>
+    </comp>
+    <comp ref="C4">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A00E961</tstamp>
+    </comp>
+    <comp ref="C8">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A00E956</tstamp>
+    </comp>
+    <comp ref="C10">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A00E944</tstamp>
+    </comp>
+    <comp ref="C12">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A00E92C</tstamp>
+    </comp>
+    <comp ref="U4">
+      <value>MAX31856</value>
+      <footprint>Housings_SSOP:TSSOP-14_4.4x5mm_Pitch0.65mm</footprint>
+      <libsource lib="TemperatureSensor-cache" part="MAX31856"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A00E90A</tstamp>
+    </comp>
+    <comp ref="R2">
+      <value>3.3k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E1B27</tstamp>
+    </comp>
+    <comp ref="D2">
+      <value>D</value>
+      <footprint>Diodes_SMD:D_SOD-323</footprint>
+      <libsource lib="TemperatureSensor-cache" part="D"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E251B</tstamp>
+    </comp>
+    <comp ref="R1">
+      <value>3.3k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E2D35</tstamp>
+    </comp>
+    <comp ref="D1">
+      <value>D</value>
+      <footprint>Diodes_SMD:D_SOD-323</footprint>
+      <libsource lib="TemperatureSensor-cache" part="D"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E2D41</tstamp>
+    </comp>
+    <comp ref="D6">
+      <value>D</value>
+      <footprint>Diodes_SMD:D_SOD-323</footprint>
+      <libsource lib="TemperatureSensor-cache" part="D"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E412F</tstamp>
+    </comp>
+    <comp ref="R4">
+      <value>3.3k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E477F</tstamp>
+    </comp>
+    <comp ref="U2">
+      <value>LD1117S33TR_SOT223</value>
+      <footprint>TO_SOT_Packages_THT:TO-220-3_Vertical</footprint>
+      <libsource lib="TemperatureSensor-cache" part="LD1117S33TR_SOT223"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E5313</tstamp>
+    </comp>
+    <comp ref="C1">
+      <value>100nF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C_Small"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E5B95</tstamp>
+    </comp>
+    <comp ref="C2">
+      <value>10uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C_Small"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E5CE2</tstamp>
+    </comp>
+    <comp ref="R5">
+      <value>1k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7400</tstamp>
+    </comp>
+    <comp ref="D3">
+      <value>LED</value>
+      <footprint>LEDs:LED_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="LED"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7407</tstamp>
+    </comp>
+    <comp ref="C5">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E741A</tstamp>
+    </comp>
+    <comp ref="C3">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7426</tstamp>
+    </comp>
+    <comp ref="C6">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7430</tstamp>
+    </comp>
+    <comp ref="C9">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7441</tstamp>
+    </comp>
+    <comp ref="C11">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7458</tstamp>
+    </comp>
+    <comp ref="U3">
+      <value>MAX31856</value>
+      <footprint>Housings_SSOP:TSSOP-14_4.4x5mm_Pitch0.65mm</footprint>
+      <libsource lib="TemperatureSensor-cache" part="MAX31856"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7479</tstamp>
+    </comp>
+    <comp ref="D5">
+      <value>D</value>
+      <footprint>Diodes_SMD:D_SOD-323</footprint>
+      <libsource lib="TemperatureSensor-cache" part="D"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7488</tstamp>
+    </comp>
+    <comp ref="R3">
+      <value>3.3k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E748E</tstamp>
+    </comp>
+    <comp ref="R10">
+      <value>1k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7B9E</tstamp>
+    </comp>
+    <comp ref="D8">
+      <value>LED</value>
+      <footprint>LEDs:LED_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="LED"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7BA5</tstamp>
+    </comp>
+    <comp ref="C17">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7BB8</tstamp>
+    </comp>
+    <comp ref="C14">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7BC4</tstamp>
+    </comp>
+    <comp ref="C18">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7BCE</tstamp>
+    </comp>
+    <comp ref="C20">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7BDF</tstamp>
+    </comp>
+    <comp ref="C22">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7BF6</tstamp>
+    </comp>
+    <comp ref="U6">
+      <value>MAX31856</value>
+      <footprint>Housings_SSOP:TSSOP-14_4.4x5mm_Pitch0.65mm</footprint>
+      <libsource lib="TemperatureSensor-cache" part="MAX31856"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C17</tstamp>
+    </comp>
+    <comp ref="D10">
+      <value>D</value>
+      <footprint>Diodes_SMD:D_SOD-323</footprint>
+      <libsource lib="TemperatureSensor-cache" part="D"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C26</tstamp>
+    </comp>
+    <comp ref="R8">
+      <value>3.3k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C2C</tstamp>
+    </comp>
+    <comp ref="R9">
+      <value>1k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C3F</tstamp>
+    </comp>
+    <comp ref="D7">
+      <value>LED</value>
+      <footprint>LEDs:LED_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="LED"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C46</tstamp>
+    </comp>
+    <comp ref="C15">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C59</tstamp>
+    </comp>
+    <comp ref="C13">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C65</tstamp>
+    </comp>
+    <comp ref="C16">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C6F</tstamp>
+    </comp>
+    <comp ref="C19">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C80</tstamp>
+    </comp>
+    <comp ref="C21">
+      <value>0.1uF</value>
+      <footprint>Capacitors_SMD:C_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="C"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7C97</tstamp>
+    </comp>
+    <comp ref="U5">
+      <value>MAX31856</value>
+      <footprint>Housings_SSOP:TSSOP-14_4.4x5mm_Pitch0.65mm</footprint>
+      <libsource lib="TemperatureSensor-cache" part="MAX31856"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7CB8</tstamp>
+    </comp>
+    <comp ref="D9">
+      <value>D</value>
+      <footprint>Diodes_SMD:D_SOD-323</footprint>
+      <libsource lib="TemperatureSensor-cache" part="D"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7CC7</tstamp>
+    </comp>
+    <comp ref="R7">
+      <value>3.3k</value>
+      <footprint>Resistors_SMD:R_0603</footprint>
+      <libsource lib="TemperatureSensor-cache" part="R"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0E7CCD</tstamp>
+    </comp>
+    <comp ref="F1">
+      <value>Fuse</value>
+      <footprint>Fuse_Holders_and_Fuses:Fuseholder5x20_horiz_open_inline_Type-I</footprint>
+      <libsource lib="TemperatureSensor-cache" part="Fuse"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0FEEAE</tstamp>
+    </comp>
+    <comp ref="D11">
+      <value>D_Zener</value>
+      <footprint>Diodes_SMD:D_0805</footprint>
+      <libsource lib="TemperatureSensor-cache" part="D_Zener"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A0FF04F</tstamp>
+    </comp>
+    <comp ref="J5">
+      <value>Barrel_Jack</value>
+      <footprint>Connectors:BARREL_JACK</footprint>
+      <libsource lib="TemperatureSensor-cache" part="Barrel_Jack"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A15EA9D</tstamp>
+    </comp>
+    <comp ref="J1">
+      <value>Conn_01x02</value>
+      <footprint>TemperatureSensor:Thermocouple_Pins</footprint>
+      <libsource lib="TemperatureSensor-cache" part="Conn_01x02"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A21CC6C</tstamp>
+    </comp>
+    <comp ref="J2">
+      <value>Conn_01x02</value>
+      <footprint>TemperatureSensor:Thermocouple_Pins</footprint>
+      <libsource lib="TemperatureSensor-cache" part="Conn_01x02"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A21CEC1</tstamp>
+    </comp>
+    <comp ref="J3">
+      <value>Conn_01x02</value>
+      <footprint>TemperatureSensor:Thermocouple_Pins</footprint>
+      <libsource lib="TemperatureSensor-cache" part="Conn_01x02"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A21CF74</tstamp>
+    </comp>
+    <comp ref="J4">
+      <value>Conn_01x02</value>
+      <footprint>TemperatureSensor:Thermocouple_Pins</footprint>
+      <libsource lib="TemperatureSensor-cache" part="Conn_01x02"/>
+      <sheetpath names="/TempSensors/" tstamps="/5A00E52F/"/>
+      <tstamp>5A21D02C</tstamp>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="TemperatureSensor-cache" part="AP1117-15">
+      <aliases>
+        <alias>AP1117-18</alias>
+        <alias>AP1117-25</alias>
+        <alias>AP1117-33</alias>
+        <alias>AP1117-50</alias>
+        <alias>LD1117S33TR_SOT223</alias>
+        <alias>LD1117S12TR_SOT223</alias>
+        <alias>LD1117S18TR_SOT223</alias>
+        <alias>LD1117S25TR_SOT223</alias>
+        <alias>LD1117S50TR_SOT223</alias>
+        <alias>NCP1117-12_SOT223</alias>
+        <alias>NCP1117-1.5_SOT223</alias>
+        <alias>NCP1117-1.8_SOT223</alias>
+        <alias>NCP1117-2.0_SOT223</alias>
+        <alias>NCP1117-2.5_SOT223</alias>
+        <alias>NCP1117-2.85_SOT223</alias>
+        <alias>NCP1117-3.3_SOT223</alias>
+        <alias>NCP1117-5.0_SOT223</alias>
+      </aliases>
+      <footprints>
+        <fp>SOT?223*TabPin2*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">AP1117-15</field>
+        <field name="Footprint">TO_SOT_Packages_SMD:SOT-223-3Lead_TabPin2</field>
+      </fields>
+      <pins>
+        <pin num="1" name="GND" type="power_in"/>
+        <pin num="2" name="VO" type="passive"/>
+        <pin num="3" name="VI" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="ARDUINO_MICRO_SHIELD">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">ARDUINO_MICRO_SHIELD</field>
+      </fields>
+      <pins>
+        <pin num="2" name="2/SDA" type="BiDi"/>
+        <pin num="3" name="3(PWM)/SCL" type="BiDi"/>
+        <pin num="4" name="4/A6" type="BiDi"/>
+        <pin num="5" name="5(PWM)" type="BiDi"/>
+        <pin num="5V" name="+5V" type="power_in"/>
+        <pin num="6" name="6(PWM)/A7" type="BiDi"/>
+        <pin num="7" name="7" type="BiDi"/>
+        <pin num="8" name="8/A8" type="BiDi"/>
+        <pin num="9" name="9(PWM)/A9" type="BiDi"/>
+        <pin num="10" name="10(PWM)/A10" type="BiDi"/>
+        <pin num="11" name="11(PWM)" type="BiDi"/>
+        <pin num="12" name="12/A11" type="BiDi"/>
+        <pin num="13" name="13(PWM)" type="BiDi"/>
+        <pin num="3.3V" name="3.3V" type="power_in"/>
+        <pin num="A0" name="A0" type="BiDi"/>
+        <pin num="A1" name="A1" type="BiDi"/>
+        <pin num="A2" name="A2" type="BiDi"/>
+        <pin num="A3" name="A3" type="BiDi"/>
+        <pin num="A4" name="A4" type="BiDi"/>
+        <pin num="A5" name="A5" type="BiDi"/>
+        <pin num="AREF" name="AREF" type="power_in"/>
+        <pin num="GND" name="GND" type="power_in"/>
+        <pin num="MI" name="MISO" type="BiDi"/>
+        <pin num="MO" name="MOSI" type="BiDi"/>
+        <pin num="NC" name="~" type="NotConnected"/>
+        <pin num="RST" name="RESET" type="BiDi"/>
+        <pin num="RST1" name="RESET1" type="BiDi"/>
+        <pin num="RX" name="0/RX" type="BiDi"/>
+        <pin num="SCK" name="SCK" type="BiDi"/>
+        <pin num="SS" name="RX_LED/SS" type="BiDi"/>
+        <pin num="TX" name="1/TX" type="BiDi"/>
+        <pin num="VI" name="VIN" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="Barrel_Jack">
+      <aliases>
+        <alias>Jack-DC</alias>
+      </aliases>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Barrel_Jack</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+        <pin num="3" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="C">
+      <footprints>
+        <fp>C?</fp>
+        <fp>C_????_*</fp>
+        <fp>C_????</fp>
+        <fp>SMD*_c</fp>
+        <fp>Capacitor*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="C_Small">
+      <footprints>
+        <fp>C_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">C</field>
+        <field name="Value">C_Small</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="Conn_01x02">
+      <footprints>
+        <fp>Connector*:*_??x*mm*</fp>
+        <fp>Connector*:*1x??x*mm*</fp>
+        <fp>Pin?Header?Straight?1X*</fp>
+        <fp>Pin?Header?Angled?1X*</fp>
+        <fp>Socket?Strip?Straight?1X*</fp>
+        <fp>Socket?Strip?Angled?1X*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x02</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="Conn_01x04">
+      <footprints>
+        <fp>Connector*:*_??x*mm*</fp>
+        <fp>Connector*:*1x??x*mm*</fp>
+        <fp>Pin?Header?Straight?1X*</fp>
+        <fp>Pin?Header?Angled?1X*</fp>
+        <fp>Socket?Strip?Straight?1X*</fp>
+        <fp>Socket?Strip?Angled?1X*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_01x04</field>
+      </fields>
+      <pins>
+        <pin num="1" name="Pin_1" type="passive"/>
+        <pin num="2" name="Pin_2" type="passive"/>
+        <pin num="3" name="Pin_3" type="passive"/>
+        <pin num="4" name="Pin_4" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="D">
+      <footprints>
+        <fp>TO-???*</fp>
+        <fp>*SingleDiode</fp>
+        <fp>*_Diode_*</fp>
+        <fp>*SingleDiode*</fp>
+        <fp>D_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">D</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="D_Zener">
+      <footprints>
+        <fp>TO-???*</fp>
+        <fp>*SingleDiode</fp>
+        <fp>*_Diode_*</fp>
+        <fp>*SingleDiode*</fp>
+        <fp>D_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">D_Zener</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="Fuse">
+      <footprints>
+        <fp>*Fuse*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">F</field>
+        <field name="Value">Fuse</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="LED">
+      <footprints>
+        <fp>LED-3MM</fp>
+        <fp>LED-5MM</fp>
+        <fp>LED-10MM</fp>
+        <fp>LED-0603</fp>
+        <fp>LED-0805</fp>
+        <fp>LED-1206</fp>
+        <fp>LEDV</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D</field>
+        <field name="Value">LED</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="MAX31856">
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">MAX31856</field>
+      </fields>
+      <pins>
+        <pin num="1" name="AGND" type="input"/>
+        <pin num="2" name="BIAS" type="input"/>
+        <pin num="3" name="T-" type="input"/>
+        <pin num="4" name="T+" type="input"/>
+        <pin num="5" name="AVDD" type="input"/>
+        <pin num="6" name="DNC" type="input"/>
+        <pin num="7" name="DRDY" type="input"/>
+        <pin num="8" name="DVDD" type="input"/>
+        <pin num="9" name="CS" type="input"/>
+        <pin num="10" name="SCK" type="input"/>
+        <pin num="11" name="SDO" type="input"/>
+        <pin num="12" name="SDI" type="input"/>
+        <pin num="13" name="FAULT" type="input"/>
+        <pin num="14" name="DGND" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="R">
+      <footprints>
+        <fp>R_*</fp>
+        <fp>Resistor_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R</field>
+        <field name="Value">R</field>
+      </fields>
+      <pins>
+        <pin num="1" name="~" type="passive"/>
+        <pin num="2" name="~" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="TemperatureSensor-cache" part="SW_Push">
+      <fields>
+        <field name="Reference">SW</field>
+        <field name="Value">SW_Push</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="TemperatureSensor-cache">
+      <uri>C:\Users\Thomas\Dropbox\Work\conrad\isodar\Ion-Source-Control-System\Hardware\KiCAD\TemperatureSensor\TemperatureSensor-cache.lib</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="Net-(U1-PadRX)">
+      <node ref="U1" pin="RX"/>
+    </net>
+    <net code="2" name="Net-(SW1-Pad2)">
+      <node ref="SW1" pin="2"/>
+      <node ref="U1" pin="RST"/>
+    </net>
+    <net code="3" name="GND">
+      <node ref="C2" pin="2"/>
+      <node ref="C1" pin="2"/>
+      <node ref="U2" pin="1"/>
+      <node ref="C9" pin="2"/>
+      <node ref="C3" pin="2"/>
+      <node ref="C5" pin="2"/>
+      <node ref="U5" pin="1"/>
+      <node ref="C21" pin="2"/>
+      <node ref="C19" pin="2"/>
+      <node ref="D11" pin="2"/>
+      <node ref="U5" pin="14"/>
+      <node ref="J5" pin="3"/>
+      <node ref="J5" pin="2"/>
+      <node ref="C13" pin="2"/>
+      <node ref="C15" pin="2"/>
+      <node ref="U3" pin="14"/>
+      <node ref="U3" pin="1"/>
+      <node ref="C22" pin="2"/>
+      <node ref="C11" pin="2"/>
+      <node ref="C20" pin="2"/>
+      <node ref="C14" pin="2"/>
+      <node ref="C17" pin="2"/>
+      <node ref="C4" pin="2"/>
+      <node ref="C12" pin="2"/>
+      <node ref="C10" pin="2"/>
+      <node ref="C7" pin="2"/>
+      <node ref="U4" pin="14"/>
+      <node ref="U4" pin="1"/>
+      <node ref="U6" pin="1"/>
+      <node ref="U6" pin="14"/>
+      <node ref="J6" pin="3"/>
+      <node ref="J6" pin="1"/>
+      <node ref="SW1" pin="1"/>
+      <node ref="U1" pin="GND"/>
+    </net>
+    <net code="4" name="Net-(U1-PadMI)">
+      <node ref="U1" pin="MI"/>
+    </net>
+    <net code="5" name="Net-(U1-PadMO)">
+      <node ref="U1" pin="MO"/>
+    </net>
+    <net code="6" name="Net-(U1-PadSCK)">
+      <node ref="U1" pin="SCK"/>
+    </net>
+    <net code="7" name="Net-(U1-Pad12)">
+      <node ref="U1" pin="12"/>
+    </net>
+    <net code="8" name="Net-(U1-Pad11)">
+      <node ref="U1" pin="11"/>
+    </net>
+    <net code="9" name="Net-(U1-Pad10)">
+      <node ref="U1" pin="10"/>
+    </net>
+    <net code="10" name="Net-(U1-PadTX)">
+      <node ref="U1" pin="TX"/>
+    </net>
+    <net code="11" name="Net-(U1-PadSS)">
+      <node ref="U1" pin="SS"/>
+    </net>
+    <net code="12" name="Net-(U1-PadAREF)">
+      <node ref="U1" pin="AREF"/>
+    </net>
+    <net code="13" name="Net-(U1-PadA0)">
+      <node ref="U1" pin="A0"/>
+    </net>
+    <net code="14" name="Net-(U1-PadA1)">
+      <node ref="U1" pin="A1"/>
+    </net>
+    <net code="15" name="Net-(U1-PadA2)">
+      <node ref="U1" pin="A2"/>
+    </net>
+    <net code="16" name="Net-(U1-PadA3)">
+      <node ref="U1" pin="A3"/>
+    </net>
+    <net code="17" name="Net-(U1-PadA4)">
+      <node ref="U1" pin="A4"/>
+    </net>
+    <net code="18" name="Net-(U1-PadA5)">
+      <node ref="U1" pin="A5"/>
+    </net>
+    <net code="19" name="Net-(U1-PadRST1)">
+      <node ref="U1" pin="RST1"/>
+    </net>
+    <net code="21" name="Net-(U1-PadNC)">
+      <node ref="U1" pin="NC"/>
+    </net>
+    <net code="22" name="CS4">
+      <node ref="D9" pin="1"/>
+      <node ref="U1" pin="3"/>
+    </net>
+    <net code="23" name="COM_LED2">
+      <node ref="J6" pin="4"/>
+      <node ref="U1" pin="13"/>
+    </net>
+    <net code="24" name="COM_LED1">
+      <node ref="J6" pin="2"/>
+      <node ref="U1" pin="2"/>
+    </net>
+    <net code="25" name="Net-(U1-Pad5V)">
+      <node ref="U1" pin="5V"/>
+    </net>
+    <net code="26" name="Net-(U1-Pad3.3V)">
+      <node ref="U1" pin="3.3V"/>
+    </net>
+    <net code="27" name="VIN">
+      <node ref="C1" pin="1"/>
+      <node ref="U2" pin="3"/>
+      <node ref="F1" pin="1"/>
+      <node ref="D11" pin="1"/>
+      <node ref="U1" pin="VI"/>
+    </net>
+    <net code="28" name="SDI">
+      <node ref="U1" pin="9"/>
+      <node ref="D2" pin="1"/>
+    </net>
+    <net code="29" name="SCK">
+      <node ref="D1" pin="1"/>
+      <node ref="U1" pin="8"/>
+    </net>
+    <net code="30" name="SDO">
+      <node ref="U6" pin="11"/>
+      <node ref="U4" pin="11"/>
+      <node ref="U1" pin="7"/>
+      <node ref="U5" pin="11"/>
+      <node ref="U3" pin="11"/>
+    </net>
+    <net code="31" name="CS1">
+      <node ref="D6" pin="1"/>
+      <node ref="U1" pin="6"/>
+    </net>
+    <net code="32" name="CS2">
+      <node ref="D5" pin="1"/>
+      <node ref="U1" pin="5"/>
+    </net>
+    <net code="33" name="CS3">
+      <node ref="U1" pin="4"/>
+      <node ref="D10" pin="1"/>
+    </net>
+    <net code="34" name="Net-(D3-Pad1)">
+      <node ref="D3" pin="1"/>
+      <node ref="U3" pin="13"/>
+    </net>
+    <net code="35" name="Net-(D4-Pad1)">
+      <node ref="D4" pin="1"/>
+      <node ref="U4" pin="13"/>
+    </net>
+    <net code="36" name="Net-(D6-Pad2)">
+      <node ref="R4" pin="2"/>
+      <node ref="U4" pin="9"/>
+      <node ref="D6" pin="2"/>
+    </net>
+    <net code="37" name="SCK_3V3">
+      <node ref="D1" pin="2"/>
+      <node ref="U3" pin="10"/>
+      <node ref="U6" pin="10"/>
+      <node ref="U5" pin="10"/>
+      <node ref="R1" pin="2"/>
+      <node ref="U4" pin="10"/>
+    </net>
+    <net code="38" name="Net-(D9-Pad2)">
+      <node ref="D9" pin="2"/>
+      <node ref="R7" pin="2"/>
+      <node ref="U5" pin="9"/>
+    </net>
+    <net code="39" name="Net-(U5-Pad7)">
+      <node ref="U5" pin="7"/>
+    </net>
+    <net code="40" name="Net-(U5-Pad6)">
+      <node ref="U5" pin="6"/>
+    </net>
+    <net code="41" name="Net-(F1-Pad2)">
+      <node ref="J5" pin="1"/>
+      <node ref="F1" pin="2"/>
+    </net>
+    <net code="42" name="SDI_3V3">
+      <node ref="U4" pin="12"/>
+      <node ref="R2" pin="2"/>
+      <node ref="U5" pin="12"/>
+      <node ref="U6" pin="12"/>
+      <node ref="U3" pin="12"/>
+      <node ref="D2" pin="2"/>
+    </net>
+    <net code="43" name="Net-(D7-Pad1)">
+      <node ref="D7" pin="1"/>
+      <node ref="U5" pin="13"/>
+    </net>
+    <net code="44" name="+3V3">
+      <node ref="C9" pin="1"/>
+      <node ref="C20" pin="1"/>
+      <node ref="R10" pin="1"/>
+      <node ref="R3" pin="1"/>
+      <node ref="C22" pin="1"/>
+      <node ref="R9" pin="1"/>
+      <node ref="R1" pin="1"/>
+      <node ref="R4" pin="1"/>
+      <node ref="U6" pin="8"/>
+      <node ref="U4" pin="5"/>
+      <node ref="C11" pin="1"/>
+      <node ref="R2" pin="1"/>
+      <node ref="U4" pin="8"/>
+      <node ref="R8" pin="1"/>
+      <node ref="U6" pin="5"/>
+      <node ref="U3" pin="5"/>
+      <node ref="R6" pin="1"/>
+      <node ref="U3" pin="8"/>
+      <node ref="C10" pin="1"/>
+      <node ref="C12" pin="1"/>
+      <node ref="R5" pin="1"/>
+      <node ref="R7" pin="1"/>
+      <node ref="C21" pin="1"/>
+      <node ref="U5" pin="8"/>
+      <node ref="U5" pin="5"/>
+      <node ref="C2" pin="1"/>
+      <node ref="U2" pin="2"/>
+      <node ref="C19" pin="1"/>
+    </net>
+    <net code="45" name="T4+">
+      <node ref="J4" pin="2"/>
+      <node ref="U5" pin="4"/>
+      <node ref="C16" pin="2"/>
+      <node ref="C13" pin="1"/>
+    </net>
+    <net code="46" name="T4-">
+      <node ref="J4" pin="1"/>
+      <node ref="C15" pin="1"/>
+      <node ref="C16" pin="1"/>
+      <node ref="U5" pin="2"/>
+      <node ref="U5" pin="3"/>
+    </net>
+    <net code="47" name="T3+">
+      <node ref="U6" pin="4"/>
+      <node ref="C14" pin="1"/>
+      <node ref="J3" pin="2"/>
+      <node ref="C18" pin="2"/>
+    </net>
+    <net code="48" name="T3-">
+      <node ref="U6" pin="2"/>
+      <node ref="U6" pin="3"/>
+      <node ref="C18" pin="1"/>
+      <node ref="J3" pin="1"/>
+      <node ref="C17" pin="1"/>
+    </net>
+    <net code="49" name="T2+">
+      <node ref="U3" pin="4"/>
+      <node ref="C6" pin="2"/>
+      <node ref="C3" pin="1"/>
+      <node ref="J2" pin="2"/>
+    </net>
+    <net code="50" name="T2-">
+      <node ref="C6" pin="1"/>
+      <node ref="C5" pin="1"/>
+      <node ref="J2" pin="1"/>
+      <node ref="U3" pin="2"/>
+      <node ref="U3" pin="3"/>
+    </net>
+    <net code="51" name="T1+">
+      <node ref="C4" pin="1"/>
+      <node ref="U4" pin="4"/>
+      <node ref="J1" pin="2"/>
+      <node ref="C8" pin="2"/>
+    </net>
+    <net code="52" name="T1-">
+      <node ref="U4" pin="3"/>
+      <node ref="U4" pin="2"/>
+      <node ref="J1" pin="1"/>
+      <node ref="C7" pin="1"/>
+      <node ref="C8" pin="1"/>
+    </net>
+    <net code="53" name="Net-(D8-Pad1)">
+      <node ref="D8" pin="1"/>
+      <node ref="U6" pin="13"/>
+    </net>
+    <net code="54" name="Net-(D5-Pad2)">
+      <node ref="R3" pin="2"/>
+      <node ref="U3" pin="9"/>
+      <node ref="D5" pin="2"/>
+    </net>
+    <net code="55" name="Net-(D10-Pad2)">
+      <node ref="D10" pin="2"/>
+      <node ref="U6" pin="9"/>
+      <node ref="R8" pin="2"/>
+    </net>
+    <net code="56" name="Net-(D3-Pad2)">
+      <node ref="D3" pin="2"/>
+      <node ref="R5" pin="2"/>
+    </net>
+    <net code="57" name="Net-(D4-Pad2)">
+      <node ref="R6" pin="2"/>
+      <node ref="D4" pin="2"/>
+    </net>
+    <net code="58" name="Net-(U4-Pad7)">
+      <node ref="U4" pin="7"/>
+    </net>
+    <net code="59" name="Net-(U4-Pad6)">
+      <node ref="U4" pin="6"/>
+    </net>
+    <net code="60" name="Net-(U6-Pad7)">
+      <node ref="U6" pin="7"/>
+    </net>
+    <net code="61" name="Net-(U6-Pad6)">
+      <node ref="U6" pin="6"/>
+    </net>
+    <net code="62" name="Net-(D7-Pad2)">
+      <node ref="D7" pin="2"/>
+      <node ref="R9" pin="2"/>
+    </net>
+    <net code="63" name="Net-(U3-Pad7)">
+      <node ref="U3" pin="7"/>
+    </net>
+    <net code="64" name="Net-(U3-Pad6)">
+      <node ref="U3" pin="6"/>
+    </net>
+    <net code="65" name="Net-(D8-Pad2)">
+      <node ref="R10" pin="2"/>
+      <node ref="D8" pin="2"/>
+    </net>
+  </nets>
+</export>

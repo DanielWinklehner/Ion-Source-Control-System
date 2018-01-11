@@ -19,11 +19,10 @@ p = Pico('/dev/ttyUSB0')
 pico_thread = threading.Thread(target=p.run)
 pico_thread.start()
 
-
 def poll():
     # dummy function, actually get values from devices here
-    a = [p.current_value, 13439.0, 165.1, 34509.11]
-    return ' '.join([str(_) for _ in a])
+    values = [p.current_value, 13439.0, 165.1, 34509.11]
+    return ' '.join([str(val) for val in values])
 
 def vset():
     pass
@@ -37,27 +36,29 @@ def vmove():
 def move():
     pass
 
-# mapping of words to function calls
+# mapping of received words to function calls
 fmap = {
         b'poll': poll,
         b'vset': vset,
         b'hmove': hmove,
         b'vmove': vmove
-        }
+       }
 
+print("Scanner DAQ Server accepting connections")
 
-# print a welcome message
-print "Scanner DAQ Server accepting connections"
 try:
+    # outer loop to continuously accept connections
     while True:
         conn, addr = s.accept()
-        print "got connection at {}".format(addr)
+        print("got connection at {}".format(addr))
+        # inner loop to handle messages with current connection
         while True:
             data = conn.recv(BUFFER_SIZE)
             if not data:
                 break
-            print "received data:", data
-            conn.send(fmap[data]())  # echo
+            print("received data: {}".format(data))
+            #call function corresponding to what was sent
+            conn.send(fmap[data]())
         conn.close()
 except KeyboardInterrupt:
     p.terminate()
