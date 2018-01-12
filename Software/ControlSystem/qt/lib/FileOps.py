@@ -6,6 +6,7 @@
 # Loading/saving functions for control system
 
 import json
+import operator
 
 from lib.Device import Device
 from lib.Channel import Channel
