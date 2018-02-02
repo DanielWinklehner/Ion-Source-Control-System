@@ -7,15 +7,16 @@ class Pico():
     def __init__(self, port, debug=False):
 
         self._terminate = False
+        self._debug = debug
 
         # startup commands
         self._init_prgm = [
-                '*RST',           # reset to default settings  
+                '*RST',           # reset to default settings
                 'FORM:ELEM READ', # output only the value (i.e. no unit/timestamp, etc)
                 'NPLC .01',       # fastest polling rate
                 'SYST:ZCH OFF'    # disable zero checking
         ]
-        
+
         # loop commands
         self._run_prgm = [
         'READ?', 'r'
