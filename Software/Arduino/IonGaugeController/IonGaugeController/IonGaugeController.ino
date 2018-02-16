@@ -303,10 +303,20 @@ void loop() {
   } 
   else 
   {
-    if (gauge1_err) gauge1_state = String("ERR");
-    else gauge1_state = String("OFF");
+    if (gauge1_err) {
+      gauge1_state = String("ERR");
+      if (gauge1_calib_flag){
+          digitalWrite(RELAY3,LOW);   // Turns ON  RELAY 3 (gauge 1 calibration)
+          gauge1_calib_flag = false;
+          delay(50);
+          gauge1_state = String("RST");
+      }
+    }
+    else {
+      gauge1_state = String("OFF");
+    }
     gauge1_torr_str = String("0.0e-0");
-    gauge1_calib_flag = false;
+    //gauge1_calib_flag = false;
   }
 
   if (gauge2_running)
