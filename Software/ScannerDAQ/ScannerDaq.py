@@ -113,19 +113,27 @@ class Comm(QObject):
     def terminate(self):
         self._terminate = True
 
-class DaqView(QObject):
+class DaqView():
 
-    sig_connected = pyqtSignal()
-    sig_disconnected = pyqtSignal()
+    #sig_connected = pyqtSignal()
+    #sig_disconnected = pyqtSignal()
 
     def __init__(self):
         self._window = MainWindow.MainWindow()
         self._window.btnConnect.clicked.connect(self.connect_to_server)
 
-        self._window.ui.btnVStepTest.clicked.connect(self.test_stepper)
+        # stepper manual controls
+        self._window.ui.btnRetract.clicked.connect(lambda: self.stepper_com('SL SP'))
+        self._window.ui.btnExtend.clicked.connect(lambda: self.stepper_com('SL - SP'))
+        self._window.ui.btnStop.clicked.connect(lambda: self.stepper_com('\x1b'))
+        self._window.ui.btnCalibMoveSet.clicked.connect(self.calib_move_set)
 
-        self._values = {'vol': 0.0, 'ver': 0.0, 'hor': 0.0, 'cur': 0.0}
-        self._deques = {'vol': deque(maxlen=10), 'ver': 0.0, 'hor': 0.0, 'cur': deque(maxlen=5)}
+        # calibration buttons
+        #self._window.ui.btnVExtend.clicked.connect(self.set_stepper_extended)
+        #self._window.ui.btnVParked.clicked.connect(self.set_stepper_parked)
+        #self._window.ui.btnHExtend.clicked.connect(self.set_stepper_extended)
+        #self._window.ui.btnHParked.clicked.connect(self.set_stepper_parked)
+
 
         # set up main device dictionary
         device_name_list = ['pico', 'vstepper', 'hstepper', 'vreg']
@@ -154,8 +162,8 @@ class DaqView(QObject):
         self._devices['vreg']['name'] = 'Voltage'
 
         self._devices['pico']['unit'] = 'A'
-        self._devices['vstepper']['unit'] = 'cm'
-        self._devices['hstepper']['unit'] = 'cm'
+        self._devices['vstepper']['unit'] = 'steps'
+        self._devices['hstepper']['unit'] = 'steps'
         self._devices['vreg']['unit'] = 'kV'
 
         # exceptions to default values
@@ -163,17 +171,15 @@ class DaqView(QObject):
         self._devices['vstepper']['status'] = 'Not calibrated'
         self._devices['hstepper']['status'] = 'Not calibrated'
 
+        # calibration variables
         self._vercalib = False
         self._horcalib = False
+        self._ver_calib_pts = (None, None)
+        self._hor_calib_pts = (None, None)
 
         self._com_thread = QThread()
 
         self.update_display_values()
-
-    def test_stepper(self):
-        rnd = np.random.normal(250000, 100000)
-        msg = 'vmove {}'.format(int(rnd))
-        self._comm._command_queue.put(msg)
 
     def connect_to_server(self):
 
@@ -231,6 +237,11 @@ class DaqView(QObject):
         self._window.tabCalib.setEnabled(False)
         self._window.tabScan.setEnabled(False)
 
+        # reset devices
+        self._ver_calib_pts = (None, None)
+        self._hor_calib_pts = (None, None)
+        self.check_calibration()
+
     def on_poll_rate(self, rate):
         self._window.lblPollRate.setText('Polling rate: {0:.2f} Hz'.format(rate))
 
@@ -240,8 +251,8 @@ class DaqView(QObject):
                                 else 'ERR' for x in data.split(' ')]
 
         self._devices['pico']['value'] = cur
-        self._devices['vstepper']['value'] = ver
-        self._devices['hstepper']['value'] = hor
+        self._devices['vstepper']['value'] = ver if not self._vercalib else None
+        self._devices['hstepper']['value'] = ver if not self._vercalib else None
         self._devices['vreg']['value'] = vol
 
         for device_name, info in self._devices.items():
@@ -267,6 +278,82 @@ class DaqView(QObject):
                             info['status'] != '' else ''
                     )
                 )
+
+    # stepper buttons on calibration page call this function with fixed commands
+    def stepper_com(self, cmd):
+        if self._window.ui.rbVMove.isChecked():
+            msg = 'vmove '
+        else:
+            msg = 'hmove '
+
+        msg += cmd
+
+        self._comm._command_queue.put(msg)
+
+    def calib_move_set(self):
+        ''' Called when the user presses Go button on calibration page '''
+
+        stepdest = None
+        vdest = None
+
+        # Did the user provide a number of steps?
+        steptxt = self._window.ui.txtMovePos.text()
+        if steptxt.strip() != '':
+            try:
+                stepdest = int(steptxt)
+            except ValueError:
+                pass
+
+        # Did the user provide a voltage target?
+        vtxt = self._window.ui.txtMoveV.text()
+        if vtxt.strip() != '':
+            try:
+                stepdest = float(steptxt)
+            except ValueError:
+                pass
+
+        if stepdest is not None:
+            # send the absolute move command to the selected stepper
+            self.stepper_com('MA {}'.format(stepdest))
+
+        if vdest is not None:
+            # send the voltage set command to the voltage regulator
+            self._comm._command_queue.put('vset {}'.format(vdest))
+
+    def check_calibration(self):
+        # are both vertical points set?
+        if self._ver_calib_pts != (None, None):
+            self._devices['vstepper']['status'] = ''
+            self._devices['vstepper']['unit'] = 'mm'
+        else:
+            self._devices['vstepper']['status'] = 'Not calibrated'
+            self._devices['vstepper']['unit'] = 'steps'
+            self._vercalib = False
+
+        # same for horizontal points
+        if self._hor_calib_pts != (None, None):
+            self._devices['hstepper']['status'] = ''
+            self._devices['hstepper']['unit'] = 'mm'
+        else:
+            self._devices['hstepper']['status'] = 'Not calibrated'
+            self._devices['hstepper']['unit'] = 'steps'
+            self._horcalib = False
+
+
+    def set_stepper_extended(self):
+        ''' Sets the calibration points '''
+        if self._window.ui.rbVMove.isChecked():
+            self._ver_calib_pts[1] = self._devices['vstepper']['value']
+        else:
+            self._hor_calib_pts[1] = self._devices['vstepper']['value']
+
+    def set_stepper_parked(self):
+        ''' Sets the calibration points '''
+        if self._window.ui.rbVMove.isChecked():
+            self._ver_calib_pts[0] = self._devices['vstepper']['value']
+        else:
+            self._hor_calib_pts[0] = self._devices['vstepper']['value']
+
 
     def run(self):
         self._window.show()

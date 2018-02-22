@@ -6,6 +6,7 @@ import threading
 import sys
 import subprocess
 from inspect import isclass
+# from collections import OrderedDict
 
 from devices.pico import Pico
 from devices.stepper import Stepper
@@ -26,7 +27,7 @@ s.listen(1)
 
 # device dict, default assignment to the respective class
 devices = {
-            'pico': {'device': Pico, 'serial': 'aaa', 'thread': None},
+            'pico': {'device': Pico, 'serial': 'Controller', 'thread': None},
             'vstepper': {'device': Stepper, 'serial': '8212017125346', 'thread': None},
             'hstepper': {'device': Stepper, 'serial': 'aaa', 'thread': None},
             'vreg': {'device': object, 'serial': 'aaa', 'thread': None}
@@ -66,7 +67,13 @@ def poll():
     Aggregate available info from all devices
     Return 'ERR' string if a device is uninitialized
     '''
-    device_names = [device_name for device_name, _ in devices.iteritems()]
+    # order devices manually
+    device_names = ['pico', 'vstepper', 'hstepper', 'vreg']
+
+    # what I would like to do:
+    # device_names = [device_name for device_name, _ in devices.iteritems()]
+    # maybe this can be solved with an ordered dict
+
     values = ['ERR' if isclass(devices[device_name]['device']) \
                 else devices[device_name]['device'].current_value \
                 for device_name in device_names
@@ -81,9 +88,7 @@ def hmove():
     pass
 
 def vmove(arg):
-    devices['vstepper']['device'].add_command_to_queue(
-                                    'MA {}'.format(int(arg)) # absolute move
-                                )
+    devices['vstepper']['device'].add_command_to_queue(arg) # absolute move
 
 def move():
     pass
@@ -112,7 +117,7 @@ try:
 
             # call function corresponding to what was sent
             # if sent data has an argument, split it from the command word
-            tp = data.split(' ')
+            tp = data.split(' ', 1) # max split = 1
             if tp == ['poll']:
                 # on poll request we immediately send the result
                 conn.send(fmap[tp[0]]())
@@ -123,4 +128,5 @@ try:
         conn.close()
 except KeyboardInterrupt:
     for device_name, info in devices.iteritems():
-        info['device'].terminate()
+        if not isclass(info['device']):
+            info['device'].terminate()

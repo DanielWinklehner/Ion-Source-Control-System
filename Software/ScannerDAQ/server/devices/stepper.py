@@ -19,9 +19,9 @@ class Stepper():
                 'FD',           # reset to default settings
                 'MS=16',        # 16 microsteps/step
                 'A=50000',      # steps/sec^2
-                'VA SP=6400',   # create and set speed variable=6400 steps/sec
-                'VM=6400',      # maximum velocity is 6400 steps/sec
-                'RC=75',        # set run current = 75%
+                'VA SP=12800',  # create and set speed variable in steps/sec
+                'VM=12800',     # maximum velocity in steps/sec
+                'RC=85',        # set run current as percent (e.g. 75=75%)
                 'S1=3,1',       # enable limit - switch & use with HM command
                 'S2=2,1'        # enable limit + switch & use with HM command
             ]

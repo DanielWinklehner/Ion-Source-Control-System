@@ -37,19 +37,19 @@ class Pico():
     def run(self):
 
         for cmd in self._init_prgm:
-            if debug:
+            if self._debug:
                 print(cmd)
             self._s.write(cmd + '\r')
 
         while not self._terminate:
             for cmd in self._run_prgm:
-                if debug:
+                if self._debug:
                     print(cmd)
                 if cmd != 'r':
                     self._s.write(cmd + '\r')
                 else:
                     resp = fast_read(self._s)#.split(',')
-                    if debug:
+                    if self._debug:
                         print(resp)
                     self._current_value = float(resp)
 
