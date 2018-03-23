@@ -1,0 +1,22 @@
+1. Manually install d2xx drivers on RasPi. Has to be version 1.3.x (or maybe just have to sudo).
+Link: http://www.ftdichip.com/Drivers/D2XX.htm (use the v6 that says works on RasPi, follow instructions in readme in the rightmost column)
+(CO-U32 serial number is CO001144)
+2. If you compile the tests/examples, there is a small modification necessary in the loopback example 
+(just add "../" in front of the import statement in main.c)
+3. Install ftd2xx from https://github.com/ctrl-shift-esc/ftd2xx (has Linux version as opposed to PyUSB 1.6)
+4. Compile ftd2xx as sudo! (sudo python setup.py install)
+
+5. Run python as sudo, test the comunication:
+
+BaudRate 9600, 8 data bits, 1 stop bit, no parity, no flow control
+500 ms read, 100 ms write timeout (in Matsusada Example Code)
+
+import ftd2xx
+
+ftd2xx.setVIDPID(0x1192, 0x1000)  # Add our devices Vendor ID and Product ID to the loaded list of FTDI ID's
+dev = ftd2xx.open(0)  # if there is only one FTDI device connected or CO happens to be the first one in the list, otherwise, different index
+dev.setBaudRate(9600)
+dev.setDataCharacteristics(8, 0, 0)  # 8 data bits, 1 stop bit (for some reason BITS_8 = 0), parity none = 0
+dev.setFlowControl(0x0000)
+dev.write("#1 REN\r")  # needs a carriage return, not a newline! #1 can be replaced with units 2, 3, 4, etc.
+

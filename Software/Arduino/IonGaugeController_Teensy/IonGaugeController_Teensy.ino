@@ -47,7 +47,7 @@ int res = 12;
 float gauge1_calib = 10.0 / 0.86;  // Diff Amp input stage has A=0.1
 float gauge1_factor = 1.02525 * gauge1_calib / pow(2.0, (float) res) / (float) samples;
 float gauge2_calib = 10.0 / 0.86;  // Diff Amp input stage has A=0.1
-float gauge2_factor = 1.2 * gauge2_calib / pow(2.0, (float) res) / (float) samples;
+float gauge2_factor = 1.02525 * gauge2_calib / pow(2.0, (float) res) / (float) samples;
 
 // Global flags for on/off status of ion gauges
 boolean gauge1_running = false;
