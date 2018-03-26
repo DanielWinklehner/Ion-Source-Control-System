@@ -22,7 +22,7 @@ class EntryForm(QWidget):
         self._properties = properties
         self._parent = parent
 
-        self._property_list = sorted([(name, x) for name, x in self._properties.items()], 
+        self._property_list = sorted([(name, x) for name, x in self._properties.items()],
                                      key=lambda y: y[1]['display_order'])
 
         # create the entry form widget
@@ -47,12 +47,12 @@ class EntryForm(QWidget):
         self._layout = QVBoxLayout()
         self._widget.setLayout(self._layout)
 
-        lblTitle = QLabel(self._title)
+        self._lblTitle = QLabel(self._title)
         font = QFont()
         font.setPointSize(14)
-        lblTitle.setFont(font)
+        self._lblTitle.setFont(font)
 
-        lblSubtitle = QLabel(self._subtitle)
+        self._lblSubtitle = QLabel(self._subtitle)
         btnSave = QPushButton('Save Changes')
         btnSave.clicked.connect(self.on_save_changes_click)
 
@@ -61,16 +61,21 @@ class EntryForm(QWidget):
         hbox.addWidget(btnSave)
         hbox.addStretch()
 
-        self._layout.addWidget(lblTitle)
-        self._layout.addWidget(lblSubtitle)
+        self._layout.addWidget(self._lblTitle)
+        self._layout.addWidget(self._lblSubtitle)
         self._layout.addLayout(self._widget_layout)
         self._layout.addLayout(hbox)
         self._layout.addStretch()
 
     def reset(self):
+
         for i, prop in enumerate(self._property_list):
 
             widget = self._widget_layout.itemAt(1 + 2 * i).widget()
+
+            if prop[0] == 'label':
+                self._title = prop[1]['value']
+                self._lblTitle.setText(self._title)
 
             if prop[1]['entry_type'] == 'text':
                 widget.setText(str(prop[1]['value']))
@@ -125,5 +130,5 @@ class EntryForm(QWidget):
     @properties.setter
     def properties(self, props):
         self._properties = props
-        self._property_list = sorted([(name, x) for name, x in self._properties.items()], 
+        self._property_list = sorted([(name, x) for name, x in self._properties.items()],
                                      key=lambda y: y[1]['display_order'])

@@ -16,7 +16,7 @@ import operator
 from multiprocessing import Process, Pipe
 
 from PyQt5.QtCore import QObject, QThread, QTimer, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QApplication, QFileDialog 
+from PyQt5.QtWidgets import QApplication, QFileDialog
 
 import numpy as np
 
@@ -54,7 +54,7 @@ def query_server(com_pipe, server_url, debug=False):
             elif _in_message[0] == "device_or_channel_changed":
                 _device_dict_list = _in_message[1]
             elif _in_message[0] == "pause_query":
-                _paused = not _paused 
+                _paused = not _paused
 
         if _device_dict_list is not None and _device_dict_list and not _paused:
             poll_count += 1
@@ -152,7 +152,7 @@ class Communicator(QObject):
                         self.sig_poll_rate.emit(gui_message[1])
                     elif gui_message[0] == "query_response":
                         self.sig_device_info.emit(gui_message[1])
-                
+
                 # if there is a message, send it
                 if not self._message_queue.empty():
                     message = self._message_queue.get()
@@ -178,7 +178,7 @@ class ControlSystem():
     def __init__(self, server_ip='127.0.0.1', server_port=80, debug=False):
         ## Set up Qt UI and connect UI signals
         self._window = MainWindow.MainWindow()
-        
+
         self._window.ui.btnSave.triggered.connect(self.on_save_button)
         self._window.ui.btnSaveAs.triggered.connect(self.on_save_as_button)
         self._window.ui.btnLoad.triggered.connect(self.on_load_button)
@@ -201,7 +201,7 @@ class ControlSystem():
         ##  Initialize RasPi server
         self.debug = debug
         self._server_url = 'http://{}:{}/'.format(server_ip, server_port)
-            
+
         try:
             r = requests.get(self._server_url + 'initialize/')
             if r.status_code == 200:
@@ -217,12 +217,12 @@ class ControlSystem():
             devices = json.loads(r.text)
             for device_id, device_info in devices.items():
                 self._window.status_message('Found {} with ID {} on port {}.'.format(
-                                            device_info['identifyer'], 
-                                            device_id, 
+                                            device_info['identifyer'],
+                                            device_id,
                                             device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
-        
+
         ## Set up communication pipes.
         self._keep_communicating = False
         self._retry_devices = False
@@ -237,7 +237,7 @@ class ControlSystem():
         self._locked_devices = []
 
         # keep persistent communicator thread
-        self._com_thread = QThread() 
+        self._com_thread = QThread()
 
         self._pinned_curve = self._window._pinnedplot.curve
         self._pinned_channel = None
@@ -251,7 +251,7 @@ class ControlSystem():
         """ Create gui/server pipe pair, start communicator """
         self._pipe_gui, pipe_server = Pipe()
 
-        self._com_process = Process(target=query_server, 
+        self._com_process = Process(target=query_server,
                                     args=(pipe_server, self._server_url, False,))
 
         self._keep_communicating = True
@@ -287,7 +287,7 @@ class ControlSystem():
         except AttributeError:
             # if process doesn't exist
             pass
-        
+
         try:
             self._communicator.terminate()
             self._com_thread.quit()
@@ -330,7 +330,7 @@ class ControlSystem():
                     self._locked_devices.append(device)
                 continue
 
-            if device in self._locked_devices: 
+            if device in self._locked_devices:
                 self._locked_devices.remove(device)
                 device._overview_widget.hide_error_message()
 
@@ -589,6 +589,8 @@ class ControlSystem():
         # if the device gets disconnected and reconnected, need to send a message to the server
         device.sig_update_server.connect(self.device_or_channel_changed)
 
+        device.reset_entry_form()
+
         # return true if successful
         return True
 
@@ -615,6 +617,8 @@ class ControlSystem():
         channel._set_signal.connect(self.set_value_callback)
         channel._pin_signal.connect(self.set_pinned_plot_callback)
         channel._settings_signal.connect(self.set_plot_settings_callback)
+
+        channel.reset_entry_form()
 
         channel.parent_device.update()
 
@@ -694,7 +698,7 @@ class ControlSystem():
                         fmt = '{:' + channel.displayformat + '}'
                         val = str(fmt.format(channel.value))
                         channel.read_widget.setText(val)
-                        
+
         elif self._window.current_tab == 'plots':
             # update the plotted channels
             for device_name, device in self._devices.items():
@@ -713,8 +717,8 @@ class ControlSystem():
     def set_pinned_plot_callback(self, device, channel):
         """ Set the pinned plot when a user pressed the plot's pin button """
         # click button emits (device, channel)
-        self._pinned_channel = channel 
-        
+        self._pinned_channel = channel
+
         # update plot settings
         x = self._window._gbpinnedplot.layout().itemAt(0).widget()
         x.setLabel('left', '{} [{}]'.format(channel.label, channel.unit))
@@ -745,7 +749,7 @@ class ControlSystem():
         if self._device_file_name == '':
             fileName, _ = QFileDialog.getSaveFileName(self._window,
                                 "Save Session as JSON","","Text Files (*.txt)")
-        
+
             if fileName == '':
                 return
 
@@ -779,7 +783,7 @@ class ControlSystem():
                               }
 
             output = {
-                      'devices': devdict, 
+                      'devices': devdict,
                       'procedures': procdict,
                       'window-settings': winsettingsdict,
                       'control-system-settings': cssettingsdict,
@@ -820,7 +824,7 @@ class ControlSystem():
             self._window.status_message('Unable to read JSON.')
             return
         else:
-            devices, procedures, winsettings, cssettings = res 
+            devices, procedures, winsettings, cssettings = res
 
         # Add devices and procedures
         for _, dev in devices.items():
@@ -897,7 +901,7 @@ class ControlSystem():
         if settings['pinned-device'] is not None:
             dev = self._devices[settings['pinned-device']]
             ch = dev.channels[settings['pinned-channel']]
-            self._pinned_channel = ch 
+            self._pinned_channel = ch
             self.set_pinned_plot_callback(dev, ch)
 
         for item in settings['plotted-channels']:
