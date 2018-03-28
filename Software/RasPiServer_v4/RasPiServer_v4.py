@@ -4,18 +4,26 @@ from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing import Process, Pipe
 from multiprocessing.managers import BaseManager
 from flask import Flask, request
-import subprocess
 import threading
 import json
 from MIST1DeviceDriver import MIST1DeviceDriver, driver_mapping
 from SerialCOM import *
 from HtmlPage import *
+from DeviceFinder import *
 import ftd2xx
 
 
 class MyManager(BaseManager):
     pass
 
+
+# register all the ftdi VIDPIDs used by the FTDI drivers
+for driver_name, info in driver_mapping.iteritems():
+    try:
+        ftd2xx.setVIDPID(*info['ftdi_info'])
+    except KeyError:
+        # driver is not FTDI, so skip it
+        continue
 
 MyManager.register('SerialCOM', SerialCOM)
 
@@ -43,23 +51,31 @@ def stopwatch(msg=''):
 # ------------------------------------------------------------------------- #
 
 
-def serial_watchdog(com_pipe, debug, port_identifyers):
+def serial_watchdog(com_pipe, debug, port_identifiers):
     """
     Function to be called as a process. Watches the serial ports and looks for devices plugged in
     or removed.
     Underscore at beginning prevents flask_classy from making it a route in the Flask server.
     :param com_pipe: this end of the pipe to communicate with main server process.
     :param debug: Flag whether or not debugging should be turned on.
-    :param port_identifyers: A list of strings that are used to identify a specific serial port (e.g. "Arduino")
+    :param port_identifiers: A list of strings that are used to identify a specific serial port (e.g. "Arduino")
     :return:
     """
     _keep_communicating2 = True
     _com_freq = 2.0  # (Hz)
     _com_period = 1.0 / _com_freq  # (s)
     _debug = debug
-    _port_identifyers = port_identifyers
+    _port_identifiers = port_identifiers
+
     _current_ports_by_ids = {}
     _new_ports_by_ids = {}
+
+    _current_ftdi_by_addr = {}
+    _new_ftdi_by_addr = {}
+
+    serial_finder = SerialDeviceFinder(port_identifiers)
+    ftdi_finder = FTDIDeviceFinder(port_identifiers)
+    finder_list = [serial_finder, ftdi_finder]
 
     while _keep_communicating2:
 
@@ -76,82 +92,36 @@ def serial_watchdog(com_pipe, debug, port_identifyers):
             elif _in_message[0] == "shutdown":
                 break
 
-            elif _in_message[0] == "port_identifyers":
-                _port_identifyers = _in_message[1]
+            elif _in_message[0] == "port_identifiers":
+                _port_identifiers = _in_message[1]
+                # update each finder's identifier list
+                for finder in finder_list:
+                    finder.identifiers = _port_identifiers
 
             elif _in_message[0] == "debug":
                 _debug = _in_message[1]
 
-        # Find the serial ports and whether they belong to an arduino
-        # TODO: This takes a very long time, is there a faster way?
-        proc = subprocess.Popen('/home/pi/RasPiServer_v3/usb.sh',
-                                stdout=subprocess.PIPE, shell=True)
-
-        output = proc.stdout.read().strip()
 
         _device_added = False
         _device_removed = False
-        _device_ids = _current_ports_by_ids.keys()
+        _finder_info = {}
+        for finder in finder_list:
+            _finder_info[finder.name] = finder.find_devices()
+            if _finder_info[finder.name]['added'] != {}:
+                _device_added = True
 
-        _obsolete_ports_by_ids = {}
-        _added_ports_by_ids = {}
-
-        # Loop through all found devices and add them to a new list, remove them from the current list
-        for line in output.split("\n"):
-
-            # Go through all identifyers and see if one is found in this serial port
-            _current_identifyer = [identifyer for identifyer in _port_identifyers if identifyer in line]
-
-            if len(_current_identifyer) == 1:
-
-                _current_identifyer = _current_identifyer[0]
-
-                port, raw_info = line.split(" - ")
-                serial_number = raw_info.split("_")[-1]
-
-                _new_ports_by_ids[serial_number] = {"port": port,
-                                                    "identifyer": _current_identifyer}
-
-                if serial_number not in _device_ids:
-                    _device_added = True
-                    _added_ports_by_ids[serial_number] = _new_ports_by_ids[serial_number]
-                else:
-                    del _current_ports_by_ids[serial_number]
-            #
-            # else:
-            #     print(line)
-
-        # Now, let's check if there are any devices still left in the current dict
-        if len(_current_ports_by_ids) > 0:
-            _device_removed = True
-            _obsolete_ports_by_ids = _current_ports_by_ids  # These SerialCOM objects have to be destroyed
-
-        _current_ports_by_ids = _new_ports_by_ids
-        _new_ports_by_ids = {}
-
-        if _debug:
-            if _device_removed:
-                print("Device(s) were removed")
-            if _device_added:
-                print("Device(s) were added")
+            if _finder_info[finder.name]['obsolete']:
+                _device_removed = True
 
         if _device_added or _device_removed:
             # If something has changed:
             if _debug:
-                print("Updated List:")
-                for _key, item in _current_ports_by_ids.items():
-                    print ("{} #{} at port {}".format(item["identifyer"], _key, item["port"]))
+                pass # need to update this block
+                #print("Updated List:")
+                #for _key, item in _current_ports_by_ids.items():
+                #    print ("{} #{} at port {}".format(item["identifier"], _key, item["port"]))
 
-            # Reverse ports_by_ids:
-            _current_ids_by_ports = {}
-            for myid, myport_info in _current_ports_by_ids.items():
-                _current_ids_by_ports[myport_info["port"]] = myid
-
-            # Send the new dictionaries back to the server
-            pipe_message = ["updated_list",
-                            _current_ports_by_ids, _current_ids_by_ports,
-                            _obsolete_ports_by_ids, _added_ports_by_ids]
-
+            pipe_message = ["updated_list", _finder_info]
             com_pipe.send(pipe_message)
 
         # Do the timing of this process:
@@ -176,11 +146,11 @@ _ports_by_ids = {}
 _ids_by_ports = {}
 _watch_proc = Process(target=serial_watchdog, args=(pipe_serial_watcher,
                                                     _mydebug,
-                                                    driver_mapping.keys()))
+                                                    driver_mapping))
 _watch_proc.daemon = True
 _keep_communicating = False
 _initialized = False
-_serial_comms = {}
+_comms = {}
 # TODO: Add another Pipe/Process combo for displaying stuff on our new display
 
 
@@ -336,10 +306,10 @@ def set_value_on_device():
 
     try:
         # print(port_id)
-        # print(_serial_comms[port_id])
+        # print(_comms[port_id])
 
         for cmd in msg:
-            device_response = _serial_comms[port_id].send_message(cmd)
+            device_response = _comms[port_id].send_message(cmd)
 
     except Exception as e:
 
@@ -441,7 +411,7 @@ def query_device():
 def mp_worker(args):
     port, messages = args
 
-    global _serial_comms
+    global _comms
     global _ids_by_ports
 
     myid = _ids_by_ports[port]
@@ -457,7 +427,7 @@ def mp_worker(args):
             print("The message to the device is: {}".format(msg))
 
         try:
-            arduino_response = _serial_comms[myid].send_message(msg)
+            arduino_response = _comms[myid].send_message(msg)
             all_responses.append(arduino_response)
 
             if _mydebug:
@@ -467,7 +437,7 @@ def mp_worker(args):
             print("Something went wrong! I'm sorry! {}".format(e))
             all_responses.append(None)
 
-    return _serial_comms[myid].get_arduino_id(), all_responses
+    return _comms[myid].get_arduino_id(), all_responses
 
 
 def listen_to_pipe():
@@ -481,22 +451,77 @@ def listen_to_pipe():
 
         if gui_message[0] == "updated_list":
 
+            temp_ports_by_ids = {}
+            temp_ids_by_ports = {}
+
             if _mydebug:
                 print("Updating ports/ids in main server")
 
-            _ports_by_ids = gui_message[1]
-            _ids_by_ports = gui_message[2]
-            _obsolete = gui_message[3]
-            _added = gui_message[4]
+            message_info = gui_message[1]
+            for name, finder_result in message_info.iteritems():
+                if name == 'serial':
+                    for key, val in finder_result['current'].iteritems():
+                        temp_ports_by_ids[key] = val
+                        temp_ids_by_ports[val['port']] = key
+                    _obsolete = finder_result['obsolete']
+                    _added = finder_result['added']
 
-            for _key in _obsolete.keys():
-                del _serial_comms[_key]
-            for _key, _port_info in _added.items():
-                _baud_rate = driver_mapping[_port_info["identifyer"]]["baud_rate"]
-                _serial_comms[_key] = manager().SerialCOM(arduino_id=_key,
-                                                          port_name=_port_info["port"],
-                                                          baud_rate=_baud_rate,
-                                                          timeout=1.0)
+                    for _key in _obsolete.keys():
+                        del _comms[_key]
+                    for _key, _port_info in _added.items():
+                        _baud_rate = driver_mapping[_port_info["identifier"]]["baud_rate"]
+                        _comms[_key] = manager().SerialCOM(arduino_id=_key,
+                                                           port_name=_port_info["port"],
+                                                           baud_rate=_baud_rate,
+                                                           timeout=1.0)
+                elif name == 'ftdi':
+                    #for key, val in finder_result['current'].iteritems():
+                    #    temp_ports_by_ids[ftdi_key] = val
+                    #    temp_ids_by_ports[val['port']] = newkey
+
+                    _obsolete = finder_result['obsolete']
+                    _added = finder_result['added']
+                    if _added != {}:
+                        # we are adding one or more devices
+                        i = 0
+                        while True:
+                            try:
+                                dev = ftd2xx.open(i)
+                                # create FTDICOM object for each new device (= number of valid opens before break)
+                                ftdi_key = dev.eeRead().SerialNumber
+                                dev.close()
+                                _comms[ftdi_key] = manager().FTDICOM(ftdi_key, i)
+                                temp_ports_by_ids[ftdi_key] = {'port': i, 'identifier': 'CO Series'}
+                                temp_ids_by_ports[i] = ftdi_key
+
+                                print('device added')
+                                i += 1
+                            except Exception as e:
+                                print(i, e, e.args, e.message)
+                                if e.message == 'DEVICE_NOT_FOUND':
+                                    # we have gone too far
+                                    break
+                                elif e.message == 'DEVICE_NOT_OPENED':
+                                    # device already opened
+                                    i += 1
+                                    continue
+                                else:
+                                    print(e)
+
+                    if _obsolete != {}:
+                        # we are removing one or more devices
+                        for key, comm in _comms.items():
+                            if isinstance(comm, FTDICOM):
+                                try:
+                                    _ = comm.serial_number
+                                except Exception as e:
+                                    if e.message == 'EEPROM_NOT_FOUND':
+                                        # remove device
+                                        print('device removed')
+                                        del _comms[key]
+            # update the server's dictionaries all at once
+            _ports_by_ids = temp_ports_by_ids
+            _ids_by_ports = temp_ids_by_ports
 
     if _keep_communicating:
         threading.Timer(0.5, listen_to_pipe).start()
