@@ -20,7 +20,7 @@ class DeviceWidget(QWidget):
 
     def __init__(self, device):
         super().__init__()
-        
+
         self._device = device
 
         self._layout = QVBoxLayout()
@@ -103,7 +103,7 @@ class DeviceWidget(QWidget):
     @property
     def gblayout(self):
         return self._gblayout
-    
+
 class Device(QObject):
 
     _sig_entry_form_ok = pyqtSignal(object, dict)
@@ -112,7 +112,7 @@ class Device(QObject):
     # emit when device changes need to be send to server (lock/unlock)
     _sig_update_server = pyqtSignal()
 
-    def __init__(self, name='', device_id='', label='', channels=None, 
+    def __init__(self, name='', device_id='', label='', channels=None,
                  driver='Arduino', overview_order=-1):
         super().__init__()
 
@@ -199,40 +199,40 @@ class Device(QObject):
 
     @staticmethod
     def driver_list():
-        return ['Arduino', 'RS485', 'FT232R', 'Teensy', 'Prolific']
+        return ['Arduino', 'RS485', 'FT232R', 'Teensy', 'Prolific', 'CO Series']
 
     def user_edit_properties(self):
-        """ Returns list of properties that should be user-editable 
+        """ Returns list of properties that should be user-editable
             key name must match a property of this class """
-            
+
         return {
                 'name': {
-                    'display_name': 'Name', 
+                    'display_name': 'Name',
                     'entry_type': 'text',
                     'value': self._name,
                     'display_order': 1
                     },
                 'device_id': {
-                    'display_name': 'Device ID', 
+                    'display_name': 'Device ID',
                     'entry_type': 'text',
                     'value': self._device_id,
                     'display_order': 2
                     },
                 'label': {
-                    'display_name': 'Label', 
+                    'display_name': 'Label',
                     'entry_type': 'text',
                     'value': self._label,
                     'display_order': 3
                     },
                 'driver': {
-                    'display_name': 'Driver', 
+                    'display_name': 'Driver',
                     'entry_type': 'combo',
                     'value': self._driver,
                     'defaults': self.driver_list(),
                     'display_order': 4
                     },
                 'overview_order': {
-                    'display_name': 'Display Order', 
+                    'display_name': 'Display Order',
                     'entry_type': 'text',
                     'value': self._overview_order,
                     'display_order': 5
@@ -253,7 +253,7 @@ class Device(QObject):
             if child.widget():
                 child.widget().setParent(None)
 
-        chlist = [ch for chname, ch in reversed(sorted(self._channels.items(), 
+        chlist = [ch for chname, ch in reversed(sorted(self._channels.items(),
                                                         key=lambda x: x[1].display_order))]
 
         for idx, ch in enumerate(chlist):
@@ -281,7 +281,7 @@ class Device(QObject):
     @property
     def driver(self):
         return self._driver
-    
+
     @driver.setter
     def driver(self, value):
         self._driver = value
@@ -305,7 +305,7 @@ class Device(QObject):
     @property
     def label(self):
         return self._label
-    
+
     @label.setter
     def label(self, value):
         self._label = value

@@ -1,26 +1,32 @@
 from __future__ import division
 
-import ftd2xx
+import struct
+
 
 class CODriver:
     def __init__(self):
-        self.command_dict = {'VGET': 'VGET', 'VSET': 'VSET',
-                             'IGET': 'IGET', 'ISET': 'ISET',
+        self.command_dict = {'VGET': 'VCN?', 'VSET': 'VCN',
+                             'IGET': 'ICN?', 'ISET': 'ICN',
                              'SW': 'SW'}
 
-        ftd2xx.setVIDPID(0x1192, 0x1000)
 
     def parse_message(self, _message):
-        message = _message.strip().split('=')[1]
+        #print('got message {}'.format(_message))
+        #message comes back as "CH1=XXXX\r". Remove 'CH1=' and '\r'
+        message = ''
+        if _message != '':
+            message = _message.strip().split('=')[1]
+
+            perc = float(message) / 100.0
 
         if message != '':
-            return {'acknowledged': True, 'value': float(message)}
+            return {'acknowledged': True, 'value': perc}
         else:
-            return {'acknowledged': False, 'value': False}
+            return {'acknowledged': True, 'value': 0.0}
 
-    def build_message(self, msg_type, for_what="OUT", value=None, data_type=None):
+    def build_message(self, device_id, msg_type, for_what="OUT", value=None, data_type=None):
 
-        msg = '#1 '
+        msg = '#{} '.format(device_id)
         msg += self.command_dict[for_what]
 
         if value is not None:
@@ -41,7 +47,7 @@ class CODriver:
 
     @staticmethod
     def get_driver_name():
-        return "co"
+        return "CO Series"
 
     def translate_gui_to_device(self, server_to_driver):
 
@@ -56,15 +62,16 @@ class CODriver:
 
         num_of_mesg = len(server_to_driver['channel_ids'])
         assert num_of_mesg == len(server_to_driver['precisions'])
-        assert server_to_driver['device_driver'] == "Prolific"
+        assert server_to_driver['device_driver'] == "CO Series"
 
-	# Each message contains a flag whether we wait for a response
-        drivers_response_to_server = [('#1 REN \r', 0)]
+	    # Each message contains a flag whether we wait for a response
+        device_id = server_to_driver['device_id']
+        drivers_response_to_server = [('#{} REN \r'.format(device_id), 0)]
 
         for i in range(num_of_mesg):
-
             drivers_response_to_server.append(
-                (self.build_message(msg_type=server_to_driver['set'],
+                (self.build_message(device_id=device_id,
+                                    msg_type=server_to_driver['set'],
                                     for_what=server_to_driver['channel_ids'][i],
                                     value=server_to_driver['values'][i],
                                     data_type=server_to_driver['data_types'][i]),
@@ -74,7 +81,6 @@ class CODriver:
 
     def translate_device_to_gui(self, responses, device_data):
         drivers_response_to_server = {}
-
         for response, channel_id in zip(responses[1:], device_data['channel_ids']):
             parsed_message = self.parse_message(response)
             if parsed_message['acknowledged']:

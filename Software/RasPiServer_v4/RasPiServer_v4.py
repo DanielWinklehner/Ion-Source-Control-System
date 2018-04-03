@@ -10,22 +10,14 @@ from MIST1DeviceDriver import MIST1DeviceDriver, driver_mapping
 from SerialCOM import *
 from HtmlPage import *
 from DeviceFinder import *
-import ftd2xx
 
 
 class MyManager(BaseManager):
     pass
 
 
-# register all the ftdi VIDPIDs used by the FTDI drivers
-for driver_name, info in driver_mapping.iteritems():
-    try:
-        ftd2xx.setVIDPID(*info['ftdi_info'])
-    except KeyError:
-        # driver is not FTDI, so skip it
-        continue
-
 MyManager.register('SerialCOM', SerialCOM)
+MyManager.register('FTDICOM', FTDICOM)
 
 def manager():
     m = MyManager()
@@ -66,12 +58,6 @@ def serial_watchdog(com_pipe, debug, port_identifiers):
     _com_period = 1.0 / _com_freq  # (s)
     _debug = debug
     _port_identifiers = port_identifiers
-
-    _current_ports_by_ids = {}
-    _new_ports_by_ids = {}
-
-    _current_ftdi_by_addr = {}
-    _new_ftdi_by_addr = {}
 
     serial_finder = SerialDeviceFinder(port_identifiers)
     ftdi_finder = FTDIDeviceFinder(port_identifiers)
@@ -307,7 +293,7 @@ def set_value_on_device():
     try:
         # print(port_id)
         # print(_comms[port_id])
-
+        print(msg)
         for cmd in msg:
             device_response = _comms[port_id].send_message(cmd)
 
@@ -385,15 +371,12 @@ def query_device():
             for response, device_data in zip(all_responses, data):
 
                 device_id, raw_output_message = response
-
                 try:
                     devices_responses[device_data['device_id']] = _my_drivers[
                         my_driver_names[device_id]].translate_device_to_gui(
                         raw_output_message, device_data)
-
                 except Exception as e:
-                    print("Exception happened, message data was {}, response from Arduino was {}".format(message_data,
-                                                                                                         response))
+                    #print(e.message(), "Exception happened, message data was {}, response from Arduino was {}".format(message_data, response))
                     devices_responses[device_data['device_id']] = "ERROR: " + str(e)
 
     except Exception as e:
@@ -415,7 +398,6 @@ def mp_worker(args):
     global _ids_by_ports
 
     myid = _ids_by_ports[port]
-
     if _mydebug:
         print("Device {} requires {} query messages.".format(myid, len(messages)))
 
@@ -437,7 +419,7 @@ def mp_worker(args):
             print("Something went wrong! I'm sorry! {}".format(e))
             all_responses.append(None)
 
-    return _comms[myid].get_arduino_id(), all_responses
+    return _comms[myid].get_device_id(), all_responses
 
 
 def listen_to_pipe():
@@ -475,12 +457,35 @@ def listen_to_pipe():
                                                            baud_rate=_baud_rate,
                                                            timeout=1.0)
                 elif name == 'ftdi':
-                    #for key, val in finder_result['current'].iteritems():
-                    #    temp_ports_by_ids[ftdi_key] = val
-                    #    temp_ids_by_ports[val['port']] = newkey
-
+                    for key, val in finder_result['current'].iteritems():
+                        if key in _ids_by_ports.keys():
+                            # don't overwrite anything that is already present
+                            # because we want to keep the serial number that was
+                            # created when the device was added the first time
+                            continue
+                        temp_ports_by_ids[key] = val
+                        temp_ids_by_ports[val['port']] = key
                     _obsolete = finder_result['obsolete']
                     _added = finder_result['added']
+
+                    for key in _obsolete.keys():
+                        del _comms[key]
+                    for key, info in _added.items():
+                        _baud_rate = driver_mapping[info['identifier']]['baud_rate']
+                        _comms[key] = manager().FTDICOM(vend_prod_id=info['vend_prod'],
+                                                        port_name=0,
+                                                        baud_rate=_baud_rate,
+                                                        timeout=1.0)
+                        # we can only get the serial number after creating the com
+                        # object, but we still want to use it as the key for everything
+                        # since the user will put it in the gui
+                        sn = _comms[key].serial_number()
+                        _comms[sn] = _comms.pop(key)
+                        temp_ports_by_ids[sn] = temp_ports_by_ids.pop(key)
+                        temp_ids_by_ports[info['port']] = sn
+                    '''
+                    # this code doesn't work because the ftd2xx library is not thread safe
+                    # but it represents what we want to do eventually...
                     if _added != {}:
                         # we are adding one or more devices
                         i = 0
@@ -519,6 +524,7 @@ def listen_to_pipe():
                                         # remove device
                                         print('device removed')
                                         del _comms[key]
+                    '''
             # update the server's dictionaries all at once
             _ports_by_ids = temp_ports_by_ids
             _ids_by_ports = temp_ids_by_ports

@@ -55,7 +55,7 @@ class REKDriver:
         assert num_of_mesg == len(server_to_driver['precisions'])
         assert server_to_driver['device_driver'] == "Prolific"
 
-	# Each message contains a flag whether we wait for a response
+	    # Each message contains a flag whether we wait for a response
         drivers_response_to_server = [('#1 REN \r', 0)]
 
         for i in range(num_of_mesg):
@@ -72,7 +72,7 @@ class REKDriver:
     def translate_device_to_gui(self, responses, device_data):
         drivers_response_to_server = {}
 
-        for response, channel_id in zip(responses[1:], device_data['channel_ids']):    
+        for response, channel_id in zip(responses[1:], device_data['channel_ids']):
             parsed_message = self.parse_message(response)
             if parsed_message['acknowledged']:
                 drivers_response_to_server[channel_id] = float(parsed_message['value'])
@@ -92,4 +92,3 @@ if __name__ == '__main__':
     x.tests()
     print(x.translate_gui_to_device(message_to_driver))
     print(x.translate_device_to_gui(response_from_driver, message_to_driver))
-

@@ -217,7 +217,7 @@ class ControlSystem():
             devices = json.loads(r.text)
             for device_id, device_info in devices.items():
                 self._window.status_message('Found {} with ID {} on port {}.'.format(
-                                            device_info['identifyer'],
+                                            device_info['identifier'],
                                             device_id,
                                             device_info['port']))
         else:

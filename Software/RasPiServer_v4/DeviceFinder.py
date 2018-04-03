@@ -124,9 +124,10 @@ class FTDIDeviceFinder(DeviceFinder):
 
             if idf is None:
                 continue
-                
+
             _found_devices_by_ids[bus_addr_key] = {"port": '{}:{}'.format(*bus_addr),
-                                                   "identifier": ''}
+                                                   "identifier": idf,
+                                                   "vend_prod": vend_prod}
 
             if bus_addr_key not in _device_ids:
                 _device_added = True

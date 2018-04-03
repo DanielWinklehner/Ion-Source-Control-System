@@ -2,27 +2,52 @@ from __future__ import division
 
 import time
 import serial
-import ftd2xx
 
 class COM(object):
-    def __init__(self, id, port, timeout, baud_rate):
+    def __init__(self, id, port_name, timeout, baud_rate):
         self._id = id
-        self._port = port
+        self._port = port_name
         self._timeout = timeout
         self._baud_rate = baud_rate
 
 class FTDICOM(COM):
-    def __init__(self, serial_number, port, timeout=1.0, baud_rate=9600):
-        COM.__init__(self, serial_number, port, timeout, baudrate)
-        self._dev = ftd2xx.open(self._port)
+    def __init__(self, vend_prod_id, port_name, timeout=1.0, baud_rate=9600):
+        import ftd2xx
+        # set up ftdi library for loading the specified device
+        ftd2xx.setVIDPID(*vend_prod_id) # this argument is a tuple, so we unpack it
+        tmp = ftd2xx.open(port_name) # can't assign member variables before init. Oh well
+        tmp.setBaudRate(9600)
+        #tmp.setTimeouts(15, 50)
+        serial_number = tmp.eeRead().SerialNumber
 
-    @property
+        COM.__init__(self, serial_number, port_name, timeout, baud_rate)
+        self._dev = tmp
+
     def serial_number(self):
         # if this fails, the device has been unplugged!
         return self._dev.eeRead().SerialNumber
 
     def send_message(self, message):
-        pass
+        try:
+            self._dev.write(message[0])
+            if message[1]:
+                time.sleep(0.05)
+                n_bytes = self._dev.getQueueStatus()
+                resp = self._dev.read(n_bytes)
+                return resp
+            else:
+                return ""
+        except Exception as e:
+            if e.message() == 'DEVICE_NOT_FOUND':
+                pass
+            elif e.message() == 'some other error':
+                pass
+            else:
+                print(e.message())
+            return ""
+
+    def get_device_id(self):
+        return self.serial_number()
 
 class SerialCOM(COM):
     def __init__(self, arduino_id, port_name, timeout=1.0, baud_rate=115200):
@@ -36,7 +61,7 @@ class SerialCOM(COM):
 
         time.sleep(1.0)
 
-    def get_arduino_id(self):
+    def get_device_id(self):
         """Summary
 
         Returns:
