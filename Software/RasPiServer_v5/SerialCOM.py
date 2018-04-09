@@ -8,6 +8,10 @@ class COM(object):
         self._timeout = timeout
         self._baud_rate = baud_rate
 
+    @property
+    def port(self):
+        return self._port
+
 class FTDICOM(COM):
     def __init__(self, vend_prod_id, port_name, timeout=1.0, baud_rate=9600):
         import ftd2xx

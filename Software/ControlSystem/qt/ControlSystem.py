@@ -222,6 +222,7 @@ class ControlSystem():
                                             device_info['port']))
         else:
             print('[Error getting devices] {}: {}'.format(r.status_code, r.text))
+            sys.exit(0)
 
         ## Set up communication pipes.
         self._keep_communicating = False
@@ -315,7 +316,6 @@ class ControlSystem():
         """ Read in message from the server, and update devices accordingly """
         parsed_response = data
         #print(parsed_response)
-        timestamp = parsed_response["timestamp"]
 
         for device_name, device in self._devices.items():
             device_id = device.device_id
@@ -334,7 +334,19 @@ class ControlSystem():
                 self._locked_devices.remove(device)
                 device._overview_widget.hide_error_message()
 
+            try:
+                timestamp = parsed_response[device_id]['timestamp']
+            except KeyError:
+                # did not get a valid response or dict might be empty
+                continue
+
             for channel_name, value in parsed_response[device_id].items():
+                # metadata the server sent back that doesn't contain channel values
+                if channel_name == 'timestamp':
+                    continue
+                elif channel_name == 'polling_rate':
+                    continue
+
                 channel = device.get_channel_by_name(channel_name)
                 if channel is None:
                     device.lock(message='Could not find channel with name {}.'.format(channel_name))
@@ -447,7 +459,14 @@ class ControlSystem():
         # zero values will crash log scale plots
         if ch.value == 0:
             ch.value = 1e-20
-        ch.append_data(timestamp, ch.value)
+
+        if len(ch.x_values) > 0:
+            # only append new data (i.e. if we are polling faster than this
+            # device can respond, might receive same point twice)
+            if ch.x_values[-1] != timestamp:
+                ch.append_data(timestamp, ch.value)
+        else:
+            ch.append_data(timestamp, ch.value)
 
     @pyqtSlot(object)
     def connect_device_channel_entry_form(self, obj):

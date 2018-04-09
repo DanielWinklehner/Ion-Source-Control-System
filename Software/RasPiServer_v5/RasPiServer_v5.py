@@ -28,14 +28,19 @@ class DeviceManager(object):
         self._query_device_data = None # some devices need this to translate the response back
 
         # device's current values (response to query command)
-        self._current_values = []
+        self._current_values = {}
 
         # polling rate for this device
         self._polling_rate = 0
         self._com_times = deque(maxlen=20)
+        self._polling_rate_max = 1. # Hz
 
         self._set_command_queue = queue.Queue()
         self._terminate = False
+
+    @property
+    def port(self):
+        return self._com.port
 
     @property
     def current_values(self):
@@ -66,13 +71,14 @@ class DeviceManager(object):
                 # try to send the command to the device
                 cmd = self._set_command_queue.get_nowait()
 
-                msg = self._driver.translate_gui_to_device(device_data)
+                msgs = self._driver.translate_gui_to_device(cmd)
 
-                for cmd in msg:
+                for msg in msgs:
                     # this takes some time
-                    device_response = self._com.send_message(cmd)
+                    device_response = self._com.send_message(msg)
 
-                self._current_values = self._driver.translate_device_to_gui(device_response)
+                print('Device response was {}'.format(device_response))
+                #self._current_values = self._driver.translate_device_to_gui(device_response)
 
             else:
                 # update the device's current value
@@ -83,10 +89,8 @@ class DeviceManager(object):
                     com_resp_list = []
                     for msg in self._query_message:
                         com_resp = self._com.send_message(msg)
-                        print('sending msg {}'.format(msg))
                         com_resp_list.append(com_resp)
 
-                    print(com_resp_list)
                     try:
                         resp = self._driver.translate_device_to_gui(
                             com_resp_list, self._query_device_data
@@ -97,11 +101,16 @@ class DeviceManager(object):
                     # add additional info to be shown in the GUI
                     resp['timestamp'] = time.time()
                     resp['polling_rate'] = self._polling_rate
+
                     self._current_values = resp
 
             t2 = datetime.now()
             delta = (t2 - t1).total_seconds()
-            self._com_times.append(delta)
+
+            if 1.0 / delta > self._polling_rate_max:
+                time.sleep(1.0 / self._polling_rate_max - delta)
+
+            self._com_times.append((datetime.now() - t1).total_seconds())
             self.update_polling_rate()
 
 
@@ -250,11 +259,12 @@ def set_value_on_device():
 
     _devices[device_id].add_command_to_queue(set_cmd)
 
-    device_data['device_id'] = old_device_id
+    set_cmd['device_id'] = old_device_id
 
     if _mydebug:
         print("The message to the device is: {}".format(msg))
 
+    '''
     try:
         print(msg)
         for cmd in msg:
@@ -264,6 +274,8 @@ def set_value_on_device():
         device_response = "Error, exception happened: {}".format(e)
 
     return json.dumps(device_response)
+    '''
+    return 'Command sent to device'
 
 @app.route("/device/query", methods=['GET', 'POST'])
 def query_device():
@@ -297,6 +309,15 @@ def query_device():
     global _current_responses
     _current_responses = json.dumps(devices_responses)
     return _current_responses
+
+@app.route("/device/active/")
+def all_devices():
+
+    global _devices
+    ports = {}
+    for id, dm in _devices.items():
+        ports[id] = dm.port
+    return json.dumps(ports)
 
 def listen_to_pipe():
 
