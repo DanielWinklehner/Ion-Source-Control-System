@@ -1012,7 +1012,7 @@ if __name__ == '__main__':
 
     app.setStyleSheet(dark_stylesheet())
 
-    cs = ControlSystem(server_ip='10.77.0.4', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
 
     # connect the closing event to the quit button procedure
     app.aboutToQuit.connect(cs.on_quit_button)

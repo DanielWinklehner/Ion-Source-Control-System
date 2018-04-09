@@ -43,7 +43,7 @@ class SerialDeviceFinder(DeviceFinder):
         _added_devices_by_ids = {}
 
         # this device finder opens a shell script to return device-port pairs
-        proc = subprocess.Popen('/home/pi/RasPiServer_v5/usb.sh',
+        proc = subprocess.Popen('/home/mist-1/Work/ControlSystem/RasPiServer_v5/usb.sh',
                                 stdout=subprocess.PIPE, shell=True)
 
         # usb script outputs two blocks of text separated by #####

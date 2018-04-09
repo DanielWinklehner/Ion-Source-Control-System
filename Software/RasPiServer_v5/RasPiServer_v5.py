@@ -43,6 +43,10 @@ class DeviceManager(object):
         return self._com.port
 
     @property
+    def polling_rate(self):
+        return self._polling_rate
+
+    @property
     def current_values(self):
         return self._current_values
 
@@ -256,19 +260,19 @@ def set_value_on_device():
     #                'values': [values],
     #                'data_types': [types]}
 
-    old_device_id = set_cmd['device_id']
-    device_id_parts = old_device_id.split("_")
-    port_id = device_id_parts[0]
+    full_device_id = set_cmd['device_id']
+    device_id_parts = full_device_id.split("_")
+    sub_id = device_id_parts[0]
     device_id = device_id_parts[0]
 
     if len(device_id_parts) > 1:
-        device_id = device_id_parts[1]
+        sub_id = device_id_parts[1]
 
-    set_cmd['device_id'] = device_id
+    set_cmd['device_id'] = sub_id
 
     _devices[device_id].add_command_to_queue(set_cmd)
 
-    set_cmd['device_id'] = old_device_id
+    #set_cmd['device_id'] = old_device_id
 
     if _mydebug:
         print("The message to the device is: {}".format(msg))
@@ -302,16 +306,14 @@ def query_device():
         device_id = device_id_parts[0]
 
         if len(device_id_parts) > 1:
-            device_id = device_id_parts[1]
-
-        device_data['device_id'] = device_id
+            device_data['device_id'] = device_id_parts[1]
 
         try:
             _devices[device_id].query_message = device_data
-            devices_responses[device_id] = _devices[device_id].current_values
+            devices_responses[full_device_id] = _devices[device_id].current_values
         except KeyError:
             # device not found on server
-            devices_responses[device_id] = "ERROR: Device not found on server"
+            devices_responses[full_device_id] = "ERROR: Device not found on server"
 
     global _current_responses
     _current_responses = json.dumps(devices_responses)
@@ -323,7 +325,7 @@ def all_devices():
     global _devices
     ports = {}
     for id, dm in _devices.items():
-        ports[id] = dm.port
+        ports[id] = [dm.port, dm.polling_rate]
     return json.dumps(ports)
 
 def listen_to_pipe():
@@ -371,7 +373,7 @@ def listen_to_pipe():
                                         port_name=_port_info["port"],
                                         baud_rate=_baud_rate,
                                         timeout=1.0)
-                        drv = driver_mapping[_port_info["identifier"]]['driver']
+                        drv = driver_mapping[_port_info["identifier"]]['driver']()
                         _devices[_key] = DeviceManager(_key, drv, com)
                         _threads[_key] = threading.Thread(target=_devices[_key].run)
                         _threads[_key].start()
