@@ -33,7 +33,7 @@ class DeviceManager(object):
         # polling rate for this device
         self._polling_rate = 0
         self._com_times = deque(maxlen=20)
-        self._polling_rate_max = 1. # Hz
+        self._polling_rate_max = 30. # Hz
 
         self._set_command_queue = queue.Queue()
         self._terminate = False
@@ -75,7 +75,12 @@ class DeviceManager(object):
 
                 for msg in msgs:
                     # this takes some time
-                    device_response = self._com.send_message(msg)
+                    try:
+                        device_response = self._com.send_message(msg)
+                    except Exception as e:
+                        #print('Unable to send set message! Exception: {}'.format(e))
+                        device_response = 'Error, got exception {}'.format(e)
+
 
                 print('Device response was {}'.format(device_response))
                 #self._current_values = self._driver.translate_device_to_gui(device_response)
@@ -88,8 +93,12 @@ class DeviceManager(object):
                     #                    for msg in self._query_message]
                     com_resp_list = []
                     for msg in self._query_message:
-                        com_resp = self._com.send_message(msg)
-                        com_resp_list.append(com_resp)
+                        try:
+                            com_resp = self._com.send_message(msg)
+                            com_resp_list.append(com_resp)
+                        except Exception as e:
+                            #print('Unable to send query message! Exception: {}'.format(e))
+                            com_resp_list.append(None)
 
                     try:
                         resp = self._driver.translate_device_to_gui(
@@ -283,8 +292,19 @@ def query_device():
     data = json.loads(request.form['data'])
     devices_responses = {}
     for i, device_data in enumerate(data):
-        device_id = device_data['device_id']
         device_data['set'] = False
+
+        # for master/slave devices, we need to send commands to the master only
+        # e.g. if serial number is XXXXXX_2, we look for device XXXXXX, and
+        # device data should then use only the '2' as the id.
+        full_device_id = device_data['device_id']
+        device_id_parts = full_device_id.split("_")
+        device_id = device_id_parts[0]
+
+        if len(device_id_parts) > 1:
+            device_id = device_id_parts[1]
+
+        device_data['device_id'] = device_id
 
         try:
             _devices[device_id].query_message = device_data
@@ -293,19 +313,6 @@ def query_device():
             # device not found on server
             devices_responses[device_id] = "ERROR: Device not found on server"
 
-        '''
-        old_device_id = device_data['device_id']
-        device_id_parts = old_device_id.split("_")
-        port_id = device_id_parts[0]
-        device_id = device_id_parts[0]
-
-        if len(device_id_parts) > 1:
-            device_id = device_id_parts[1]
-
-        device_data['device_id'] = device_id
-
-        device_data['device_id'] = old_device_id
-        '''
     global _current_responses
     _current_responses = json.dumps(devices_responses)
     return _current_responses
@@ -323,9 +330,10 @@ def listen_to_pipe():
 
     global _ports_by_ids
     global _ids_by_ports
+    global _devices
+    global _threads
 
     if _pipe_server.poll():
-
         gui_message = _pipe_server.recv()
 
         if gui_message[0] == "updated_list":
@@ -347,14 +355,17 @@ def listen_to_pipe():
 
                     for _key in _obsolete.keys():
                         # gracefully remove devices/threads
+                        print('Shutting down device {}'.format(_key))
                         _devices[_key].terminate()
                         _threads[_key].join()
-                        if not _threads[key].is_alive():
+                        if not _threads[_key].is_alive():
+                            print('Removing device {}'.format(_key))
                             del _devices[_key]
                             del _threads[_key]
 
                     for _key, _port_info in _added.items():
                         # add devices/threads
+                        print('Adding device {}'.format(_key))
                         _baud_rate = driver_mapping[_port_info["identifier"]]["baud_rate"]
                         com = SerialCOM(arduino_id=_key,
                                         port_name=_port_info["port"],
@@ -362,8 +373,9 @@ def listen_to_pipe():
                                         timeout=1.0)
                         drv = driver_mapping[_port_info["identifier"]]['driver']
                         _devices[_key] = DeviceManager(_key, drv, com)
-                        _threads[_key] = threading.Thread(target=_devices[_key].run())
+                        _threads[_key] = threading.Thread(target=_devices[_key].run)
                         _threads[_key].start()
+
                 '''
                 elif name == 'ftdi':
                     for key, val in finder_result['current'].items():
@@ -408,7 +420,5 @@ def listen_to_pipe():
     if _keep_communicating:
         threading.Timer(0.5, listen_to_pipe).start()
 
-
 if __name__ == "__main__":
-
     app.run(host='0.0.0.0', port=5000)
