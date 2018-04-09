@@ -336,15 +336,14 @@ class ControlSystem():
 
             try:
                 timestamp = parsed_response[device_id]['timestamp']
+                device.polling_rate = parsed_response[device_id]['polling_rate']
             except KeyError:
                 # did not get a valid response or dict might be empty
                 continue
 
             for channel_name, value in parsed_response[device_id].items():
                 # metadata the server sent back that doesn't contain channel values
-                if channel_name == 'timestamp':
-                    continue
-                elif channel_name == 'polling_rate':
+                if channel_name in ['timestamp', 'polling_rate']:
                     continue
 
                 channel = device.get_channel_by_name(channel_name)
@@ -1012,7 +1011,7 @@ if __name__ == '__main__':
 
     app.setStyleSheet(dark_stylesheet())
 
-    cs = ControlSystem(server_ip='10.77.0.2', server_port=5000, debug=False)
+    cs = ControlSystem(server_ip='10.77.0.4', server_port=5000, debug=False)
 
     # connect the closing event to the quit button procedure
     app.aboutToQuit.connect(cs.on_quit_button)

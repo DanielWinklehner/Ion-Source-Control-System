@@ -27,7 +27,12 @@ class DeviceWidget(QWidget):
         self.setLayout(self._layout)
 
         self._gb = QGroupBox(self._device.label)
+
         self._layout.addWidget(self._gb)
+
+        # label to display this device's polling rate
+        self._polling_rate_label = QLabel('Polling rate: --')
+        self._layout.addWidget(self._polling_rate_label)
         self._layout.addStretch()
 
         self._gblayout = QVBoxLayout()
@@ -58,11 +63,12 @@ class DeviceWidget(QWidget):
 
             self._hbox = QHBoxLayout()
             self._btnRetry = QPushButton('Force Retry')
+            self._polling_rate_label.setText('Polling rate: --')
             self._btnRetry.clicked.connect(self.force_retry_connect)
             self._hbox.addStretch()
             self._hbox.addWidget(self._btnRetry)
             self._hbox.addStretch()
-            self._layout.insertLayout(2, self._hbox)
+            self._layout.insertLayout(3, self._hbox)
 
             self._hasMessage = True
 
@@ -134,6 +140,7 @@ class Device(QObject):
 
         self._error_message = ''
         self._retry_time = 30
+        self._polling_rate = 0. # Hz
 
         self._entry_form = EntryForm(self._label, '', self.user_edit_properties(), self)
         self._entry_form.sig_save.connect(self.save_changes)
@@ -150,6 +157,7 @@ class Device(QObject):
         # create gui representation
         self._overview_widget = DeviceWidget(self)
         self._gblayout = self._overview_widget.gblayout
+        self._polling_rate_label = self._overview_widget._polling_rate_label
 
         self._initialized = True
         self._entry_form.add_delete_button()
@@ -261,6 +269,16 @@ class Device(QObject):
 
         for idx, ch in enumerate(chlist):
             self._gblayout.insertWidget(idx, ch._overview_widget)
+
+    @property
+    def polling_rate(self):
+        return self._polling_rate
+
+    @polling_rate.setter
+    def polling_rate(self, value):
+        self._polling_rate = value
+        if self._initialized:
+            self._polling_rate_label.setText('Polling rate: {0:.2f} Hz'.format(self._polling_rate))
 
     @property
     def error_message(self):
