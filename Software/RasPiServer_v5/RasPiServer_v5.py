@@ -6,6 +6,7 @@ import queue
 import time
 from datetime import datetime, timedelta
 from collections import deque
+import logging
 
 from flask import Flask, request
 import numpy as np
@@ -76,7 +77,7 @@ class DeviceManager(object):
                 cmd = self._set_command_queue.get_nowait()
 
                 msgs = self._driver.translate_gui_to_device(cmd)
-
+                print(msgs)
                 for msg in msgs:
                     # this takes some time
                     try:
@@ -86,7 +87,7 @@ class DeviceManager(object):
                         device_response = 'Error, got exception {}'.format(e)
 
 
-                print('Device response was {}'.format(device_response))
+                #print('Device response was {}'.format(device_response))
                 #self._current_values = self._driver.translate_device_to_gui(device_response)
 
             else:
@@ -210,10 +211,12 @@ def serial_watchdog(com_pipe, debug, port_identifiers):
 
 app = Flask(__name__)
 
+# disable flask output messages (makes server easier to debug)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
 _mydebug = False
 _pipe_server, pipe_serial_watcher = Pipe()
-_ports_by_ids = {}
-_ids_by_ports = {}
 _watch_proc = Process(target=serial_watchdog,
                       args=(pipe_serial_watcher, _mydebug, driver_mapping))
 
@@ -222,6 +225,7 @@ _keep_communicating = False
 _initialized = False
 _devices = {}
 _threads = {}
+_ftdi_serial_port_mapping = {} # gui uses serial numbers, server uses ports
 _current_responses = {}
 
 @app.route("/initialize/")
@@ -330,18 +334,14 @@ def all_devices():
 
 def listen_to_pipe():
 
-    global _ports_by_ids
-    global _ids_by_ports
     global _devices
     global _threads
+    global _ftdi_serial_port_mapping
 
     if _pipe_server.poll():
         gui_message = _pipe_server.recv()
 
         if gui_message[0] == "updated_list":
-
-            temp_ports_by_ids = {}
-            temp_ids_by_ports = {}
 
             if _mydebug:
                 print("Updating ports/ids in main server")
@@ -350,8 +350,7 @@ def listen_to_pipe():
             for name, finder_result in message_info.items():
                 if name == 'serial':
                     for key, val in finder_result['current'].items():
-                        temp_ports_by_ids[key] = val
-                        temp_ids_by_ports[val['port']] = key
+                        continue
                     _obsolete = finder_result['obsolete']
                     _added = finder_result['added']
 
@@ -378,46 +377,41 @@ def listen_to_pipe():
                         _threads[_key] = threading.Thread(target=_devices[_key].run)
                         _threads[_key].start()
 
-                '''
                 elif name == 'ftdi':
                     for key, val in finder_result['current'].items():
-                        if key in _ids_by_ports.keys():
-                            # don't overwrite anything that is already present
-                            # because we want to keep the serial number that was
-                            # created when the device was added the first time
-                            continue
-                        temp_ports_by_ids[key] = val
-                        temp_ids_by_ports[val['port']] = key
+                        #if key in _ids_by_ports.keys():
+                        #    # don't overwrite anything that is already present
+                        #    # because we want to keep the serial number that was
+                        #    # created when the device was added the first time
+                        continue
                     _obsolete = finder_result['obsolete']
                     _added = finder_result['added']
 
-                    for key in _obsolete.keys():
-                        del _comms[key]
+                    for _key in _obsolete.keys():
+                        print('Shutting down device {}'.format(_key))
+                        sn = _ftdi_serial_port_mapping[_key]
+                        _devices[sn].terminate()
+                        _threads[sn].join()
+                        if not _threads[sn].is_alive():
+                            print('Removing device {}'.format(sn))
+                            del _devices[sn]
+                            del _threads[sn]
                     for key, info in _added.items():
                         _baud_rate = driver_mapping[info['identifier']]['baud_rate']
-                        _comms[key] = manager().FTDICOM(vend_prod_id=info['vend_prod'],
-                                                        port_name=0,
-                                                        baud_rate=_baud_rate,
-                                                        timeout=1.0)
+                        com = FTDICOM(vend_prod_id=info['vend_prod'],
+                                      port_name=0,
+                                      baud_rate=_baud_rate,
+                                      timeout=1.0)
                         # we can only get the serial number after creating the com
                         # object, but we still want to use it as the key for everything
                         # since the user will put it in the gui
-                        sn = _comms[key].serial_number()
-                        _comms[sn] = _comms.pop(key)
-                        temp_ports_by_ids[sn] = temp_ports_by_ids.pop(key)
-                        temp_ids_by_ports[info['port']] = sn
-
-                        com = SerialCOM(arduino_id=_key,
-                                        port_name=_port_info["port"],
-                                        baud_rate=_baud_rate,
-                                        timeout=1.0)
-                        devices[_key] = DeviceManager(_key, driver_mapping[_port_info["identifier"]], com)
-                        threads[_key] = threading.Thread(target = dm.run())
-                        threads[_key].start()
-                '''
-            # update the server's dictionaries all at once
-            _ports_by_ids = temp_ports_by_ids
-            _ids_by_ports = temp_ids_by_ports
+                        sn = com.serial_number()
+                        print('Adding device {}'.format(sn))
+                        _ftdi_serial_port_mapping[key] = sn
+                        drv = driver_mapping[info["identifier"]]['driver']()
+                        _devices[sn] = DeviceManager(sn, drv, com)
+                        _threads[sn] = threading.Thread(target = _devices[sn].run)
+                        _threads[sn].start()
 
     if _keep_communicating:
         threading.Timer(0.5, listen_to_pipe).start()

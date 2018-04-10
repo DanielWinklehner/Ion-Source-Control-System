@@ -27,16 +27,16 @@ class FTDICOM(COM):
 
     def serial_number(self):
         # if this fails, the device has been unplugged!
-        return self._dev.eeRead().SerialNumber
+        return self._dev.eeRead().SerialNumber.decode()
 
     def send_message(self, message):
         try:
-            self._dev.write(message[0])
+            self._dev.write(message[0].encode())
+            time.sleep(0.05)
             if message[1]:
-                time.sleep(0.05)
                 n_bytes = self._dev.getQueueStatus()
                 resp = self._dev.read(n_bytes)
-                return resp
+                return resp.decode()
             else:
                 return ""
         except Exception as e:

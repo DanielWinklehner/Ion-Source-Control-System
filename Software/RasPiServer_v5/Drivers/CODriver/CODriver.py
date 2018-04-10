@@ -5,8 +5,8 @@ import struct
 
 class CODriver:
     def __init__(self):
-        self.command_dict = {'VGET': 'VCN?', 'VSET': 'VCN',
-                             'IGET': 'ICN?', 'ISET': 'ICN',
+        self.command_dict = {'VGET': 'VM', 'VSET': 'VCN',
+                             'IGET': 'IM', 'ISET': 'ICN',
                              'SW': 'SW'}
 
 
@@ -37,7 +37,7 @@ class CODriver:
                 else:
                     msg += '0'
             elif 'float' in data_type:
-                msg += " {}".format(str(value))
+                msg += " {0:.2f}".format(value) # power supply ignores values > 2 decimal points
             else:
                 pass
 

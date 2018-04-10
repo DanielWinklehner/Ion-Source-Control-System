@@ -23,7 +23,7 @@ from .widgets.DateTimePlotWidget import DateTimePlotWidget
 from .widgets.EntryForm import EntryForm
 
 from lib.Device import Device
-from lib.Channel import Channel 
+from lib.Channel import Channel
 from lib.Procedure import Procedure
 
 class MainWindow(QMainWindow):
@@ -95,6 +95,8 @@ class MainWindow(QMainWindow):
         self._settings_devices = {}
 
     def apply_settings(self, settings):
+        self.resize(settings['window-width'], settings['window-height'])
+
         self.ui.splitMain.setSizes([settings['split-main-first'],
                                     settings['split-main-second']])
 
@@ -102,8 +104,7 @@ class MainWindow(QMainWindow):
                                         settings['split-settings-second']])
 
         self.move(settings['window-pos-x'], settings['window-pos-y'])
-    
-        self.resize(settings['window-width'], settings['window-height'])
+
 
     def current_settings(self):
         return {
@@ -134,9 +135,9 @@ class MainWindow(QMainWindow):
     # ---- Tab Update Functions ----
     def update_overview(self, devices):
         self.clearLayout(self._overview_layout)
-        order_devlist = sorted([x for _, x in devices.items()], 
+        order_devlist = sorted([x for _, x in devices.items()],
                                key=lambda y: y.overview_order)
-        for device in order_devlist: 
+        for device in order_devlist:
             if 'overview' in device.pages:
                 self._overview_layout.insertWidget(0, device._overview_widget)
         self._overview_layout.addStretch()
@@ -190,7 +191,7 @@ class MainWindow(QMainWindow):
     def on_settings_row_changed(self, item):
         if item == None:
             return
-    
+
         # if clause fixes mysterious floating entry forms....
         if self._devvbox.count():
             widget = self._devvbox.itemAt(0).widget()

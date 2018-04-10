@@ -43,7 +43,7 @@ class SerialDeviceFinder(DeviceFinder):
         _added_devices_by_ids = {}
 
         # this device finder opens a shell script to return device-port pairs
-        proc = subprocess.Popen('/home/mist-1/Work/ControlSystem/RasPiServer_v5/usb.sh',
+        proc = subprocess.Popen('/home/pi/RasPiServer_v5/usb.sh',
                                 stdout=subprocess.PIPE, shell=True)
 
         # usb script outputs two blocks of text separated by #####
@@ -76,7 +76,7 @@ class SerialDeviceFinder(DeviceFinder):
                 _obsolete_devices_by_ids[id] = self._current_devices[id]  # These SerialCOM objects have to be destroyed
 
         self._current_devices = _found_devices_by_ids
-        
+
         return {'current': self._current_devices,
                 'added': _added_devices_by_ids,
                 'obsolete': _obsolete_devices_by_ids}

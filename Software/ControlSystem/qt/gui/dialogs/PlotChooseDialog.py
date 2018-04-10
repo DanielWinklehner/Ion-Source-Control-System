@@ -20,7 +20,7 @@ class PlotChooseDialog(QDialog):
         self.ui.btnDone.clicked.connect(self.on_done_click)
 
         self._accepted = False # true if user presses 'done' instead of closing out the window
-        
+
         self._device_dict = devices
         self._plotted_channels = plotted_channels
         self.update_devices()
@@ -31,10 +31,10 @@ class PlotChooseDialog(QDialog):
         for devname, dev in self._device_dict.items():
             chlist = []
             for chname, ch in reversed(sorted(dev.channels.items(), key=lambda x: x[1].display_order)):
-                if ch.data_type == float:
+                if ch.data_type == float and ch.mode in ['read', 'both']:
                     chlist.append(ch)
             self._devices.append(chlist)
-            
+
     def update_devices(self):
         """ Populates tree view with devices/channels """
         for devname, dev in self._device_dict.items():
@@ -42,7 +42,7 @@ class PlotChooseDialog(QDialog):
             devrow.setFlags(devrow.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
             devrow.setText(0, dev.label)
             for chname, ch in reversed(sorted(dev.channels.items(), key=lambda x: x[1].display_order)):
-                if ch.data_type == float:
+                if ch.data_type == float and ch.mode in ['read', 'both']:
                     chrow = QTreeWidgetItem(devrow)
                     chrow.setFlags(chrow.flags() | Qt.ItemIsUserCheckable)
                     chrow.setText(0, ch.label)
@@ -66,7 +66,7 @@ class PlotChooseDialog(QDialog):
             for j in range(ch_count):
                 ch_item = dev_item.child(j)
                 if ch_item.checkState(0):
-                    channel = self._devices[i][j] 
+                    channel = self._devices[i][j]
                     self._selected_channels.append(channel)
 
         self._accepted = True
@@ -75,4 +75,3 @@ class PlotChooseDialog(QDialog):
     def exec_(self):
         super(PlotChooseDialog, self).exec_()
         return (self._accepted, self._selected_channels)
-
